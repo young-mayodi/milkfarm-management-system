@@ -38,10 +38,7 @@ plugin :tmp_restart
 # plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
 
 # Railway and Heroku-specific configuration
-if ENV['RAILWAY_ENVIRONMENT']
-  # Bind to all interfaces for Railway
-  bind "tcp://0.0.0.0:#{ENV.fetch('PORT', 3000)}"
-elsif ENV['DYNO'] # Heroku detection
+if ENV['DYNO'] # Heroku detection
   # Heroku provides PORT environment variable
   port ENV.fetch("PORT", 3000)
   
@@ -53,6 +50,9 @@ elsif ENV['DYNO'] # Heroku detection
     # Worker specific setup for Rails 8.0+
     ActiveRecord::Base.establish_connection if defined?(ActiveRecord)
   end
+elsif ENV['RAILWAY_ENVIRONMENT']
+  # Bind to all interfaces for Railway
+  bind "tcp://0.0.0.0:#{ENV.fetch('PORT', 3000)}"
 end
 
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
