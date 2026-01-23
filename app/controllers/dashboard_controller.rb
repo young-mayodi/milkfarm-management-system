@@ -46,6 +46,9 @@ class DashboardController < ApplicationController
     
     # Monthly sales
     @monthly_sales = SalesRecord.for_month(Date.current.month, Date.current.year).sum(:total_sales)
+    
+    # Monthly revenue calculation
+    @monthly_revenue = @monthly_sales * 1.0 # Assuming total sales is the revenue
   end
 
   def prepare_chart_data

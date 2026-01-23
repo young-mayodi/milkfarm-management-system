@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>🥛 Dairy Farm Management System</title>
+    <title>🌌 MilkyWay Farm Management System</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -35,7 +35,7 @@
         --dark-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
         
         --sidebar-bg: linear-gradient(180deg, #1a1d29 0%, #2c3e50 100%);
-        --sidebar-width: 280px;
+        --sidebar-width: 320px;
         --header-height: 70px;
         
         --border-radius: 12px;
@@ -119,14 +119,6 @@
       .sidebar-menu::-webkit-scrollbar-thumb {
         background: rgba(255, 255, 255, 0.2);
         border-radius: 2px;
-      }
-      
-      .sidebar-heading {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        color: rgba(255, 255, 255, 0.6) !important;
-        font-size: 0.75rem;
       }
       
       .nav-pills .nav-link {
@@ -692,7 +684,7 @@
         
         <div class="mobile-brand">
           <i class="bi bi-droplet-fill me-2"></i>
-          <span class="brand-text">Dairy Farm</span>
+          <span class="brand-text">MilkyWay</span>
         </div>
         
         <div class="mobile-user-menu">
@@ -720,7 +712,7 @@
       <div class="spinner-border text-light mb-3" role="status" style="width: 3rem; height: 3rem;">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <h4>🥛 Dairy Farm Management</h4>
+      <h4>🌌 MilkyWay Farm Management</h4>
       <p class="text-light opacity-75">Loading your dashboard...</p>
     </div>
 
@@ -733,17 +725,18 @@
               <i class="bi bi-droplet-fill text-white fs-4"></i>
             </div>
             <div>
-              <h5 class="mb-0 text-white fw-bold">
-                <% if current_farm %>
-                  <%= current_farm.name %>
-                <% else %>
-                  Dairy Farm
-                <% end %>
+              <h5 class="mb-0 text-white fw-bold" style="font-size: 1.1rem; line-height: 1.2;">
+                🌌 MilkyWay Farm
               </h5>
               <% if current_user %>
-                <small class="text-light opacity-75">
+                <small class="text-light opacity-75" style="font-size: 0.8rem;">
                   <%= Time.current.strftime("%l:%M %p") %> • 
                   <span class="badge bg-light text-dark"><%= current_user.role.humanize %></span>
+                </small>
+              <% else %>
+                <small class="text-light opacity-75" style="font-size: 0.8rem;">
+                  <%= Time.current.strftime("%l:%M %p") %> • 
+                  <span class="badge bg-light text-dark">Guest</span>
                 </small>
               <% end %>
             </div>

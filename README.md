@@ -1,4 +1,4 @@
-# Milk Production Management System
+# MilkyWay Farm Management System
 
 A comprehensive Ruby on Rails application for managing dairy farm operations, tracking milk production, and recording sales data.
 

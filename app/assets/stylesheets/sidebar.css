@@ -4,7 +4,7 @@
 }
 
 .sidebar {
-  width: 280px;
+  width: 320px;
   min-height: 100vh;
   position: fixed;
   left: 0;
@@ -14,7 +14,7 @@
 }
 
 .main-content {
-  margin-left: 280px;
+  margin-left: 320px;
   min-height: 100vh;
   transition: all 0.3s;
 }
@@ -31,6 +31,9 @@
   margin-bottom: 2px;
   padding: 0.75rem 1rem;
   transition: all 0.2s;
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .sidebar .nav-link:hover {
@@ -53,7 +56,7 @@
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .sidebar {
-    margin-left: -280px;
+    margin-left: -320px;
   }
   
   .sidebar.show {
@@ -90,4 +93,25 @@
 
 .sidebar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
+}
+
+/* Improve sidebar text visibility */
+.sidebar .nav-link span {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.sidebar-heading {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  padding-left: 1rem;
+}
+
+/* Prevent badge text overflow */
+.sidebar .badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
 }
