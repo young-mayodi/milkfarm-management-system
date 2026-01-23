@@ -325,22 +325,11 @@ class ProductionRecordsController < ApplicationController
     response.headers['Cache-Control'] = 'no-cache'
     response.headers['Connection'] = 'keep-alive'
     
-    @farm_id = params[:farm_id] || current_farm&.id
-    @date = params[:date]&.to_date || Date.current
-    
     begin
-      # Send initial connection confirmation
+      # Send connection confirmation and close immediately
       response.stream.write("data: {\"type\":\"connected\",\"timestamp\":#{Time.current.to_i}}\n\n")
-      
-      # Send periodic heartbeat instead of Redis subscription
-      30.times do |i|
-        sleep 1
-        response.stream.write("data: {\"type\":\"heartbeat\",\"timestamp\":#{Time.current.to_i}}\n\n")
-      end
-    rescue IOError
-      # Client disconnected
-      logger.info "SSE client disconnected"
-    rescue => e
+      response.stream.write("data: {\"type\":\"disconnected\",\"timestamp\":#{Time.current.to_i}}\n\n")
+    rescue IOError, StandardError => e
       # Handle any errors gracefully
       logger.error "SSE error: #{e.message}"
     ensure
