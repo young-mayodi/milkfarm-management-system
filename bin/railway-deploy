@@ -1,0 +1,22 @@
+#!/bin/bash
+
+echo "🌌 MilkyWay Farm Management System - Railway Deployment"
+echo "======================================================="
+
+# Run database migrations
+echo "📊 Running database migrations..."
+bundle exec rails db:migrate
+
+# Seed the database if it's empty
+echo "🌱 Checking if database needs seeding..."
+FARM_COUNT=$(bundle exec rails runner "puts Farm.count")
+
+if [ "$FARM_COUNT" -eq "0" ]; then
+    echo "🌱 Database is empty, running seeds..."
+    bundle exec rails db:seed
+    echo "✅ Database seeded successfully!"
+else
+    echo "✅ Database already contains data (${FARM_COUNT} farms)"
+fi
+
+echo "🚀 Starting application..."

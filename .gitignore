@@ -49,6 +49,9 @@
 # Ignore temporary scripts and cookies
 cookies.txt
 session_cookies.txt
+
+# Railway deployment files
+.railway/
 *_test.rb
 populate_*.rb
 .env
