@@ -54,7 +54,7 @@ Rails.application.configure do
 
   # Use Redis for caching and job queue
   if ENV['REDIS_URL'].present?
-    config.cache_store = :redis_cache_store, { url: ENV['REDIS_URL'] }
+    config.cache_store = :redis_cache_store, ENV['REDIS_URL']
     config.active_job.queue_adapter = :sidekiq
   else
     # Fallback to memory store if Redis not available
