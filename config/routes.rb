@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  # Sidekiq web UI for monitoring background jobs
+  require 'sidekiq/web'
+  mount Sidekiq::Web => '/sidekiq'
+
   # Authentication routes
   get "login", to: "sessions#new"
   get "test", to: "sessions#test"

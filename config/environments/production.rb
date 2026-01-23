@@ -52,11 +52,10 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Simple cache store for Railway
-  config.cache_store = :memory_store
-
-  # Simple job queue for Railway  
-  config.active_job.queue_adapter = :async
+  # Use Redis for caching and job queue
+  redis_url = ENV.fetch('REDIS_URL', 'redis://localhost:6379/1')
+  config.cache_store = :redis_cache_store, { url: redis_url }
+  config.active_job.queue_adapter = :sidekiq
 
   # Set host to be used by links generated in mailer templates.
   # Use Heroku, Railway's provided domain or localhost for development
