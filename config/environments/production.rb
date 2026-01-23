@@ -52,13 +52,13 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Use Redis for caching and job queue
+  # Simple cache store for now - Redis has compatibility issues with Rails 8
+  config.cache_store = :memory_store
+  
+  # Use Sidekiq for background jobs when Redis is available
   if ENV['REDIS_URL'].present?
-    config.cache_store = :redis_cache_store, ENV['REDIS_URL']
     config.active_job.queue_adapter = :sidekiq
   else
-    # Fallback to memory store if Redis not available
-    config.cache_store = :memory_store
     config.active_job.queue_adapter = :async
   end
 
