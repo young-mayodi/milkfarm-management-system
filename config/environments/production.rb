@@ -53,9 +53,14 @@ Rails.application.configure do
   config.active_support.report_deprecations = false
 
   # Use Redis for caching and job queue
-  redis_url = ENV.fetch('REDIS_URL', 'redis://localhost:6379/1')
-  config.cache_store = :redis_cache_store, { url: redis_url }
-  config.active_job.queue_adapter = :sidekiq
+  if ENV['REDIS_URL'].present?
+    config.cache_store = :redis_cache_store, { url: ENV['REDIS_URL'] }
+    config.active_job.queue_adapter = :sidekiq
+  else
+    # Fallback to memory store if Redis not available
+    config.cache_store = :memory_store
+    config.active_job.queue_adapter = :async
+  end
 
   # Set host to be used by links generated in mailer templates.
   # Use Heroku, Railway's provided domain or localhost for development
