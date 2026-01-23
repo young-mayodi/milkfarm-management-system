@@ -23,9 +23,9 @@ gem "kaminari"
 # CSV export
 gem "csv"
 
-# Performance & Monitoring gems
-gem 'redis', '~> 5.0'
-gem 'hiredis', '~> 0.6.0'
+# Performance & Monitoring gems - Removed Redis for Railway simplicity
+# gem 'redis', '~> 5.0'
+# gem 'hiredis', '~> 0.6.0'
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"

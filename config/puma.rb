@@ -34,7 +34,26 @@ port ENV.fetch("PORT", 3000)
 plugin :tmp_restart
 
 # Run the Solid Queue supervisor inside of Puma for single-server deployments
-plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
+# Disabled for Railway deployment
+# plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
+
+# Railway and Heroku-specific configuration
+if ENV['RAILWAY_ENVIRONMENT']
+  # Bind to all interfaces for Railway
+  bind "tcp://0.0.0.0:#{ENV.fetch('PORT', 3000)}"
+elsif ENV['DYNO'] # Heroku detection
+  # Heroku provides PORT environment variable
+  port ENV.fetch("PORT", 3000)
+  
+  # Heroku recommends these settings
+  workers ENV.fetch("WEB_CONCURRENCY") { 1 }
+  preload_app!
+  
+  on_worker_boot do
+    # Worker specific setup for Rails 8.0+
+    ActiveRecord::Base.establish_connection if defined?(ActiveRecord)
+  end
+end
 
 # Specify the PID file. Defaults to tmp/pids/server.pid in development.
 # In other environments, only set the PID file if requested.

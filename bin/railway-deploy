@@ -3,20 +3,41 @@
 echo "🌌 MilkyWay Farm Management System - Railway Deployment"
 echo "======================================================="
 
-# Run database migrations
-echo "📊 Running database migrations..."
-bundle exec rails db:migrate
+# Set Rails environment
+export RAILS_ENV=production
 
-# Seed the database if it's empty
-echo "🌱 Checking if database needs seeding..."
-FARM_COUNT=$(bundle exec rails runner "puts Farm.count")
-
-if [ "$FARM_COUNT" -eq "0" ]; then
-    echo "🌱 Database is empty, running seeds..."
-    bundle exec rails db:seed
-    echo "✅ Database seeded successfully!"
-else
-    echo "✅ Database already contains data (${FARM_COUNT} farms)"
+# Check if DATABASE_URL is set
+if [ -z "$DATABASE_URL" ]; then
+    echo "❌ ERROR: DATABASE_URL environment variable not set"
+    exit 1
 fi
 
-echo "🚀 Starting application..."
+echo "📊 Setting up database..."
+
+# Create database if it doesn't exist
+echo "Creating database..."
+bundle exec rails db:create 2>/dev/null || echo "Database might already exist"
+
+# Run migrations
+echo "Running migrations..."
+bundle exec rails db:migrate
+
+# Check if database has data, if not, seed it
+echo "Checking if seeding is needed..."
+TABLES_COUNT=$(bundle exec rails runner "puts ActiveRecord::Base.connection.tables.count" 2>/dev/null || echo "0")
+
+if [ "$TABLES_COUNT" -gt "0" ]; then
+    FARM_COUNT=$(bundle exec rails runner "puts Farm.count rescue puts '0'" 2>/dev/null || echo "0")
+    
+    if [ "$FARM_COUNT" -eq "0" ]; then
+        echo "🌱 Database is empty, running seeds..."
+        bundle exec rails db:seed
+        echo "✅ Database seeded successfully!"
+    else
+        echo "✅ Database already contains data (${FARM_COUNT} farms)"
+    fi
+else
+    echo "⚠️  No tables found, skipping seeding"
+fi
+
+echo "🚀 MilkyWay Farm Management System ready!"
