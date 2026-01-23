@@ -51,3 +51,4 @@ cookies.txt
 session_cookies.txt
 *_test.rb
 populate_*.rb
+.env
