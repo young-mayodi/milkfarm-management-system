@@ -19,69 +19,37 @@ class DashboardController < ApplicationController
   private
 
   def load_dashboard_data
-    # Cache expensive queries for 5 minutes
-    @farms = Rails.cache.fetch("dashboard_farms", expires_in: 5.minutes) do
-      current_user.admin? ? Farm.all : [current_user.farm]
-    end
-    
-    cache_key = "dashboard_data_#{@farms.map(&:id).join('_')}"
-    cached_data = Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
-      farms_to_query = @farms
-      
-      # Calculate metrics for each farm
-      farms_data = farms_to_query.map do |farm|
-        calculate_farm_metrics(farm)
-      end
-      
-      # Aggregate totals
-      {
-        farms_data: farms_data,
-        total_cows: farms_data.sum { |f| f[:total_cows] },
-        total_production: farms_data.sum { |f| f[:total_production] },
-        total_sales: farms_data.sum { |f| f[:total_sales] },
-        avg_production: farms_data.sum { |f| f[:avg_production] } / farms_data.size.to_f
-      }
-    end
-    
-    @farms_data = cached_data[:farms_data]
-    @total_cows = cached_data[:total_cows] 
-    @total_production = cached_data[:total_production]
-    @total_sales = cached_data[:total_sales]
-    @avg_production = cached_data[:avg_production]
+    # Simple data loading without complex caching
+    @farms = current_user.admin? ? Farm.all : [current_user.farm]
     @total_farms = @farms.count
+    @total_cows = Cow.count
     @active_cows = Cow.active.count
     
-    # Cache daily metrics for 10 minutes
-    daily_cache_key = "dashboard_daily_#{Date.current}"
-    daily_data = Rails.cache.fetch(daily_cache_key, expires_in: 10.minutes) do
+    # Today's production
+    @today_production = ProductionRecord.where(production_date: Date.current).sum(:total_production)
+    
+    # Yesterday's production for comparison
+    @yesterday_production = ProductionRecord.where(production_date: Date.yesterday).sum(:total_production)
+    
+    # This month's production
+    @monthly_production = ProductionRecord.for_month(Date.current.month, Date.current.year).sum(:total_production)
+    
+    # Recent production records
+    @recent_records = ProductionRecord.includes(:cow, :farm).recent.limit(10)
+    
+    # Farm-wise production today
+    @farm_production_today = @farms.map do |farm|
       {
-        today_production: ProductionRecord.where(production_date: Date.current).sum(:total_production),
-        yesterday_production: ProductionRecord.where(production_date: Date.yesterday).sum(:total_production),
-        monthly_production: ProductionRecord.for_month(Date.current.month, Date.current.year).sum(:total_production),
-        monthly_sales: SalesRecord.for_month(Date.current.month, Date.current.year).sum(:total_sales)
+        farm: farm,
+        production: ProductionRecord.daily_farm_total(farm, Date.current)
       }
     end
     
-    @today_production = daily_data[:today_production]
-    @yesterday_production = daily_data[:yesterday_production] 
-    @monthly_production = daily_data[:monthly_production]
-    @monthly_sales = daily_data[:monthly_sales]
-    @monthly_revenue = @monthly_sales * 1.0
+    # Monthly sales
+    @monthly_sales = SalesRecord.for_month(Date.current.month, Date.current.year).sum(:total_sales)
     
-    # Recent records - cache for 2 minutes
-    @recent_records = Rails.cache.fetch("dashboard_recent_records", expires_in: 2.minutes) do
-      ProductionRecord.includes(:cow, :farm).recent.limit(10).to_a
-    end
-    
-    # Farm production today - cache for 10 minutes  
-    @farm_production_today = Rails.cache.fetch("farm_production_today_#{Date.current}", expires_in: 10.minutes) do
-      @farms.map do |farm|
-        {
-          farm: farm,
-          production: ProductionRecord.daily_farm_total(farm, Date.current)
-        }
-      end
-    end
+    # Monthly revenue calculation
+    @monthly_revenue = @monthly_sales * 1.0 # Assuming total sales is the revenue
   end
 
   def prepare_chart_data
@@ -179,16 +147,6 @@ class DashboardController < ApplicationController
           tension: 0.4
         }
       ]
-    }
-  end
-  
-  def calculate_farm_metrics(farm)
-    {
-      farm: farm,
-      total_cows: farm.cows.count,
-      total_production: ProductionRecord.where(cow: farm.cows).sum(:total_production),
-      total_sales: SalesRecord.where(farm: farm).sum(:total_sales),
-      avg_production: ProductionRecord.where(cow: farm.cows).average(:total_production) || 0
     }
   end
 end

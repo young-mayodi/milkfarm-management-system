@@ -328,28 +328,21 @@ class ProductionRecordsController < ApplicationController
     @farm_id = params[:farm_id] || current_farm&.id
     @date = params[:date]&.to_date || Date.current
     
-    # Generate unique channel for this farm/date combination
-    channel = "bulk_entry_#{@farm_id}_#{@date.strftime('%Y%m%d')}"
-    
     begin
-      # Keep connection alive and listen for updates
-      redis = Redis.new
-      redis.subscribe(channel) do |on|
-        on.message do |ch, message|
-          # Send the update to the client
-          response.stream.write("data: #{message}\n\n")
-        end
+      # Send initial connection confirmation
+      response.stream.write("data: {\"type\":\"connected\",\"timestamp\":#{Time.current.to_i}}\n\n")
+      
+      # Send periodic heartbeat instead of Redis subscription
+      30.times do |i|
+        sleep 1
+        response.stream.write("data: {\"type\":\"heartbeat\",\"timestamp\":#{Time.current.to_i}}\n\n")
       end
     rescue IOError
       # Client disconnected
-    rescue Redis::BaseError
-      # Redis not available, send periodic heartbeat instead
-      loop do
-        sleep 30
-        response.stream.write("data: {\"type\":\"heartbeat\",\"timestamp\":#{Time.current.to_i}}\n\n")
-      rescue IOError
-        break
-      end
+      logger.info "SSE client disconnected"
+    rescue => e
+      # Handle any errors gracefully
+      logger.error "SSE error: #{e.message}"
     ensure
       response.stream.close
     end
