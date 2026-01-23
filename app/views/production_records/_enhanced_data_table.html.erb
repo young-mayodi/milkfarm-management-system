@@ -1,0 +1,248 @@
+<!-- Advanced Data Table with Enhanced Features -->
+<div class="enhanced-data-table-container">
+  <div class="table-toolbar mb-3">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="bi bi-search"></i>
+          </span>
+          <input type="text" class="form-control" placeholder="Search cows..." id="cow_search_filter">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" id="performance_filter">
+          <option value="">All Cows</option>
+          <option value="high">High Producers (>15L)</option>
+          <option value="medium">Medium Producers (8-15L)</option>
+          <option value="low">Low Producers (<8L)</option>
+          <option value="empty">No Data Yet</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" id="sort_by">
+          <option value="name">Sort by Name</option>
+          <option value="production">Sort by Production</option>
+          <option value="tag">Sort by Tag</option>
+          <option value="health">Sort by Health Score</option>
+        </select>
+      </div>
+      <div class="col-md-4 text-end">
+        <div class="btn-group btn-group-sm" role="group">
+          <button type="button" class="btn btn-outline-secondary" id="expand_all">
+            <i class="bi bi-arrows-expand"></i> Expand All
+          </button>
+          <button type="button" class="btn btn-outline-secondary" id="collapse_all">
+            <i class="bi bi-arrows-collapse"></i> Collapse All
+          </button>
+          <button type="button" class="btn btn-outline-primary" id="table_settings">
+            <i class="bi bi-gear"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced Table with Advanced Features -->
+  <div class="table-responsive production-table-container">
+    <table class="table table-hover table-sm production-entry-table" id="enhanced_production_table">
+      <thead class="table-dark sticky-top">
+        <tr>
+          <th width="5%">
+            <input type="checkbox" class="form-check-input" id="select_all_cows">
+          </th>
+          <th width="15%">Cow Details</th>
+          <th width="12%">Health Status</th>
+          <th width="15%">Morning <small>(5-8 AM)</small></th>
+          <th width="15%">Noon <small>(11-2 PM)</small></th>
+          <th width="15%">Evening <small>(5-8 PM)</small></th>
+          <th width="12%">Total</th>
+          <th width="8%">Actions</th>
+          <th width="3%">
+            <i class="bi bi-three-dots-vertical"></i>
+          </th>
+        </tr>
+      </thead>
+      <tbody id="production_table_body">
+        <% @records.each_with_index do |record, index| %>
+          <tr class="production-row" data-cow-id="<%= record.cow.id %>" data-production-total="<%= record.total_production %>">
+            <td>
+              <input type="checkbox" class="form-check-input cow-selector" value="<%= record.cow.id %>">
+            </td>
+            <td>
+              <div class="cow-details-cell">
+                <div class="cow-main-info">
+                  <strong class="cow-name"><%= record.cow.name %></strong>
+                  <span class="badge bg-secondary ms-1"><%= record.cow.tag_number %></span>
+                </div>
+                <div class="cow-sub-info">
+                  <small class="text-muted">
+                    <%= record.cow.breed || 'Mixed' %> • Age: <%= record.cow.age || 'N/A' %>
+                  </small>
+                </div>
+                <!-- Expandable Details -->
+                <div class="cow-expanded-details" style="display: none;">
+                  <div class="mt-2 p-2 bg-light rounded">
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <small><strong>Last 7 days avg:</strong> 15.2L</small>
+                      </div>
+                      <div class="col-6">
+                        <small><strong>Best day:</strong> 18.5L</small>
+                      </div>
+                      <div class="col-6">
+                        <small><strong>Feed intake:</strong> Normal</small>
+                      </div>
+                      <div class="col-6">
+                        <small><strong>Last check:</strong> 2 days ago</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-link btn-sm p-0 toggle-details" title="Toggle details">
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+              </div>
+            </td>
+            <td>
+              <div class="health-status-cell">
+                <div class="health-indicator health-good">
+                  <i class="bi bi-heart-fill me-1"></i>
+                  <span class="health-text">Good</span>
+                </div>
+                <div class="health-details">
+                  <small class="text-muted">Last check: 2 days ago</small>
+                </div>
+              </div>
+            </td>
+            <!-- Production Input Cells with Enhanced Features -->
+            <td class="production-input-cell">
+              <div class="production-input-wrapper">
+                <%= form.number_field "production_#{record.cow.id}_morning",
+                    value: record.morning_production > 0 ? record.morning_production : nil,
+                    placeholder: "0.0",
+                    step: 0.1,
+                    min: 0,
+                    max: 50,
+                    class: "form-control production-input morning-input #{@readonly_mode ? 'readonly-input' : ''}",
+                    readonly: @readonly_mode,
+                    data: { 
+                      "cow-id": record.cow.id, 
+                      "session": "morning",
+                      "previous": record.cow.production_records.where(production_date: @date - 1.day).first&.morning_production || 0,
+                      "avg": 12.5,
+                      "max-normal": 18.0
+                    } %>
+                <div class="input-indicators">
+                  <span class="trend-indicator" title="Trend vs yesterday"></span>
+                  <span class="quality-indicator" title="Data quality"></span>
+                </div>
+                <!-- Smart Suggestions Dropdown -->
+                <div class="smart-suggestions dropdown" style="display: none;">
+                  <div class="dropdown-menu show">
+                    <h6 class="dropdown-header">Smart Suggestions</h6>
+                    <button class="dropdown-item suggestion-item" data-value="12.5">
+                      <i class="bi bi-graph-up text-success"></i> Avg: 12.5L
+                    </button>
+                    <button class="dropdown-item suggestion-item" data-value="11.8">
+                      <i class="bi bi-arrow-repeat text-info"></i> Yesterday: 11.8L
+                    </button>
+                    <button class="dropdown-item suggestion-item" data-value="13.2">
+                      <i class="bi bi-robot text-primary"></i> AI Predict: 13.2L
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <!-- Similar enhanced cells for noon and evening -->
+            <td class="production-input-cell">
+              <!-- Noon input with same enhancements -->
+              <div class="production-input-wrapper">
+                <%= form.number_field "production_#{record.cow.id}_noon",
+                    value: record.noon_production > 0 ? record.noon_production : nil,
+                    placeholder: "0.0",
+                    step: 0.1,
+                    min: 0,
+                    max: 50,
+                    class: "form-control production-input noon-input #{@readonly_mode ? 'readonly-input' : ''}",
+                    readonly: @readonly_mode,
+                    data: { 
+                      "cow-id": record.cow.id, 
+                      "session": "noon",
+                      "previous": record.cow.production_records.where(production_date: @date - 1.day).first&.noon_production || 0,
+                      "avg": 8.3
+                    } %>
+                <div class="input-indicators">
+                  <span class="trend-indicator"></span>
+                  <span class="quality-indicator"></span>
+                </div>
+              </div>
+            </td>
+            <td class="production-input-cell">
+              <!-- Evening input with same enhancements -->
+              <div class="production-input-wrapper">
+                <%= form.number_field "production_#{record.cow.id}_evening",
+                    value: record.evening_production > 0 ? record.evening_production : nil,
+                    placeholder: "0.0",
+                    step: 0.1,
+                    min: 0,
+                    max: 50,
+                    class: "form-control production-input evening-input #{@readonly_mode ? 'readonly-input' : ''}",
+                    readonly: @readonly_mode,
+                    data: { 
+                      "cow-id": record.cow.id, 
+                      "session": "evening",
+                      "previous": record.cow.production_records.where(production_date: @date - 1.day).first&.evening_production || 0,
+                      "avg": 11.7
+                    } %>
+                <div class="input-indicators">
+                  <span class="trend-indicator"></span>
+                  <span class="quality-indicator"></span>
+                </div>
+              </div>
+            </td>
+            <td class="total-cell">
+              <div class="total-production-display">
+                <span class="total-value" id="total_<%= record.cow.id %>">
+                  <%= record.total_production > 0 ? number_with_precision(record.total_production, precision: 1) : '0.0' %>
+                </span>
+                <small class="total-unit">L</small>
+                <div class="total-indicator">
+                  <span class="performance-badge badge bg-success">High</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button type="button" class="btn btn-outline-primary btn-sm copy-previous" title="Copy from yesterday">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm row-notes" title="Add notes">
+                  <i class="bi bi-chat-left-text"></i>
+                </button>
+              </div>
+            </td>
+            <td>
+              <div class="dropdown">
+                <button class="btn btn-link btn-sm" data-bs-toggle="dropdown">
+                  <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><button class="dropdown-item" onclick="viewCowHistory(<%= record.cow.id %>)">
+                    <i class="bi bi-clock-history me-2"></i>View History
+                  </button></li>
+                  <li><button class="dropdown-item" onclick="copyRowToAll(<%= record.cow.id %>)">
+                    <i class="bi bi-files me-2"></i>Copy to All
+                  </button></li>
+                  <li><button class="dropdown-item text-danger" onclick="clearRow(<%= record.cow.id %>)">
+                    <i class="bi bi-trash me-2"></i>Clear Row
+                  </button></li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

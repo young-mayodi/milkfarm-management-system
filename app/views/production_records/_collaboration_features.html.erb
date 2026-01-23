@@ -1,0 +1,122 @@
+<!-- Real-time Collaboration Features -->
+<div class="collaboration-panel">
+  <!-- Active Users Indicator -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-2">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="active-users-display">
+          <i class="bi bi-people-fill text-primary me-2"></i>
+          <span class="fw-semibold">Active Users:</span>
+          <div class="user-avatars ms-2">
+            <span class="user-avatar bg-primary" title="John Smith (you)">JS</span>
+            <span class="user-avatar bg-success" title="Mary Johnson - editing row 3">MJ</span>
+            <span class="user-avatar bg-warning" title="Tom Wilson - viewing">TW</span>
+          </div>
+        </div>
+        <div class="collaboration-status">
+          <span class="status-indicator status-connected">
+            <i class="bi bi-wifi"></i> Connected
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-time Activity Feed -->
+  <div class="activity-feed-container" style="display: none;">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-light">
+        <h6 class="mb-0">
+          <i class="bi bi-activity me-2"></i>
+          Recent Activity
+          <button class="btn btn-link btn-sm float-end p-0" id="toggle_activity_feed">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="activity-feed">
+          <div class="activity-item">
+            <div class="activity-avatar bg-success">MJ</div>
+            <div class="activity-content">
+              <div class="activity-text">
+                <strong>Mary Johnson</strong> updated Bessie's morning production to 14.2L
+              </div>
+              <small class="text-muted">2 minutes ago</small>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-avatar bg-warning">TW</div>
+            <div class="activity-content">
+              <div class="activity-text">
+                <strong>Tom Wilson</strong> joined the session
+              </div>
+              <small class="text-muted">5 minutes ago</small>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-avatar bg-primary">JS</div>
+            <div class="activity-content">
+              <div class="activity-text">
+                <strong>You</strong> started bulk entry for January 23, 2026
+              </div>
+              <small class="text-muted">8 minutes ago</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conflict Resolution Modal -->
+  <div class="modal fade" id="conflictResolutionModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Data Conflict Detected
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="conflict-description mb-3">
+            <p><strong>Cow:</strong> <span id="conflict_cow_name">Bessie</span></p>
+            <p><strong>Field:</strong> <span id="conflict_field">Morning Production</span></p>
+          </div>
+          <div class="conflict-options">
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="conflict-option">
+                  <h6>Your Value</h6>
+                  <div class="value-display bg-primary text-white p-3 rounded">
+                    <span id="your_value">14.5L</span>
+                  </div>
+                  <button class="btn btn-primary w-100 mt-2" id="keep_your_value">
+                    Keep Your Value
+                  </button>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="conflict-option">
+                  <h6>Their Value <small>(Mary Johnson)</small></h6>
+                  <div class="value-display bg-success text-white p-3 rounded">
+                    <span id="their_value">14.2L</span>
+                  </div>
+                  <button class="btn btn-success w-100 mt-2" id="accept_their_value">
+                    Accept Their Value
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="text-center mt-3">
+              <button class="btn btn-outline-secondary" id="merge_values">
+                <i class="bi bi-shuffle me-2"></i>Merge Values
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

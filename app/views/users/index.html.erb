@@ -1,0 +1,165 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>
+      <i class="bi bi-people-fill me-2"></i>
+      Farm Team Management
+    </h1>
+    <p class="lead text-muted">Manage users and permissions for <%= current_farm.name %></p>
+  </div>
+  <div>
+    <% if current_user.can_manage_farm? %>
+      <%= link_to "Add New User", new_user_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>
+
+<!-- Team Statistics -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card bg-primary text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="mb-0"><%= current_farm.users.active.count %></h4>
+            <p class="mb-0">Active Users</p>
+          </div>
+          <i class="bi bi-people fs-1 opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card bg-success text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="mb-0"><%= current_farm.farm_owners.count + current_farm.farm_managers.count %></h4>
+            <p class="mb-0">Managers</p>
+          </div>
+          <i class="bi bi-shield-check fs-1 opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card bg-info text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="mb-0"><%= current_farm.farm_workers.count %></h4>
+            <p class="mb-0">Farm Workers</p>
+          </div>
+          <i class="bi bi-person-workspace fs-1 opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3">
+    <div class="card bg-warning text-dark">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="mb-0"><%= current_farm.users.where(role: 'veterinarian').count %></h4>
+            <p class="mb-0">Veterinarians</p>
+          </div>
+          <i class="bi bi-heart-pulse fs-1 opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Team Members</h5>
+  </div>
+  <div class="card-body">
+    <% if @users.any? %>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Phone</th>
+              <th>Last Sign In</th>
+              <th>Status</th>
+              <% if current_user.can_manage_farm? %>
+                <th>Actions</th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% @users.each do |user| %>
+              <tr>
+                <td>
+                  <strong><%= user.full_name %></strong>
+                  <% if user == current_user %>
+                    <span class="badge bg-primary ms-2">You</span>
+                  <% end %>
+                </td>
+                <td><%= user.email %></td>
+                <td>
+                  <% role_colors = {
+                    'farm_owner' => 'danger',
+                    'farm_manager' => 'warning', 
+                    'farm_worker' => 'info',
+                    'veterinarian' => 'success'
+                  } %>
+                  <span class="badge bg-<%= role_colors[user.role] || 'secondary' %>">
+                    <%= user.role.humanize %>
+                  </span>
+                </td>
+                <td><%= user.phone || '-' %></td>
+                <td>
+                  <% if user.last_sign_in_at %>
+                    <%= time_ago_in_words(user.last_sign_in_at) %> ago
+                  <% else %>
+                    Never
+                  <% end %>
+                </td>
+                <td>
+                  <% if user.active? %>
+                    <span class="badge bg-success">Active</span>
+                  <% else %>
+                    <span class="badge bg-secondary">Inactive</span>
+                  <% end %>
+                </td>
+                <% if current_user.can_manage_farm? %>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <%= link_to "View", user, class: "btn btn-outline-primary" %>
+                      <% unless user == current_user %>
+                        <%= link_to "Edit", edit_user_path(user), class: "btn btn-outline-secondary" %>
+                        <%= link_to "Deactivate", deactivate_user_path(user), 
+                                    method: :patch, 
+                                    class: "btn btn-outline-danger",
+                                    confirm: "Are you sure you want to deactivate #{user.full_name}?" %>
+                      <% end %>
+                    </div>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      
+      <%= paginate @users if respond_to?(:paginate) %>
+    <% else %>
+      <div class="text-center py-5">
+        <i class="bi bi-people display-1 text-muted"></i>
+        <h3 class="mt-3">No Team Members</h3>
+        <p class="text-muted">Start by adding your first team member.</p>
+        <% if current_user.can_manage_farm? %>
+          <%= link_to "Add First User", new_user_path, class: "btn btn-primary" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

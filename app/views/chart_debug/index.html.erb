@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chart Data Debug</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Chart Data Debug</h1>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Database Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Production Records:</strong> <%= @total_production_records %></p>
+                        <p><strong>Sales Records:</strong> <%= @total_sales_records %></p>
+                        <p><strong>Farms:</strong> <%= @farms.count %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Weekly Trend Chart Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre><%= JSON.pretty_generate(@weekly_trend_chart) %></pre>
+                        
+                        <h6>Chart Test:</h6>
+                        <div style="height: 300px;">
+                            <canvas data-controller="chart" 
+                                    data-chart-type-value="line"
+                                    data-chart-data-value="<%= chart_data_json(@weekly_trend_chart) %>"
+                                    data-chart-options-value="<%= chart_options_json({responsive: true, maintainAspectRatio: false}) %>">
+                            </canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Farm Comparison Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre><%= JSON.pretty_generate(@farm_comparison_chart) %></pre>
+                        
+                        <h6>Chart Test:</h6>
+                        <div style="height: 300px;">
+                            <canvas data-controller="chart" 
+                                    data-chart-type-value="doughnut"
+                                    data-chart-data-value="<%= chart_data_json(@farm_comparison_chart) %>"
+                                    data-chart-options-value="<%= chart_options_json({responsive: true, maintainAspectRatio: false}) %>">
+                            </canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Production vs Sales Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre><%= JSON.pretty_generate(@production_vs_sales_chart) %></pre>
+                        
+                        <h6>Chart Test:</h6>
+                        <div style="height: 300px;">
+                            <canvas data-controller="chart" 
+                                    data-chart-type-value="line"
+                                    data-chart-data-value="<%= chart_data_json(@production_vs_sales_chart) %>"
+                                    data-chart-options-value="<%= chart_options_json({responsive: true, maintainAspectRatio: false}) %>">
+                            </canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Simple Test Chart (Static Data)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 300px;">
+                            <canvas data-controller="chart" 
+                                    data-chart-type-value="bar"
+                                    data-chart-data-value='{"labels":["Jan","Feb","Mar","Apr"],"datasets":[{"label":"Test","data":[10,20,15,30],"backgroundColor":"rgba(75, 192, 192, 0.8)"}]}'
+                                    data-chart-options-value='{"responsive":true,"maintainAspectRatio":false}'>
+                            </canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

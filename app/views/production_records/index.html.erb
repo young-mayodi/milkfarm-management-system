@@ -1,0 +1,1018 @@
+<% content_for :title, "Production Records" %>
+
+<!-- Feature Announcement Banner -->
+<div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-lightbulb-fill me-2 text-warning" style="font-size: 1.3rem;"></i>
+    <div>
+      <strong>🆕 New Feature:</strong> 
+      Click on any cow name in the production records or performance analytics below to view detailed individual production charts, trends, and analytics for that specific cow!
+    </div>
+  </div>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<!-- Modern Header -->
+<div class="records-header mb-5">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center">
+        <div class="header-icon me-3">
+          <i class="bi bi-clipboard-data"></i>
+        </div>
+        <div>
+          <h1 class="header-title mb-0">📋 Production Records</h1>
+          <p class="header-subtitle mb-0">
+            <% if @farm %>
+              Tracking milk production for <strong><%= @farm.name %></strong>
+            <% elsif @cow %>
+              Production history for <strong><%= @cow.name %></strong> at <%= @cow.farm.name %>
+            <% else %>
+              Complete production data overview
+            <% end %>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 text-end">
+      <div class="header-actions">
+        <div class="btn-group me-2" role="group">
+          <%= link_to bulk_entry_production_records_path, class: "btn btn-success" do %>
+            <i class="bi bi-table me-2"></i>Bulk Entry
+          <% end %>
+          <%= link_to enhanced_bulk_entry_production_records_path, class: "btn btn-primary" do %>
+            <i class="bi bi-grid-3x3 me-2"></i>Enhanced Entry
+            <span class="badge bg-light text-primary ms-1">NEW</span>
+          <% end %>
+        </div>
+        <%= link_to new_production_record_path, class: "btn btn-outline-primary me-2" do %>
+          <i class="bi bi-plus-circle me-2"></i>Add Record
+        <% end %>
+        <div class="btn-group">
+          <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <%= link_to request.url + (request.query_string.present? ? "&format=csv" : "?format=csv"), 
+                         class: "dropdown-item" do %>
+                <i class="bi bi-download me-2"></i>Export CSV
+              <% end %>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <% if @farm %>
+                <%= link_to @farm, class: "dropdown-item" do %>
+                  <i class="bi bi-arrow-left me-2"></i>Back to Farm
+                <% end %>
+              <% elsif @cow %>
+                <%= link_to [@cow.farm, @cow], class: "dropdown-item" do %>
+                  <i class="bi bi-arrow-left me-2"></i>Back to <%= @cow.name %>
+                <% end %>
+              <% else %>
+                <%= link_to farms_path, class: "dropdown-item" do %>
+                  <i class="bi bi-building me-2"></i>View Farms
+                <% end %>
+              <% end %>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row g-4 mb-5">
+  <div class="col-lg-3 col-md-6">
+    <div class="stat-card bg-primary">
+      <div class="stat-icon">
+        <i class="bi bi-calendar-check"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value"><%= @production_records.count %></div>
+        <div class="stat-label">Total Records</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6">
+    <div class="stat-card bg-success">
+      <div class="stat-icon">
+        <i class="bi bi-droplet-fill"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">
+          <%= number_with_precision(@production_records.sum(:total_production), precision: 1) %>L
+        </div>
+        <div class="stat-label">Total Production</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6">
+    <div class="stat-card bg-info">
+      <div class="stat-icon">
+        <i class="bi bi-bar-chart-line"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">
+          <%= number_with_precision(@production_records.average(:total_production) || 0, precision: 1) %>L
+        </div>
+        <div class="stat-label">Average Daily</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6">
+    <div class="stat-card bg-warning">
+      <div class="stat-icon">
+        <i class="bi bi-calendar-week"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">
+          <%= @production_records.where(production_date: Date.current.beginning_of_week..Date.current).count %>
+        </div>
+        <div class="stat-label">This Week</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cow Performance Analytics Section -->
+<% unless @cow %>
+<div class="cow-performance-section mb-5">
+  <div class="analytics-header">
+    <h4 class="analytics-title">
+      <i class="bi bi-graph-up-arrow me-2 text-primary"></i>
+      Cow Performance Analytics
+    </h4>
+    <p class="analytics-subtitle">Click on any cow to view detailed individual analytics and production charts</p>
+  </div>
+  
+  <div class="row g-4">
+    <!-- Top Performers This Week -->
+    <div class="col-lg-6">
+      <div class="analytics-card">
+        <div class="analytics-card-header bg-gradient-success">
+          <h5 class="mb-0">🏆 Top Performers This Week</h5>
+          <small>Best producing cows from production records</small>
+        </div>
+        <div class="analytics-card-body">
+          <% @top_performers.each_with_index do |cow_data, index| %>
+            <%= link_to cow_path(cow_data[:id]), class: "text-decoration-none cow-analytics-link", data: { turbo: false } do %>
+              <div class="cow-performance-item">
+                <div class="performance-rank">
+                  <span class="rank-number rank-<%= index < 3 ? ['gold', 'silver', 'bronze'][index] : 'default' %>">
+                    <%= index + 1 %>
+                  </span>
+                </div>
+                <div class="performance-details">
+                  <h6 class="cow-name-performance">
+                    <i class="bi bi-cursor-fill text-primary me-1"></i>
+                    <%= cow_data[:name] %>
+                  </h6>
+                  <small class="cow-meta">Tag: <%= cow_data[:tag] %> • 📊 View detailed analytics</small>
+                </div>
+                <div class="performance-stats">
+                  <div class="total-production"><%= cow_data[:total] %>L</div>
+                  <small class="text-muted">This week</small>
+                </div>
+                <div class="performance-arrow">
+                  <i class="bi bi-arrow-right-circle"></i>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+          
+          <% if @top_performers.empty? %>
+            <div class="empty-analytics">
+              <i class="bi bi-calendar-x text-muted"></i>
+              <p class="text-muted mt-2 mb-0">No production data for this week yet</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Recent High Producers -->
+    <div class="col-lg-6">
+      <div class="analytics-card">
+        <div class="analytics-card-header bg-gradient-info">
+          <h5 class="mb-0">⚡ Recent High Producers</h5>
+          <small>Cows with recent strong daily performance</small>
+        </div>
+        <div class="analytics-card-body">
+          <% @recent_high_producers.each do |cow_data| %>
+            <%= link_to cow_path(cow_data[:id]), class: "text-decoration-none cow-analytics-link", data: { turbo: false } do %>
+              <div class="cow-performance-item compact">
+                <div class="performance-details">
+                  <h6 class="cow-name-performance">
+                    <i class="bi bi-cursor-fill text-primary me-1"></i>
+                    <%= cow_data[:name] %>
+                  </h6>
+                  <small class="cow-meta">Tag: <%= cow_data[:tag] %> • 📈 Trend analysis</small>
+                </div>
+                <div class="performance-stats">
+                  <div class="avg-production text-info"><%= cow_data[:avg] %>L</div>
+                  <small class="text-muted">Daily avg</small>
+                </div>
+                <div class="performance-arrow">
+                  <i class="bi bi-arrow-right-circle"></i>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+          
+          <% if @recent_high_producers.empty? %>
+            <div class="empty-analytics">
+              <i class="bi bi-graph-up text-muted"></i>
+              <p class="text-muted mt-2 mb-0">No high producers in recent days</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<% end %>
+
+<!-- Enhanced Filters -->
+<div class="filters-card mb-4">
+  <div class="filters-header">
+    <h5 class="filters-title">
+      <i class="bi bi-funnel me-2"></i>Filters & Search
+    </h5>
+  </div>
+  
+  <%= form_with url: request.url, method: :get, local: true, class: "filters-form" do |f| %>
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Search Records</label>
+        <%= f.text_field :search, 
+                         value: params[:search],
+                         class: "form-control", 
+                         placeholder: "Search by cow name or tag..." %>
+      </div>
+      
+      <div class="col-md-2">
+        <label class="form-label">Date From</label>
+        <%= f.date_field :date_from, 
+                         value: params[:date_from],
+                         class: "form-control" %>
+      </div>
+      
+      <div class="col-md-2">
+        <label class="form-label">Date To</label>
+        <%= f.date_field :date_to, 
+                         value: params[:date_to],
+                         class: "form-control" %>
+      </div>
+      
+      <div class="col-md-2">
+        <label class="form-label">Farm</label>
+        <%= f.select :farm_id, 
+                     options_from_collection_for_select(Farm.all, :id, :name, params[:farm_id]),
+                     { prompt: "All Farms" },
+                     { class: "form-select" } %>
+      </div>
+      
+      <div class="col-md-2">
+        <label class="form-label">Sort By</label>
+        <%= f.select :sort, 
+                     options_for_select([
+                       ['Date (Newest)', 'date_desc'],
+                       ['Date (Oldest)', 'date_asc'],
+                       ['Production (High)', 'production_desc'],
+                       ['Production (Low)', 'production_asc'],
+                       ['Cow Name', 'cow_name']
+                     ], params[:sort]),
+                     {},
+                     { class: "form-select" } %>
+      </div>
+      
+      <div class="col-md-1 d-flex align-items-end">
+        <%= f.submit "Filter", class: "btn btn-primary w-100" %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<% if @production_records.any? %>
+  <!-- Production Records Table -->
+  <div class="records-card">
+    <div class="records-header">
+      <h5 class="records-title">
+        <i class="bi bi-list-check me-2"></i>Production Records
+        <span class="badge bg-primary ms-2"><%= @production_records.count %></span>
+      </h5>
+      
+      <div class="view-toggle">
+        <button class="btn btn-sm btn-outline-primary active" id="tableView">
+          <i class="bi bi-table"></i> Table
+        </button>
+        <button class="btn btn-sm btn-outline-primary" id="cardView">
+          <i class="bi bi-grid-3x3-gap"></i> Cards
+        </button>
+      </div>
+    </div>
+    
+    <!-- Table View -->
+    <div id="tableViewContainer" class="table-responsive">
+      <table class="table table-hover production-table">
+        <thead class="table-header">
+          <tr>
+            <th><i class="bi bi-calendar3 me-1"></i>Date</th>
+            <th><i class="bi bi-tag-fill me-1"></i>Cow</th>
+            <th><i class="bi bi-building me-1"></i>Farm</th>
+            <th><i class="bi bi-sunrise me-1"></i>Morning</th>
+            <th><i class="bi bi-sun me-1"></i>Noon</th>
+            <th><i class="bi bi-sunset me-1"></i>Evening</th>
+            <th><i class="bi bi-droplet-fill me-1"></i>Total</th>
+            <th><i class="bi bi-gear me-1"></i>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @production_records.each do |record| %>
+            <tr class="table-row" data-date="<%= record.production_date %>" data-cow="<%= record.cow.name %>">
+              <td>
+                <div class="date-cell">
+                  <strong><%= record.production_date.strftime('%m/%d/%y') %></strong>
+                  <small class="text-muted d-block"><%= record.production_date.strftime('%A') %></small>
+                </div>
+              </td>
+              <td>
+                <div class="cow-cell">
+                  <%= link_to cow_path(record.cow), class: "text-decoration-none cow-drill-link", data: { turbo: false } do %>
+                    <strong class="cow-name-clickable">
+                      <i class="bi bi-cursor-fill text-primary me-1"></i>
+                      <%= record.cow.name %>
+                    </strong>
+                    <small class="text-muted d-block">
+                      Tag: <%= record.cow.tag_number %> • <span class="text-primary">📊 View analytics</span>
+                    </small>
+                  <% end %>
+                </div>
+              </td>
+              <td>
+                <span class="farm-badge">
+                  <i class="bi bi-building me-1"></i><%= record.farm.name %>
+                </span>
+              </td>
+              <td>
+                <span class="production-value morning">
+                  <%= number_with_precision(record.morning_production, precision: 1) %>L
+                </span>
+              </td>
+              <td>
+                <span class="production-value noon">
+                  <%= number_with_precision(record.noon_production || 0, precision: 1) %>L
+                </span>
+              </td>
+              <td>
+                <span class="production-value evening">
+                  <%= number_with_precision(record.evening_production || 0, precision: 1) %>L
+                </span>
+              </td>
+              <td>
+                <span class="production-value total">
+                  <strong><%= number_with_precision(record.total_production, precision: 1) %>L</strong>
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <%= link_to record, class: "btn btn-sm btn-outline-primary", title: "View" do %>
+                    <i class="bi bi-eye"></i>
+                  <% end %>
+                  <%= link_to edit_production_record_path(record), class: "btn btn-sm btn-outline-secondary ms-1", title: "Edit" do %>
+                    <i class="bi bi-pencil"></i>
+                  <% end %>
+                  <%= link_to record, method: :delete, 
+                             class: "btn btn-sm btn-outline-danger ms-1", 
+                             title: "Delete",
+                             confirm: "Are you sure?",
+                             data: { bs_toggle: "tooltip" } do %>
+                    <i class="bi bi-trash"></i>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Card View (Hidden by default) -->
+    <div id="cardViewContainer" class="records-grid" style="display: none;">
+      <% @production_records.each do |record| %>
+        <div class="production-record-card">
+          <div class="record-card-header">
+            <div class="record-date">
+              <i class="bi bi-calendar3 me-2"></i>
+              <strong><%= record.production_date.strftime('%B %d, %Y') %></strong>
+              <small class="text-muted d-block"><%= record.production_date.strftime('%A') %></small>
+            </div>
+            <div class="record-total">
+              <span class="total-production"><%= number_with_precision(record.total_production, precision: 1) %>L</span>
+              <small class="text-muted d-block">Total</small>
+            </div>
+          </div>
+          
+          <div class="record-card-body">
+            <div class="cow-info">
+              <%= link_to cow_path(record.cow), class: "text-decoration-none cow-drill-link", data: { turbo: false } do %>
+                <h6 class="cow-name cow-name-clickable">
+                  <i class="bi bi-cursor-fill text-primary me-1"></i>
+                  <i class="bi bi-tag-fill me-1"></i><%= record.cow.name %>
+                </h6>
+                <p class="cow-details mb-2">
+                  Tag: <%= record.cow.tag_number %> | 
+                  <span class="farm-name"><%= record.farm.name %></span> | 
+                  <span class="text-primary fw-bold">📊 View individual analytics</span>
+                </p>
+              <% end %>
+            </div>
+            
+            <div class="production-breakdown">
+              <div class="production-item">
+                <i class="bi bi-sunrise me-1"></i>
+                <span>Morning: <strong><%= number_with_precision(record.morning_production, precision: 1) %>L</strong></span>
+              </div>
+              <div class="production-item">
+                <i class="bi bi-sun me-1"></i>
+                <span>Noon: <strong><%= number_with_precision(record.noon_production || 0, precision: 1) %>L</strong></span>
+              </div>
+              <div class="production-item">
+                <i class="bi bi-sunset me-1"></i>
+                <span>Evening: <strong><%= number_with_precision(record.evening_production || 0, precision: 1) %>L</strong></span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="record-card-footer">
+            <div class="record-actions">
+              <%= link_to record, class: "btn btn-sm btn-outline-primary" do %>
+                <i class="bi bi-eye me-1"></i>View
+              <% end %>
+              <%= link_to edit_production_record_path(record), class: "btn btn-sm btn-outline-secondary" do %>
+                <i class="bi bi-pencil me-1"></i>Edit
+              <% end %>
+              <%= link_to record, method: :delete, 
+                         class: "btn btn-sm btn-outline-danger", 
+                         confirm: "Are you sure?" do %>
+                <i class="bi bi-trash me-1"></i>Delete
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  
+  <!-- Pagination -->
+  <div class="d-flex justify-content-center mt-4">
+    <%= paginate @production_records if respond_to?(:paginate) %>
+  </div>
+  
+<% else %>
+  <!-- Empty State -->
+  <div class="empty-state">
+    <div class="empty-icon">
+      <i class="bi bi-inbox"></i>
+    </div>
+    <h3>No production records found</h3>
+    <p class="text-muted">
+      <% if params[:search].present? || params[:date_from].present? %>
+        Try adjusting your search criteria or 
+        <%= link_to "clear filters", request.path, class: "text-primary" %>.
+      <% else %>
+        Start by recording your first milk production entry.
+      <% end %>
+    </p>
+    <div class="empty-actions">
+      <%= link_to "Add Production Record", new_production_record_path, class: "btn btn-primary me-2" %>
+      <%= link_to "Bulk Entry", bulk_entry_production_records_path, class: "btn btn-success" %>
+    </div>
+  </div>
+<% end %>
+
+<style>
+  .records-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+    padding: 30px;
+    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+  }
+  
+  .header-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+  }
+  
+  .header-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  
+  .header-subtitle {
+    opacity: 0.9;
+    font-size: 1.1rem;
+  }
+  
+  .stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .stat-card.bg-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  }
+  
+  .stat-card.bg-success {
+    background: linear-gradient(135deg, #48bb78, #38a169) !important;
+  }
+  
+  .stat-card.bg-info {
+    background: linear-gradient(135deg, #4299e1, #3182ce) !important;
+  }
+  
+  .stat-card.bg-warning {
+    background: linear-gradient(135deg, #ed8936, #dd6b20) !important;
+  }
+  
+  .stat-icon {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    opacity: 0.9;
+  }
+  
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  
+  .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+  
+  .filters-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .filters-title {
+    color: #2d3748;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+  
+  .records-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .records-header {
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    padding: 20px 25px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .records-title {
+    color: #2d3748;
+    margin: 0;
+    font-weight: 600;
+  }
+  
+  .view-toggle .btn {
+    border-radius: 8px;
+    margin-left: 5px;
+  }
+  
+  .view-toggle .btn.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+  }
+  
+  .production-table {
+    margin: 0;
+  }
+  
+  .table-header th {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    font-weight: 600;
+    color: #4a5568;
+    padding: 15px 12px;
+  }
+  
+  .table-row:hover {
+    background: #f8fafc;
+  }
+  
+  .date-cell strong {
+    color: #2d3748;
+  }
+  
+  .cow-cell strong {
+    color: #2d3748;
+  }
+  
+  .farm-badge {
+    background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
+    color: #4a5568;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+  
+  .production-value {
+    font-weight: 600;
+  }
+  
+  .production-value.morning {
+    color: #ed8936;
+  }
+  
+  .production-value.noon {
+    color: #4299e1;
+  }
+  
+  .production-value.evening {
+    color: #9f7aea;
+  }
+  
+  .production-value.total {
+    color: #48bb78;
+  }
+  
+  .records-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    padding: 25px;
+  }
+  
+  .production-record-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .production-record-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+  }
+  
+  .record-card-header {
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .record-date strong {
+    color: #2d3748;
+  }
+  
+  .total-production {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #48bb78;
+  }
+  
+  .record-card-body {
+    padding: 15px;
+  }
+  
+  .cow-name {
+    color: #2d3748;
+    margin-bottom: 8px;
+  }
+  
+  .cow-details {
+    color: #718096;
+    font-size: 0.9rem;
+  }
+  
+  .farm-name {
+    color: #667eea;
+    font-weight: 500;
+  }
+  
+  .production-breakdown {
+    margin-top: 15px;
+  }
+  
+  .production-item {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+  
+  .record-card-footer {
+    border-top: 1px solid #e2e8f0;
+    padding: 15px;
+  }
+  
+  .record-actions .btn {
+    margin-right: 8px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 60px 30px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .empty-icon {
+    font-size: 4rem;
+    color: #cbd5e0;
+    margin-bottom: 20px;
+  }
+  
+  .empty-state h3 {
+    color: #2d3748;
+    margin-bottom: 10px;
+  }
+  
+  .empty-state p {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+  }
+  
+  @media (max-width: 768px) {
+    .records-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .header-actions {
+      margin-top: 20px;
+    }
+    
+    .view-toggle {
+      margin-top: 15px;
+    }
+  }
+  
+  /* Cow Performance Analytics Styling */
+  .cow-performance-section {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(111, 66, 193, 0.05) 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid rgba(13, 110, 253, 0.1);
+  }
+  
+  .analytics-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .analytics-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+  }
+  
+  .analytics-subtitle {
+    color: #6c757d;
+    margin-bottom: 0;
+    font-size: 1rem;
+  }
+  
+  .analytics-card {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+  }
+  
+  .analytics-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  }
+  
+  .analytics-card-header {
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+  }
+  
+  .analytics-card-header.bg-gradient-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+  }
+  
+  .analytics-card-body {
+    padding: 1.5rem;
+  }
+  
+  .cow-performance-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: rgba(13, 110, 253, 0.03);
+    border: 1px solid rgba(13, 110, 253, 0.1);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .cow-performance-item:last-child {
+    margin-bottom: 0;
+  }
+  
+  .cow-performance-item.compact {
+    padding: 0.75rem;
+  }
+  
+  .cow-performance-item:hover {
+    background: rgba(13, 110, 253, 0.08);
+    border-color: #0d6efd;
+    transform: translateX(3px);
+  }
+  
+  .performance-rank {
+    margin-right: 1rem;
+  }
+  
+  .rank-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: white;
+  }
+  
+  .rank-gold {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #1a1a1a !important;
+  }
+  
+  .rank-silver {
+    background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+    color: #1a1a1a !important;
+  }
+  
+  .rank-bronze {
+    background: linear-gradient(135deg, #cd7f32, #daa520);
+  }
+  
+  .rank-default {
+    background: linear-gradient(135deg, #6c757d, #adb5bd);
+  }
+  
+  .performance-details {
+    flex: 1;
+  }
+  
+  .cow-name-performance {
+    margin-bottom: 0.25rem;
+    font-size: 1rem;
+    color: #1a1a1a;
+    transition: all 0.2s ease;
+  }
+  
+  .cow-performance-item:hover .cow-name-performance {
+    color: #0d6efd;
+    font-weight: 600;
+  }
+  
+  .cow-meta {
+    color: #6c757d;
+    font-size: 0.85rem;
+  }
+  
+  .performance-stats {
+    text-align: right;
+    margin-right: 1rem;
+  }
+  
+  .total-production, .avg-production {
+    font-size: 1.1rem;
+    font-weight: bold;
+    line-height: 1;
+  }
+  
+  .performance-arrow {
+    color: #0d6efd;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+  }
+  
+  .cow-performance-item:hover .performance-arrow {
+    transform: translateX(3px);
+  }
+  
+  .cow-analytics-link {
+    display: block;
+  }
+  
+  .empty-analytics {
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .empty-analytics i {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Cow Drill-Down Styling */
+  .cow-drill-link {
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    padding: 5px;
+    display: block;
+  }
+  
+  .cow-drill-link:hover {
+    background: rgba(13, 110, 253, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2);
+  }
+  
+  .cow-name-clickable {
+    color: #1a1a1a !important;
+    transition: all 0.2s ease;
+  }
+  
+  .cow-drill-link:hover .cow-name-clickable {
+    color: #0d6efd !important;
+    font-weight: 600;
+  }
+  
+  .cow-cell {
+    cursor: pointer;
+  }
+  
+  .production-record-card {
+    transition: all 0.2s ease;
+  }
+  
+  .production-record-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tableViewBtn = document.getElementById('tableView');
+    const cardViewBtn = document.getElementById('cardView');
+    const tableContainer = document.getElementById('tableViewContainer');
+    const cardContainer = document.getElementById('cardViewContainer');
+    
+    if (tableViewBtn && cardViewBtn) {
+      tableViewBtn.addEventListener('click', function() {
+        tableContainer.style.display = 'block';
+        cardContainer.style.display = 'none';
+        tableViewBtn.classList.add('active');
+        cardViewBtn.classList.remove('active');
+      });
+      
+      cardViewBtn.addEventListener('click', function() {
+        tableContainer.style.display = 'none';
+        cardContainer.style.display = 'block';
+        cardViewBtn.classList.add('active');
+        tableViewBtn.classList.remove('active');
+      });
+    }
+  });
+</script>

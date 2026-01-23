@@ -1,0 +1,529 @@
+<% content_for :title, "Edit Farm" %>
+
+<!-- Modern Form Header -->
+<div class="form-header mb-5">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center">
+        <div class="header-icon me-3">
+          <i class="bi bi-pencil-square"></i>
+        </div>
+        <div>
+          <h1 class="header-title mb-0">✏️ Edit Farm</h1>
+          <p class="header-subtitle mb-0">
+            Update information for <strong><%= @farm.name %></strong>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 text-end">
+      <div class="form-actions-header">
+        <%= link_to @farm, class: "btn btn-outline-info me-2" do %>
+          <i class="bi bi-eye me-2"></i>View Farm
+        <% end %>
+        <%= link_to farms_path, class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-arrow-left me-2"></i>Back to Farms
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Form Container -->
+<div class="form-container">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+      <div class="modern-form-card">
+        <div class="form-card-header">
+          <div class="edit-form-header">
+            <div class="farm-avatar">
+              <i class="bi bi-house-door-fill"></i>
+            </div>
+            <div class="farm-edit-info">
+              <h5 class="farm-edit-name"><%= @farm.name %></h5>
+              <p class="farm-edit-meta">
+                Farm ID: #<%= @farm.id %> • 
+                <span class="text-success">
+                  <i class="bi bi-circle-fill me-1"></i>Active
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-card-body">
+          <%= form_with model: @farm, local: true, class: "modern-form", id: "editFarmForm", 
+                        data: { turbo: false } do |form| %>
+            
+            <!-- Error Display -->
+            <% if @farm.errors.any? %>
+              <div class="error-container">
+                <div class="error-header">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>Please fix the following errors:</strong>
+                </div>
+                <ul class="error-list">
+                  <% @farm.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <!-- Form Fields -->
+            <div class="form-section">
+              <div class="section-header">
+                <h6 class="section-title">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Basic Information
+                </h6>
+                <p class="section-description">
+                  Update the core details of your farm
+                </p>
+              </div>
+              
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <%= form.label :name, class: "form-label modern-label" do %>
+                    <i class="bi bi-house-door me-2"></i>Farm Name *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.text_field :name, 
+                        class: "form-control modern-input #{'is-invalid' if @farm.errors[:name].any?}", 
+                        placeholder: "e.g., Green Valley Dairy Farm",
+                        required: true %>
+                    <% if @farm.errors[:name].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @farm.errors[:name].first %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <%= form.label :owner, class: "form-label modern-label" do %>
+                    <i class="bi bi-person me-2"></i>Owner Name *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.text_field :owner, 
+                        class: "form-control modern-input #{'is-invalid' if @farm.errors[:owner].any?}", 
+                        placeholder: "Enter owner's full name",
+                        required: true %>
+                    <% if @farm.errors[:owner].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @farm.errors[:owner].first %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <%= form.label :location, class: "form-label modern-label" do %>
+                    <i class="bi bi-geo-alt me-2"></i>Location
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.text_area :location, 
+                        rows: 3, 
+                        class: "form-control modern-input #{'is-invalid' if @farm.errors[:location].any?}", 
+                        placeholder: "Enter farm address or location description..." %>
+                    <% if @farm.errors[:location].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @farm.errors[:location].first %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="section-header">
+                <h6 class="section-title">
+                  <i class="bi bi-telephone me-2"></i>
+                  Contact Information
+                </h6>
+                <p class="section-description">
+                  Keep your contact details up to date
+                </p>
+              </div>
+              
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <%= form.label :contact_phone, "Contact Phone", class: "form-label modern-label" do %>
+                    <i class="bi bi-telephone me-2"></i>Phone Number *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.telephone_field :contact_phone, 
+                        class: "form-control modern-input #{'is-invalid' if @farm.errors[:contact_phone].any?}", 
+                        placeholder: "+254-700-123456 or 0700123456",
+                        required: true %>
+                    <% if @farm.errors[:contact_phone].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @farm.errors[:contact_phone].first %>
+                      </div>
+                    <% else %>
+                      <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Enter a valid phone number for farm communications
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Farm Statistics -->
+            <div class="form-section">
+              <div class="section-header">
+                <h6 class="section-title">
+                  <i class="bi bi-bar-chart me-2"></i>
+                  Current Statistics
+                </h6>
+                <p class="section-description">
+                  Overview of your farm's current status
+                </p>
+              </div>
+              
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <div class="stat-icon primary">
+                    <i class="bi bi-emoji-smile"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-value"><%= @farm.total_cows %></div>
+                    <div class="stat-label">Total Cows</div>
+                  </div>
+                </div>
+                
+                <div class="stat-item">
+                  <div class="stat-icon success">
+                    <i class="bi bi-heart-fill"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-value"><%= @farm.active_cows %></div>
+                    <div class="stat-label">Active Cows</div>
+                  </div>
+                </div>
+                
+                <div class="stat-item">
+                  <div class="stat-icon info">
+                    <i class="bi bi-droplet-fill"></i>
+                  </div>
+                  <div class="stat-content">
+                    <div class="stat-value">
+                      <%= number_with_precision(@farm.today_production, precision: 1) %>L
+                    </div>
+                    <div class="stat-label">Today's Production</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+              <div class="action-buttons">
+                <%= link_to @farm, class: "btn btn-outline-secondary" do %>
+                  <i class="bi bi-x-lg me-2"></i>Cancel
+                <% end %>
+                <%= form.submit "Update Farm", 
+                    class: "btn btn-primary btn-lg submit-button",
+                    data: { loading_text: "Updating Farm..." } %>
+              </div>
+              
+              <div class="danger-zone mt-4">
+                <div class="danger-header">
+                  <h6 class="danger-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Danger Zone
+                  </h6>
+                  <p class="danger-description">
+                    Irreversible actions that affect this farm
+                  </p>
+                </div>
+                
+                <div class="danger-actions">
+                  <%= link_to farm_path(@farm), method: :delete,
+                      confirm: "Are you sure you want to delete '#{@farm.name}'? This action cannot be undone and will remove all associated cows and production records.",
+                      class: "btn btn-outline-danger" do %>
+                    <i class="bi bi-trash me-2"></i>Delete Farm
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Reuse the form enhancement script from new.html.erb
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('editFarmForm');
+  const submitButton = document.querySelector('.submit-button');
+  const inputs = document.querySelectorAll('.modern-input');
+
+  // Real-time validation
+  inputs.forEach(input => {
+    input.addEventListener('input', function() {
+      if (this.hasAttribute('required') && this.value.trim()) {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+      }
+    });
+    
+    input.addEventListener('blur', function() {
+      if (this.hasAttribute('required') && !this.value.trim()) {
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+      }
+    });
+  });
+
+  // Phone number formatting
+  const phoneInput = document.querySelector('input[type="tel"]');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', function() {
+      let value = this.value.replace(/\D/g, '');
+      if (value.length > 0) {
+        if (value.length <= 10) {
+          value = value.replace(/(\d{4})(\d{3})(\d{3})/, '$1-$2-$3');
+        } else {
+          value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{3})/, '+$1-$2-$3-$4');
+        }
+      }
+      this.value = value;
+    });
+  }
+
+  // Form submission enhancement
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (submitButton) {
+        const originalText = submitButton.textContent;
+        const loadingText = submitButton.dataset.loadingText || 'Updating...';
+        
+        submitButton.disabled = true;
+        submitButton.innerHTML = `
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+          ${loadingText}
+        `;
+        
+        // Re-enable after timeout (fallback)
+        setTimeout(() => {
+          submitButton.disabled = false;
+          submitButton.textContent = originalText;
+        }, 10000);
+      }
+    });
+  }
+
+  // Input focus effects
+  inputs.forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement.classList.add('focused');
+    });
+    
+    input.addEventListener('blur', function() {
+      this.parentElement.classList.remove('focused');
+    });
+  });
+});
+</script>
+
+<style>
+/* Additional styles specific to edit form */
+.edit-form-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.farm-avatar {
+  width: 60px;
+  height: 60px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.farm-edit-info {
+  flex: 1;
+}
+
+.farm-edit-name {
+  color: white;
+  margin: 0 0 0.25rem 0;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.farm-edit-meta {
+  color: rgba(255,255,255,0.9);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.form-section {
+  margin-bottom: 2.5rem;
+}
+
+.section-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.section-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.section-description {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.stat-item {
+  background: var(--muted-bg);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  background: var(--hover-bg);
+  transform: translateY(-2px);
+}
+
+.stat-item .stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: white;
+  margin: 0 auto 1rem;
+}
+
+.stat-icon.primary {
+  background: var(--gradient-primary);
+}
+
+.stat-icon.success {
+  background: var(--gradient-success);
+}
+
+.stat-icon.info {
+  background: var(--gradient-info);
+}
+
+.stat-item .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.stat-item .stat-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  border-top: 1px solid var(--border-color);
+  padding-top: 2rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-bottom: 2rem;
+}
+
+.danger-zone {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+}
+
+.danger-header {
+  margin-bottom: 1rem;
+}
+
+.danger-title {
+  color: var(--danger-color);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.danger-description {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.danger-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column-reverse;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .danger-actions {
+    flex-direction: column;
+  }
+}
+</style>
+            <%= form.telephone_field :contact_phone, class: "form-control #{'is-invalid' if @farm.errors[:contact_phone].any?}", required: true %>
+            <% if @farm.errors[:contact_phone].any? %>
+              <div class="invalid-feedback">
+                <%= @farm.errors[:contact_phone].first %>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <%= link_to "Cancel", @farm, class: "btn btn-secondary" %>
+            <%= form.submit "Update Farm", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

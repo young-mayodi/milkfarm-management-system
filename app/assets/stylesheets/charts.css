@@ -1,0 +1,45 @@
+/* Chart.js Custom Styles */
+.chart-container {
+  position: relative;
+  height: 300px;
+  margin: 20px 0;
+}
+
+.chart-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.chart-no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Dashboard chart animations */
+.chart-card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.chart-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Chart legend spacing */
+.chart-legend {
+  margin-top: 15px;
+}
+
+/* Responsive chart containers */
+@media (max-width: 768px) {
+  .chart-container {
+    height: 250px;
+  }
+}

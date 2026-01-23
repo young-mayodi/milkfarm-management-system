@@ -1,0 +1,169 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>Production Trends</h1>
+    <p class="lead text-muted">Detailed production analysis over time</p>
+  </div>
+  <div>
+    <%= link_to "Back to Reports", reports_path, class: "btn btn-outline-secondary" %>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <%= form_with url: production_trends_reports_path, method: :get, local: true, class: "row g-3" do |form| %>
+      <div class="col-md-3">
+        <%= form.label :farm_id, "Select Farm", class: "form-label" %>
+        <%= form.select :farm_id, options_from_collection_for_select(@farms, :id, :name, params[:farm_id]), 
+                        { prompt: "All Farms" }, { class: "form-select" } %>
+      </div>
+      <div class="col-md-3">
+        <%= form.label :cow_id, "Select Cow", class: "form-label" %>
+        <%= form.select :cow_id, options_from_collection_for_select(@cows, :id, ->(cow) { "#{cow.name} (#{cow.farm.name})" }, params[:cow_id]), 
+                        { prompt: "All Cows" }, { class: "form-select" } %>
+      </div>
+      <div class="col-md-3">
+        <%= form.label :days, "Time Period", class: "form-label" %>
+        <%= form.select :days, options_for_select([
+              ["Last 7 days", "7"],
+              ["Last 14 days", "14"],
+              ["Last 30 days", "30"],
+              ["Last 60 days", "60"],
+              ["Last 90 days", "90"]
+            ], params[:days] || "30"), {}, { class: "form-select" } %>
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <%= form.submit "Update Chart", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Debug info -->
+<div class="alert alert-warning">
+  <strong>Debug Test:</strong>
+  <span data-controller="hello" data-hello-name-value="Chart Test">
+    <button data-action="click->hello#greet" class="btn btn-sm btn-info">Test Stimulus</button>
+    <span data-hello-target="output"></span>
+  </span>
+</div>
+
+<!-- Chart -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><%= @title %></h5>
+  </div>
+  <div class="card-body" style="height: 500px;">
+    <canvas data-controller="chart" 
+            data-chart-type-value="line"
+            data-chart-data-value="<%= chart_data_json(@chart_data) %>"
+            data-chart-options-value="<%= chart_options_json({plugins: {legend: {display: @chart_data[:datasets].length > 1}}}) %>">
+    </canvas>
+  </div>
+</div>
+
+<!-- Analysis Summary -->
+<div class="row mt-4">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Analysis Summary</h5>
+      </div>
+      <div class="card-body">
+        <% if @cow %>
+          <% records = @cow.production_records.where(production_date: @days.days.ago..Date.current) %>
+          <div class="row">
+            <div class="col-md-3">
+              <div class="text-center">
+                <h4 class="text-primary"><%= records.count %></h4>
+                <small class="text-muted">Records</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center">
+                <h4 class="text-success"><%= number_with_precision(records.sum(:total_production), precision: 1) %>L</h4>
+                <small class="text-muted">Total Production</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center">
+                <h4 class="text-info"><%= number_with_precision(records.average(:total_production) || 0, precision: 1) %>L</h4>
+                <small class="text-muted">Daily Average</small>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="text-center">
+                <h4 class="text-warning"><%= number_with_precision(records.maximum(:total_production) || 0, precision: 1) %>L</h4>
+                <small class="text-muted">Best Day</small>
+              </div>
+            </div>
+          </div>
+        <% elsif @farm %>
+          <% records = @farm.production_records.where(production_date: @days.days.ago..Date.current) %>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="text-center">
+                <h4 class="text-primary"><%= @farm.cows.active.count %></h4>
+                <small class="text-muted">Active Cows</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <h4 class="text-success"><%= number_with_precision(records.sum(:total_production), precision: 1) %>L</h4>
+                <small class="text-muted">Total Production</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <h4 class="text-info"><%= number_with_precision(records.average(:total_production) || 0, precision: 1) %>L</h4>
+                <small class="text-muted">Daily Average</small>
+              </div>
+            </div>
+          </div>
+        <% else %>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="text-center">
+                <h4 class="text-primary"><%= Farm.count %></h4>
+                <small class="text-muted">Total Farms</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <h4 class="text-success"><%= Cow.active.count %></h4>
+                <small class="text-muted">Active Cows</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <% total_recent = ProductionRecord.where(production_date: @days.days.ago..Date.current).sum(:total_production) %>
+                <h4 class="text-info"><%= number_with_precision(total_recent, precision: 1) %>L</h4>
+                <small class="text-muted">Total Production</small>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <%= link_to "Farm Summary", farm_summary_reports_path, class: "btn btn-outline-primary btn-sm" %>
+          <%= link_to "Cow Summary", cow_summary_reports_path, class: "btn btn-outline-info btn-sm" %>
+          <%= link_to "Export Data", export_reports_path, class: "btn btn-outline-success btn-sm" %>
+          <% if @cow %>
+            <%= link_to "View Cow Details", [@cow.farm, @cow], class: "btn btn-outline-secondary btn-sm" %>
+          <% elsif @farm %>
+            <%= link_to "View Farm Details", @farm, class: "btn btn-outline-secondary btn-sm" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

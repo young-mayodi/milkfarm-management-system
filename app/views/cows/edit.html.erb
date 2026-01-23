@@ -1,0 +1,229 @@
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="mb-0">Edit Cow: <%= @cow.name %></h4>
+        <small class="text-muted">Farm: <%= @farm.name %></small>
+      </div>
+      <div class="card-body">
+        <%= form_with model: [@farm, @cow], local: true, class: "needs-validation", novalidate: true do |form| %>
+          <% if @cow.errors.any? %>
+            <div class="alert alert-danger">
+              <h6>Please fix the following errors:</h6>
+              <ul class="mb-0">
+                <% @cow.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :name, class: "form-label" %>
+                <%= form.text_field :name, class: "form-control #{'is-invalid' if @cow.errors[:name].any?}", required: true %>
+                <% if @cow.errors[:name].any? %>
+                  <div class="invalid-feedback">
+                    <%= @cow.errors[:name].first %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :tag_number, "Tag Number", class: "form-label" %>
+                <%= form.text_field :tag_number, class: "form-control #{'is-invalid' if @cow.errors[:tag_number].any?}", required: true %>
+                <% if @cow.errors[:tag_number].any? %>
+                  <div class="invalid-feedback">
+                    <%= @cow.errors[:tag_number].first %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :breed, class: "form-label" %>
+                <%= form.select :breed, 
+                    options_for_select([
+                      ['Holstein', 'Holstein'],
+                      ['Jersey', 'Jersey'],
+                      ['Guernsey', 'Guernsey'],
+                      ['Ayrshire', 'Ayrshire'],
+                      ['Brown Swiss', 'Brown Swiss'],
+                      ['Friesian', 'Friesian'],
+                      ['Crossbred', 'Crossbred'],
+                      ['Other', 'Other']
+                    ], @cow.breed),
+                    { prompt: 'Select breed' },
+                    { class: "form-select #{'is-invalid' if @cow.errors[:breed].any?}", required: true } %>
+                <% if @cow.errors[:breed].any? %>
+                  <div class="invalid-feedback">
+                    <%= @cow.errors[:breed].first %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :age, "Age (years)", class: "form-label" %>
+                <%= form.number_field :age, class: "form-control #{'is-invalid' if @cow.errors[:age].any?}", min: 1, max: 20, required: true %>
+                <% if @cow.errors[:age].any? %>
+                  <div class="invalid-feedback">
+                    <%= @cow.errors[:age].first %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :group_name, "Group", class: "form-label" %>
+                <%= form.select :group_name,
+                    options_for_select([
+                      ['Group 1', 'Group 1'],
+                      ['Group 2', 'Group 2'], 
+                      ['Group 3', 'Group 3'],
+                      ['Group 4', 'Group 4'],
+                      ['Pregnant', 'Pregnant'],
+                      ['Dry', 'Dry']
+                    ], @cow.group_name),
+                    { prompt: 'Select group' },
+                    { class: "form-select" } %>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :status, class: "form-label" %>
+                <%= form.select :status,
+                    options_for_select([
+                      ['Active', 'active'],
+                      ['Pregnant', 'pregnant'],
+                      ['Sick', 'sick'],
+                      ['Inactive', 'inactive']
+                    ], @cow.status),
+                    { prompt: 'Select status' },
+                    { class: "form-select #{'is-invalid' if @cow.errors[:status].any?}", required: true } %>
+                <% if @cow.errors[:status].any? %>
+                  <div class="invalid-feedback">
+                    <%= @cow.errors[:status].first %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="mb-3">
+                <%= form.label :mother_id, "Mother Cow (for calves)", class: "form-label" %>
+                <%= form.select :mother_id,
+                    options_from_collection_for_select(
+                      @farm.cows.adult_cows.where.not(id: @cow.id).order(:name), 
+                      :id, 
+                      :name, 
+                      @cow.mother_id
+                    ),
+                    { prompt: 'Select mother (optional for calves)' },
+                    { class: "form-select" } %>
+                <div class="form-text">
+                  Select the mother cow if this is a calf (leave empty for adult cows)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weight and Growth Tracking Section -->
+          <% if @cow.is_calf? || @cow.current_weight.present? || params[:show_weight_tracking] %>
+          <div class="row">
+            <div class="col-md-12">
+              <h6 class="border-bottom pb-2 mb-3">
+                <i class="bi bi-speedometer me-2"></i>Weight & Growth Tracking
+              </h6>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :current_weight, "Current Weight (kg)", class: "form-label" %>
+                <%= form.number_field :current_weight, 
+                    step: 0.1, 
+                    min: 0,
+                    placeholder: "Enter current weight",
+                    class: "form-control" %>
+                <div class="form-text">Weight in kilograms</div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :prev_weight, "Previous Weight (kg)", class: "form-label" %>
+                <%= form.number_field :prev_weight, 
+                    step: 0.1, 
+                    min: 0,
+                    placeholder: "Enter previous weight",
+                    class: "form-control" %>
+                <div class="form-text">Weight from last measurement</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :avg_daily_gain, "Average Daily Gain (kg/day)", class: "form-label" %>
+                <%= form.number_field :avg_daily_gain, 
+                    step: 0.01, 
+                    min: 0,
+                    placeholder: "Enter daily gain rate",
+                    class: "form-control" %>
+                <div class="form-text">Average weight gain per day</div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :birth_date, "Birth Date", class: "form-label" %>
+                <%= form.date_field :birth_date, 
+                    class: "form-control",
+                    max: Date.current %>
+                <div class="form-text">For precise age calculation</div>
+              </div>
+            </div>
+          </div>
+          
+          <% if @cow.current_weight.present? && @cow.prev_weight.present? %>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Growth Analysis:</strong>
+                <% weight_gain = @cow.current_weight - @cow.prev_weight %>
+                Weight gain: <strong><%= weight_gain.round(1) %>kg</strong>
+                <% if @cow.avg_daily_gain.present? %>
+                  | Growth rate: <strong><%= @cow.growth_rate_category %></strong>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <% end %>
+          <% end %>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <%= link_to "Cancel", [@farm, @cow], class: "btn btn-secondary" %>
+            <%= form.submit "Update Cow", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

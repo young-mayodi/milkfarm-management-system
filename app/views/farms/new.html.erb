@@ -1,0 +1,760 @@
+<% content_for :title, "Add New Farm" %>
+
+<!-- Modern Form Header -->
+<div class="form-header mb-5">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center">
+        <div class="header-icon me-3">
+          <i class="bi bi-house-add"></i>
+        </div>
+        <div>
+          <h1 class="header-title mb-0">🏡 Add New Farm</h1>
+          <p class="header-subtitle mb-0">
+            Register a new farm to start tracking milk production
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 text-end">
+      <div class="form-actions-header">
+        <%= link_to farms_path, class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-arrow-left me-2"></i>Back to Farms
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Form Container -->
+<div class="form-container">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+      <div class="modern-form-card">
+        <div class="form-card-header">
+          <div class="form-progress">
+            <div class="progress-step active" data-step="1">
+              <div class="step-icon">
+                <i class="bi bi-info-circle"></i>
+              </div>
+              <div class="step-label">Basic Information</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="2">
+              <div class="step-icon">
+                <i class="bi bi-telephone"></i>
+              </div>
+              <div class="step-label">Contact Details</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-card-body">
+          <%= form_with model: @farm, local: true, class: "modern-form", id: "farmForm", 
+                        data: { turbo: false } do |form| %>
+            
+            <!-- Error Display -->
+            <% if @farm.errors.any? %>
+              <div class="error-container">
+                <div class="error-header">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>Please fix the following errors:</strong>
+                </div>
+                <ul class="error-list">
+                  <% @farm.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <!-- Step 1: Basic Information -->
+            <div class="form-step active" id="step1">
+              <div class="step-header">
+                <h5 class="step-title">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Basic Information
+                </h5>
+                <p class="step-description">
+                  Provide the fundamental details about your farm
+                </p>
+              </div>
+              
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <%= form.label :name, class: "form-label modern-label" do %>
+                    <i class="bi bi-house-door me-2"></i>Farm Name *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.text_field :name, 
+                        class: "form-control modern-input #{'is-invalid' if @farm.errors[:name].any?}", 
+                        placeholder: "e.g., Green Valley Dairy Farm",
+                        required: true,
+                        data: { validate: "required" } %>
+                    <% if @farm.errors[:name].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @farm.errors[:name].first %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <%= form.label :owner, class: "form-label modern-label" do %>
+                    <i class="bi bi-person me-2"></i>Owner Name *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.text_field :owner, 
+                        class: "form-control modern-input #{'is-invalid' if @farm.errors[:owner].any?}", 
+                        placeholder: "Enter owner's full name",
+                        required: true,
+                        data: { validate: "required" } %>
+                    <% if @farm.errors[:owner].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @farm.errors[:owner].first %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <%= form.label :location, class: "form-label modern-label" do %>
+                    <i class="bi bi-geo-alt me-2"></i>Location
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.text_area :location, 
+                        rows: 3, 
+                        class: "form-control modern-input #{'is-invalid' if @farm.errors[:location].any?}", 
+                        placeholder: "Enter farm address or location description..." %>
+                    <% if @farm.errors[:location].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @farm.errors[:location].first %>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+
+              <div class="step-navigation">
+                <button type="button" class="btn btn-primary next-step" data-next="2">
+                  Continue to Contact Details
+                  <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 2: Contact Details -->
+            <div class="form-step" id="step2">
+              <div class="step-header">
+                <h5 class="step-title">
+                  <i class="bi bi-telephone me-2"></i>
+                  Contact Information
+                </h5>
+                <p class="step-description">
+                  How can we reach you regarding farm operations?
+                </p>
+              </div>
+              
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <%= form.label :contact_phone, "Contact Phone", class: "form-label modern-label" do %>
+                    <i class="bi bi-telephone me-2"></i>Phone Number *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.telephone_field :contact_phone, 
+                        class: "form-control modern-input #{'is-invalid' if @farm.errors[:contact_phone].any?}", 
+                        placeholder: "+254-700-123456 or 0700123456",
+                        required: true,
+                        data: { validate: "phone" } %>
+                    <% if @farm.errors[:contact_phone].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @farm.errors[:contact_phone].first %>
+                      </div>
+                    <% else %>
+                      <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Enter a valid phone number for farm communications
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <!-- Additional Features Preview -->
+                <div class="feature-preview">
+                  <h6 class="preview-title">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    What's Next?
+                  </h6>
+                  <div class="preview-items">
+                    <div class="preview-item">
+                      <i class="bi bi-emoji-smile text-success"></i>
+                      <span>Add cows to your farm</span>
+                    </div>
+                    <div class="preview-item">
+                      <i class="bi bi-clipboard-data text-primary"></i>
+                      <span>Start tracking daily production</span>
+                    </div>
+                    <div class="preview-item">
+                      <i class="bi bi-graph-up text-info"></i>
+                      <span>Monitor farm performance</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="step-navigation">
+                <button type="button" class="btn btn-outline-secondary prev-step" data-prev="1">
+                  <i class="bi bi-arrow-left me-2"></i>
+                  Back to Basic Info
+                </button>
+                <div class="submit-container">
+                  <%= form.submit "Create Farm", 
+                      class: "btn btn-success btn-lg submit-button",
+                      data: { loading_text: "Creating Farm..." } %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Form Enhancement Scripts and Styles -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('farmForm');
+  const steps = document.querySelectorAll('.form-step');
+  const progressSteps = document.querySelectorAll('.progress-step');
+  const nextButtons = document.querySelectorAll('.next-step');
+  const prevButtons = document.querySelectorAll('.prev-step');
+  const submitButton = document.querySelector('.submit-button');
+  
+  let currentStep = 1;
+  const totalSteps = 2;
+
+  // Step Navigation
+  nextButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const nextStep = parseInt(this.dataset.next);
+      if (validateCurrentStep()) {
+        goToStep(nextStep);
+      }
+    });
+  });
+
+  prevButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const prevStep = parseInt(this.dataset.prev);
+      goToStep(prevStep);
+    });
+  });
+
+  function goToStep(stepNumber) {
+    // Hide current step
+    steps[currentStep - 1].classList.remove('active');
+    progressSteps[currentStep - 1].classList.remove('active');
+    
+    // Show new step
+    steps[stepNumber - 1].classList.add('active');
+    progressSteps[stepNumber - 1].classList.add('active');
+    
+    // Mark previous steps as completed
+    for (let i = 0; i < stepNumber - 1; i++) {
+      progressSteps[i].classList.add('completed');
+    }
+    
+    currentStep = stepNumber;
+    
+    // Add entrance animation
+    steps[stepNumber - 1].style.animation = 'slideInRight 0.3s ease-out';
+    setTimeout(() => {
+      steps[stepNumber - 1].style.animation = '';
+    }, 300);
+  }
+
+  function validateCurrentStep() {
+    const currentStepElement = steps[currentStep - 1];
+    const requiredInputs = currentStepElement.querySelectorAll('[required]');
+    let isValid = true;
+
+    requiredInputs.forEach(input => {
+      if (!input.value.trim()) {
+        input.classList.add('is-invalid');
+        isValid = false;
+        
+        // Add shake animation
+        input.style.animation = 'shake 0.5s ease-in-out';
+        setTimeout(() => {
+          input.style.animation = '';
+        }, 500);
+      } else {
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+      }
+    });
+
+    return isValid;
+  }
+
+  // Real-time validation
+  const inputs = document.querySelectorAll('.modern-input');
+  inputs.forEach(input => {
+    input.addEventListener('input', function() {
+      if (this.hasAttribute('required') && this.value.trim()) {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+      }
+    });
+    
+    input.addEventListener('blur', function() {
+      if (this.hasAttribute('required') && !this.value.trim()) {
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+      }
+    });
+  });
+
+  // Phone number formatting
+  const phoneInput = document.querySelector('input[type="tel"]');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', function() {
+      let value = this.value.replace(/\D/g, '');
+      if (value.length > 0) {
+        if (value.length <= 10) {
+          value = value.replace(/(\d{4})(\d{3})(\d{3})/, '$1-$2-$3');
+        } else {
+          value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{3})/, '+$1-$2-$3-$4');
+        }
+      }
+      this.value = value;
+    });
+  }
+
+  // Form submission enhancement
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (submitButton) {
+        const originalText = submitButton.textContent;
+        const loadingText = submitButton.dataset.loadingText || 'Saving...';
+        
+        submitButton.disabled = true;
+        submitButton.innerHTML = `
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+          ${loadingText}
+        `;
+        
+        // Re-enable after timeout (fallback)
+        setTimeout(() => {
+          submitButton.disabled = false;
+          submitButton.textContent = originalText;
+        }, 10000);
+      }
+    });
+  }
+
+  // Input focus effects
+  inputs.forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement.classList.add('focused');
+    });
+    
+    input.addEventListener('blur', function() {
+      this.parentElement.classList.remove('focused');
+    });
+  });
+
+  // Auto-advance feature (optional)
+  const nameInput = document.querySelector('input[name="farm[name]"]');
+  if (nameInput) {
+    nameInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && this.value.trim()) {
+        e.preventDefault();
+        const nextButton = document.querySelector('.next-step[data-next="2"]');
+        if (nextButton && validateCurrentStep()) {
+          nextButton.click();
+        }
+      }
+    });
+  }
+});
+</script>
+
+<style>
+/* Modern Farm Form Styles */
+.form-header {
+  margin-bottom: 2rem;
+}
+
+.form-container {
+  margin-bottom: 3rem;
+}
+
+.modern-form-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.form-card-header {
+  background: var(--gradient-primary);
+  padding: 2rem;
+  color: white;
+}
+
+.form-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  text-align: center;
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+
+.progress-step.active,
+.progress-step.completed {
+  opacity: 1;
+}
+
+.step-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.progress-step.active .step-icon {
+  background: white;
+  color: var(--primary-color);
+  transform: scale(1.1);
+}
+
+.progress-step.completed .step-icon {
+  background: rgba(34, 197, 94, 0.3);
+}
+
+.step-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.progress-line {
+  position: absolute;
+  top: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: rgba(255,255,255,0.3);
+  z-index: 1;
+}
+
+.form-card-body {
+  padding: 2.5rem;
+}
+
+.form-step {
+  display: none;
+}
+
+.form-step.active {
+  display: block;
+}
+
+.step-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.step-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-description {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.modern-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.input-container {
+  position: relative;
+}
+
+.modern-input {
+  background: var(--input-bg);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.modern-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.1);
+  background: white;
+}
+
+.modern-input.is-valid {
+  border-color: var(--success-color);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2322c55e' d='m2.3 6.73.69.72 2.55-2.55-.72-.69-1.83 1.83-.36-.36-.69.72z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem 1rem;
+}
+
+.modern-input.is-invalid {
+  border-color: var(--danger-color);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23ef4444'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.25 5.25 1.5 1.5m0-1.5-1.5 1.5'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem 1rem;
+}
+
+.input-container.focused .modern-input {
+  transform: translateY(-1px);
+}
+
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--danger-color);
+  background: rgba(239, 68, 68, 0.1);
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--danger-color);
+}
+
+.form-text {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.step-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.submit-container {
+  display: flex;
+  gap: 1rem;
+}
+
+.submit-button {
+  min-width: 150px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.submit-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+}
+
+.error-container {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.error-header {
+  color: var(--danger-color);
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.error-list li {
+  color: var(--danger-color);
+  padding: 0.25rem 0;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.error-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--danger-color);
+}
+
+.feature-preview {
+  grid-column: 1 / -1;
+  background: var(--muted-bg);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.preview-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.preview-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.preview-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.preview-item i {
+  font-size: 1.125rem;
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-card-header {
+    padding: 1.5rem;
+  }
+  
+  .form-card-body {
+    padding: 1.5rem;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .step-navigation {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .submit-container {
+    width: 100%;
+  }
+  
+  .submit-button {
+    width: 100%;
+  }
+  
+  .progress-step {
+    font-size: 0.75rem;
+  }
+  
+  .step-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  
+  .step-label {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .header-title {
+    font-size: 1.5rem;
+  }
+  
+  .header-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.25rem;
+  }
+  
+  .progress-step {
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: left;
+    gap: 0.75rem;
+  }
+  
+  .progress-line {
+    display: none;
+  }
+}
+</style>

@@ -1,0 +1,244 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>Cow Summary Report</h1>
+    <p class="lead text-muted">Individual cow performance analysis with charts</p>
+  </div>
+  <div>
+    <%= link_to "Production Trends", production_trends_reports_path, class: "btn btn-info me-2" %>
+    <%= link_to "Back to Reports", reports_path, class: "btn btn-outline-secondary" %>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<% if @all_cows.any? %>
+  <div class="row mb-5">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Top 10 Cows - Total Production (<%= @date_range %> days)</h5>
+        </div>
+        <div class="card-body" style="height: 400px;">
+          <canvas id="cow-total-production-chart"></canvas>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Average Daily Production Comparison</h5>
+        </div>
+        <div class="card-body" style="height: 400px;">
+          <canvas id="cow-average-production-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Least Performing Cows Chart -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+            Bottom 10 Cows - Least Production (<%= @date_range %> days)
+          </h5>
+          <p class="text-muted mb-0">Cows that may need attention or support</p>
+        </div>
+        <div class="card-body" style="height: 400px;">
+          <canvas id="least-cow-production-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Total Production Chart
+  const totalProductionCtx = document.getElementById('cow-total-production-chart');
+  if (totalProductionCtx) {
+    <% if @cow_chart_data && @cow_chart_data[:datasets].any? %>
+      new Chart(totalProductionCtx, {
+        type: 'bar',
+        data: <%= raw chart_data_json(@cow_chart_data) %>,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    <% else %>
+      const ctx = totalProductionCtx.getContext('2d');
+      ctx.font = '16px Arial';
+      ctx.fillStyle = '#6c757d';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data available', totalProductionCtx.width / 2, totalProductionCtx.height / 2);
+    <% end %>
+  }
+
+  // Initialize Average Production Chart
+  const avgProductionCtx = document.getElementById('cow-average-production-chart');
+  if (avgProductionCtx) {
+    <% if @avg_chart_data && @avg_chart_data[:datasets].any? %>
+      new Chart(avgProductionCtx, {
+        type: 'doughnut',
+        data: <%= raw chart_data_json(@avg_chart_data) %>,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right' }
+          }
+        }
+      });
+    <% else %>
+      const ctx = avgProductionCtx.getContext('2d');
+      ctx.font = '16px Arial';
+      ctx.fillStyle = '#6c757d';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data available', avgProductionCtx.width / 2, avgProductionCtx.height / 2);
+    <% end %>
+  }
+
+  // Initialize Least Performing Cows Chart
+  const leastCowCtx = document.getElementById('least-cow-production-chart');
+  if (leastCowCtx) {
+    <% if @least_cow_chart_data && @least_cow_chart_data[:datasets].any? %>
+      new Chart(leastCowCtx, {
+        type: 'bar',
+        data: <%= raw chart_data_json(@least_cow_chart_data) %>,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                afterBody: function() {
+                  return 'Consider checking nutrition, health, or milking schedule';
+                }
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    <% else %>
+      const ctx = leastCowCtx.getContext('2d');
+      ctx.font = '16px Arial';
+      ctx.fillStyle = '#6c757d';
+      ctx.textAlign = 'center';
+      ctx.fillText('No data available', leastCowCtx.width / 2, leastCowCtx.height / 2);
+    <% end %>
+  }
+
+  console.log('Cow summary charts initialized successfully');
+});
+</script>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <%= form_with url: cow_summary_reports_path, method: :get, local: true, class: "row g-3" do |form| %>
+      <div class="col-md-4">
+        <%= form.label :farm_id, "Filter by Farm", class: "form-label" %>
+        <%= form.select :farm_id, options_from_collection_for_select(@farms, :id, :name, params[:farm_id]), 
+                        { prompt: "All Farms" }, { class: "form-select" } %>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :date_range, "Date Range (Days)", class: "form-label" %>
+        <%= form.select :date_range, options_for_select([
+              ["Last 7 days", "7"],
+              ["Last 30 days", "30"],
+              ["Last 90 days", "90"],
+              ["Last 180 days", "180"]
+            ], @date_range), {}, { class: "form-select" } %>
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <%= form.submit "Apply Filters", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @cows.any? %>
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Cow</th>
+              <th>Farm</th>
+              <th>Status</th>
+              <th>Records</th>
+              <th>Total Production</th>
+              <th>Daily Average</th>
+              <th>Best Day</th>
+              <th>Efficiency</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @cows.each do |cow| %>
+              <% stats = @cow_stats[cow.id] %>
+              <tr>
+                <td>
+                  <div>
+                    <strong><%= link_to cow.name, [cow.farm, cow], class: "text-decoration-none" %></strong>
+                    <br>
+                    <small class="text-muted"><%= cow.tag_number %></small>
+                  </div>
+                </td>
+                <td><%= cow.farm.name %></td>
+                <td>
+                  <span class="badge bg-<%= cow.status_badge_class %>">
+                    <%= cow.status.humanize %>
+                  </span>
+                </td>
+                <td><%= stats[:record_count] %></td>
+                <td>
+                  <span class="fw-bold text-primary">
+                    <%= number_with_precision(stats[:total_production], precision: 1) %>L
+                  </span>
+                </td>
+                <td><%= number_with_precision(stats[:avg_daily_production], precision: 1) %>L</td>
+                <td><%= number_with_precision(stats[:best_day], precision: 1) %>L</td>
+                <td>
+                  <% efficiency = stats[:avg_daily_production] > 0 ? (stats[:avg_daily_production] / 25.0 * 100).round(1) : 0 %>
+                  <div class="d-flex align-items-center">
+                    <div class="progress me-2" style="width: 60px; height: 8px;">
+                      <div class="progress-bar bg-<%= efficiency > 70 ? 'success' : efficiency > 40 ? 'warning' : 'danger' %>" 
+                           style="width: <%= [efficiency, 100].min %>%"></div>
+                    </div>
+                    <small><%= efficiency %>%</small>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="d-flex justify-content-center mt-4">
+        <%= paginate @cows %>
+      </div>
+    </div>
+  </div>
+<% else %>
+  <div class="text-center py-5">
+    <i class="bi bi-list-ul display-1 text-muted"></i>
+    <h3 class="mt-3">No Cow Data</h3>
+    <p class="text-muted">Add cows and production records to generate reports.</p>
+    <%= link_to "View Cows", cows_path, class: "btn btn-primary" %>
+  </div>
+<% end %>

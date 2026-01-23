@@ -1,0 +1,125 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>Farm Summary Report</h1>
+    <p class="lead text-muted">30-day performance overview with visual analytics</p>
+  </div>
+  <div>
+    <%= link_to "Production Trends", production_trends_reports_path, class: "btn btn-info me-2" %>
+    <%= link_to "Back to Reports", reports_path, class: "btn btn-outline-secondary" %>
+  </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-5">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Farm Production Comparison (30 days)</h5>
+      </div>
+      <div class="card-body" style="height: 400px;">
+        <canvas data-controller="chart" 
+                data-chart-type-value="bar"
+                data-chart-data-value="<%= @farm_chart_data.to_json %>"
+                data-chart-options-value='{"plugins": {"legend": {"display": false}}}'>
+        </canvas>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Daily Production Trend (30 days)</h5>
+      </div>
+      <div class="card-body" style="height: 400px;">
+        <canvas data-controller="chart" 
+                data-chart-type-value="line"
+                data-chart-data-value="<%= @trend_chart_data.to_json %>"
+                data-chart-options-value='{"plugins": {"legend": {"display": false}}}'>
+        </canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <% @farm_stats.each do |stats| %>
+    <div class="col-lg-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <%= link_to stats[:farm].name, stats[:farm], class: "text-decoration-none" %>
+          </h5>
+          <small class="text-muted"><%= stats[:farm].location %></small>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-6">
+              <dl class="row">
+                <dt class="col-sm-8">Total Cows:</dt>
+                <dd class="col-sm-4"><%= stats[:total_cows] %></dd>
+                
+                <dt class="col-sm-8">Active Cows:</dt>
+                <dd class="col-sm-4">
+                  <span class="badge bg-success"><%= stats[:active_cows] %></span>
+                </dd>
+                
+                <dt class="col-sm-8">Contact:</dt>
+                <dd class="col-sm-4"><%= stats[:farm].contact %></dd>
+              </dl>
+            </div>
+            
+            <div class="col-6">
+              <dl class="row">
+                <dt class="col-sm-8">30-day Production:</dt>
+                <dd class="col-sm-4">
+                  <span class="text-primary fw-bold">
+                    <%= number_with_precision(stats[:recent_production], precision: 1) %>L
+                  </span>
+                </dd>
+                
+                <dt class="col-sm-8">Daily Average:</dt>
+                <dd class="col-sm-4">
+                  <%= number_with_precision(stats[:avg_daily_production], precision: 1) %>L
+                </dd>
+                
+                <dt class="col-sm-8">Sales Volume:</dt>
+                <dd class="col-sm-4">
+                  <%= number_with_precision(stats[:recent_sales_volume], precision: 1) %>L
+                </dd>
+                
+                <dt class="col-sm-8">Revenue:</dt>
+                <dd class="col-sm-4">
+                  <span class="text-success fw-bold">
+                    KES <%= number_with_precision(stats[:recent_sales_revenue], precision: 0) %>
+                  </span>
+                </dd>
+              </dl>
+            </div>
+          </div>
+          
+          <!-- Progress bars for visualization -->
+          <div class="mt-3">
+            <div class="d-flex justify-content-between">
+              <small>Production Efficiency</small>
+              <small><%= ((stats[:recent_sales_volume] / stats[:recent_production]) * 100).round(1) rescue 0 %>%</small>
+            </div>
+            <div class="progress" style="height: 6px;">
+              <div class="progress-bar" role="progressbar" 
+                   style="width: <%= [(stats[:recent_sales_volume] / stats[:recent_production] * 100), 100].min rescue 0 %>%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<% if @farm_stats.empty? %>
+  <div class="text-center py-5">
+    <i class="bi bi-building display-1 text-muted"></i>
+    <h3 class="mt-3">No Farm Data</h3>
+    <p class="text-muted">Add farms and production records to generate reports.</p>
+    <%= link_to "Add Farm", new_farm_path, class: "btn btn-success" %>
+  </div>
+<% end %>

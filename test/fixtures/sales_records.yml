@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  farm: one
+  sale_date: 2026-01-22
+  milk_sold: 9.99
+  cash_sales: 9.99
+  mpesa_sales: 9.99
+  total_sales: 9.99
+  buyer: MyString
+
+two:
+  farm: two
+  sale_date: 2026-01-22
+  milk_sold: 9.99
+  cash_sales: 9.99
+  mpesa_sales: 9.99
+  total_sales: 9.99
+  buyer: MyString

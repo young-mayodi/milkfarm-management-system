@@ -1,0 +1,70 @@
+<div class="cow-card-compact">
+  <div class="card h-100">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-start justify-content-between mb-2">
+        <div class="d-flex align-items-center">
+          <div class="cow-avatar-compact me-2">
+            <i class="bi bi-heart-fill"></i>
+            <div class="status-dot status-<%= cow.status || 'active' %>"></div>
+          </div>
+          <div>
+            <h6 class="mb-0">
+              <%= link_to cow.name, cow_path(cow), class: "text-decoration-none" %>
+            </h6>
+            <small class="text-muted"><%= cow.tag_number %></small>
+          </div>
+        </div>
+        
+        <div class="dropdown">
+          <button class="btn btn-sm btn-link text-muted" data-bs-toggle="dropdown">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><%= link_to "View", cow_path(cow), class: "dropdown-item" %></li>
+            <li><%= link_to "Edit", edit_cow_path(cow), class: "dropdown-item" %></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="cow-quick-info">
+        <div class="row g-2 text-center">
+          <div class="col-4">
+            <small class="text-muted d-block">Breed</small>
+            <small class="fw-semibold"><%= cow.breed || 'Unknown' %></small>
+          </div>
+          <div class="col-4">
+            <small class="text-muted d-block">Age</small>
+            <small class="fw-semibold"><%= cow.age || 0 %>y</small>
+          </div>
+          <div class="col-4">
+            <small class="text-muted d-block">Status</small>
+            <span class="badge badge-sm badge-<%= cow.status || 'active' %>">
+              <%= (cow.status || 'active').capitalize %>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card-footer bg-light p-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted">
+          <% unless @farm %>
+            <%= cow.farm.name %>
+          <% else %>
+            Last updated <%= time_ago_in_words(cow.updated_at) %> ago
+          <% end %>
+        </small>
+        
+        <div class="btn-group btn-group-sm">
+          <%= link_to cow_path(cow), class: "btn btn-outline-primary btn-sm" do %>
+            <i class="bi bi-eye"></i>
+          <% end %>
+          <%= link_to edit_cow_path(cow), class: "btn btn-outline-secondary btn-sm" do %>
+            <i class="bi bi-pencil"></i>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

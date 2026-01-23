@@ -1,0 +1,176 @@
+<!-- Mobile-Optimized Data Entry Interface -->
+<div class="mobile-data-entry d-lg-none">
+  <!-- Mobile Header -->
+  <div class="mobile-header sticky-top bg-white border-bottom mb-3">
+    <div class="d-flex align-items-center justify-content-between p-3">
+      <div>
+        <h6 class="mb-1">Bulk Entry - Mobile</h6>
+        <small class="text-muted"><%= @date.strftime("%B %d") %> • <%= @cows.count %> cows</small>
+      </div>
+      <div>
+        <button class="btn btn-primary btn-sm" id="mobile_save_btn">
+          <i class="bi bi-check-lg me-1"></i>Save
+        </button>
+      </div>
+    </div>
+    
+    <!-- Mobile Progress Bar -->
+    <div class="progress" style="height: 3px;">
+      <div class="progress-bar bg-success" role="progressbar" style="width: 65%"></div>
+    </div>
+  </div>
+
+  <!-- Mobile Cow Cards -->
+  <div class="mobile-cow-cards">
+    <% @records.each_with_index do |record, index| %>
+      <div class="mobile-cow-card mb-3" data-cow-id="<%= record.cow.id %>">
+        <div class="card">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <div class="cow-info">
+              <h6 class="mb-0"><%= record.cow.name %></h6>
+              <small class="text-muted">Tag: <%= record.cow.tag_number %></small>
+            </div>
+            <div class="card-actions">
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary mobile-quick-fill" data-action="previous">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button class="btn btn-outline-success mobile-quick-fill" data-action="average">
+                  <i class="bi bi-calculator"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-body">
+            <!-- Mobile Production Inputs -->
+            <div class="row g-2 mb-3">
+              <div class="col-4">
+                <label class="form-label text-muted small">Morning</label>
+                <div class="input-group">
+                  <%= form.number_field "production_#{record.cow.id}_morning",
+                      value: record.morning_production > 0 ? record.morning_production : nil,
+                      placeholder: "0.0",
+                      step: 0.1,
+                      min: 0,
+                      max: 50,
+                      class: "form-control mobile-production-input",
+                      data: { "cow-id": record.cow.id, "session": "morning" } %>
+                  <span class="input-group-text">L</span>
+                </div>
+              </div>
+              <div class="col-4">
+                <label class="form-label text-muted small">Noon</label>
+                <div class="input-group">
+                  <%= form.number_field "production_#{record.cow.id}_noon",
+                      value: record.noon_production > 0 ? record.noon_production : nil,
+                      placeholder: "0.0",
+                      step: 0.1,
+                      min: 0,
+                      max: 50,
+                      class: "form-control mobile-production-input",
+                      data: { "cow-id": record.cow.id, "session": "noon" } %>
+                  <span class="input-group-text">L</span>
+                </div>
+              </div>
+              <div class="col-4">
+                <label class="form-label text-muted small">Evening</label>
+                <div class="input-group">
+                  <%= form.number_field "production_#{record.cow.id}_evening",
+                      value: record.evening_production > 0 ? record.evening_production : nil,
+                      placeholder: "0.0",
+                      step: 0.1,
+                      min: 0,
+                      max: 50,
+                      class: "form-control mobile-production-input",
+                      data: { "cow-id": record.cow.id, "session": "evening" } %>
+                  <span class="input-group-text">L</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Mobile Total and Status -->
+            <div class="mobile-cow-summary">
+              <div class="row align-items-center">
+                <div class="col-6">
+                  <div class="total-display">
+                    <span class="h5 text-primary mb-0" id="mobile_total_<%= record.cow.id %>">
+                      <%= record.total_production > 0 ? number_with_precision(record.total_production, precision: 1) : '0.0' %>L
+                    </span>
+                    <small class="text-muted d-block">Total Today</small>
+                  </div>
+                </div>
+                <div class="col-6 text-end">
+                  <div class="performance-indicator">
+                    <% if record.total_production > 15 %>
+                      <span class="badge bg-success">Excellent</span>
+                    <% elsif record.total_production > 10 %>
+                      <span class="badge bg-warning">Good</span>
+                    <% elsif record.total_production > 0 %>
+                      <span class="badge bg-secondary">Low</span>
+                    <% else %>
+                      <span class="badge bg-light text-dark">No Data</span>
+                    <% end %>
+                  </div>
+                  <small class="text-muted d-block">Performance</small>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Mobile Quick Actions -->
+            <div class="mobile-quick-actions mt-3">
+              <div class="btn-group w-100" role="group">
+                <button type="button" class="btn btn-outline-secondary btn-sm mobile-copy-prev">
+                  Yesterday's Data
+                </button>
+                <button type="button" class="btn btn-outline-info btn-sm mobile-use-avg">
+                  Farm Average
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm mobile-clear">
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Mobile Floating Action Button -->
+  <div class="mobile-fab">
+    <button class="btn btn-primary btn-lg rounded-circle position-fixed" style="bottom: 20px; right: 20px; z-index: 1000;" id="mobile_bulk_actions">
+      <i class="bi bi-lightning-charge-fill"></i>
+    </button>
+  </div>
+
+  <!-- Mobile Bulk Actions Sheet -->
+  <div class="mobile-action-sheet" id="mobile_action_sheet" style="display: none;">
+    <div class="action-sheet-content">
+      <div class="action-sheet-header">
+        <h6>Bulk Actions</h6>
+        <button class="btn btn-link" onclick="hideMobileActionSheet()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="action-sheet-body">
+        <button class="action-sheet-item" onclick="fillAllWithAverage()">
+          <i class="bi bi-calculator text-primary"></i>
+          <span>Fill All with Farm Average</span>
+        </button>
+        <button class="action-sheet-item" onclick="copyAllFromYesterday()">
+          <i class="bi bi-arrow-clockwise text-success"></i>
+          <span>Copy All from Yesterday</span>
+        </button>
+        <button class="action-sheet-item" onclick="clearAllFields()">
+          <i class="bi bi-trash text-danger"></i>
+          <span>Clear All Fields</span>
+        </button>
+        <button class="action-sheet-item" onclick="showKeyboardShortcuts()">
+          <i class="bi bi-keyboard text-info"></i>
+          <span>Keyboard Shortcuts</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,829 @@
+<% content_for :title, "Add New Cow" %>
+
+<!-- Modern Form Header -->
+<div class="form-header mb-5">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center">
+        <div class="header-icon me-3">
+          <i class="bi bi-emoji-smile"></i>
+        </div>
+        <div>
+          <h1 class="header-title mb-0">🐄 Add New Cow</h1>
+          <p class="header-subtitle mb-0">
+            <% if @farm %>
+              Register a new cow to <strong><%= @farm.name %></strong>
+            <% else %>
+              Add a new cow to your herd
+            <% end %>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 text-end">
+      <div class="form-actions-header">
+        <% if @farm %>
+          <%= link_to @farm, class: "btn btn-outline-info me-2" do %>
+            <i class="bi bi-house-door me-2"></i>Farm Details
+          <% end %>
+          <%= link_to farm_cows_path(@farm), class: "btn btn-outline-secondary" do %>
+            <i class="bi bi-arrow-left me-2"></i>Back to Cows
+          <% end %>
+        <% else %>
+          <%= link_to farms_path, class: "btn btn-outline-secondary" do %>
+            <i class="bi bi-arrow-left me-2"></i>Back to Farms
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Form Container -->
+<div class="form-container">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+      <div class="modern-form-card">
+        <div class="form-card-header">
+          <div class="form-progress">
+            <div class="progress-step active" data-step="1">
+              <div class="step-icon">
+                <i class="bi bi-info-circle"></i>
+              </div>
+              <div class="step-label">Basic Info</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="2">
+              <div class="step-icon">
+                <i class="bi bi-palette"></i>
+              </div>
+              <div class="step-label">Characteristics</div>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="3">
+              <div class="step-icon">
+                <i class="bi bi-gear"></i>
+              </div>
+              <div class="step-label">Management</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-card-body">
+          <%= form_with model: [@farm, @cow], local: true, class: "modern-form", id: "cowForm", 
+                        data: { turbo: false } do |form| %>
+            
+            <!-- Error Display -->
+            <% if @cow.errors.any? %>
+              <div class="error-container">
+                <div class="error-header">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>Please fix the following errors:</strong>
+                </div>
+                <ul class="error-list">
+                  <% @cow.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <!-- Step 1: Basic Information -->
+            <div class="form-step active" id="step1">
+              <div class="step-header">
+                <h5 class="step-title">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Basic Information
+                </h5>
+                <p class="step-description">
+                  Essential details to identify your cow
+                </p>
+              </div>
+              
+              <div class="form-grid">
+                <div class="form-group">
+                  <%= form.label :name, class: "form-label modern-label" do %>
+                    <i class="bi bi-emoji-smile me-2"></i>Cow Name *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.text_field :name, 
+                        class: "form-control modern-input #{'is-invalid' if @cow.errors[:name].any?}", 
+                        placeholder: "e.g., Bella, Daisy, Rosie",
+                        required: true,
+                        data: { validate: "required" } %>
+                    <% if @cow.errors[:name].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @cow.errors[:name].first %>
+                      </div>
+                    <% else %>
+                      <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Choose a unique, easy-to-remember name
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <%= form.label :tag_number, "Tag Number", class: "form-label modern-label" do %>
+                    <i class="bi bi-tags me-2"></i>Tag Number *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.text_field :tag_number, 
+                        class: "form-control modern-input #{'is-invalid' if @cow.errors[:tag_number].any?}", 
+                        placeholder: "e.g., 001, A-123, COW001",
+                        required: true,
+                        data: { validate: "required" } %>
+                    <% if @cow.errors[:tag_number].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @cow.errors[:tag_number].first %>
+                      </div>
+                    <% else %>
+                      <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Unique identifier for tracking and identification
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <%= form.label :age, "Age (years)", class: "form-label modern-label" do %>
+                    <i class="bi bi-calendar me-2"></i>Age *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.number_field :age, 
+                        class: "form-control modern-input #{'is-invalid' if @cow.errors[:age].any?}", 
+                        min: 1, max: 20, 
+                        placeholder: "Enter age in years",
+                        required: true,
+                        data: { validate: "required" } %>
+                    <% if @cow.errors[:age].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @cow.errors[:age].first %>
+                      </div>
+                    <% else %>
+                      <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Age affects production capacity and health monitoring
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <%= form.label :mother_id, "Mother (for calves)", class: "form-label modern-label" do %>
+                    <i class="bi bi-heart-fill me-2"></i>Mother Cow
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.select :mother_id, 
+                        options_from_collection_for_select(
+                          (@farm ? @farm.cows.adult_cows : Cow.adult_cows).order(:name), 
+                          :id, 
+                          :name, 
+                          @cow.mother_id
+                        ),
+                        { prompt: 'Select mother (optional for calves)' },
+                        { class: "form-select modern-input" } %>
+                    <div class="form-text">
+                      <i class="bi bi-info-circle me-1"></i>
+                      Select the mother cow if this is a calf (leave empty for adult cows)
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Weight and Growth Tracking (for Calves) -->
+                <div class="weight-tracking-section" id="weightTrackingSection" style="display: none;">
+                  <h6 class="section-title">
+                    <i class="bi bi-speedometer me-2"></i>Weight & Growth Tracking
+                    <small class="text-muted">(Optional - for calves)</small>
+                  </h6>
+                  
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <%= form.label :current_weight, "Current Weight (kg)", class: "form-label modern-label" do %>
+                          <i class="bi bi-speedometer me-2"></i>Current Weight
+                        <% end %>
+                        <div class="input-container">
+                          <%= form.number_field :current_weight, 
+                              step: 0.1, 
+                              min: 0,
+                              placeholder: "Enter current weight",
+                              class: "form-control modern-input" %>
+                          <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Weight in kilograms
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <%= form.label :prev_weight, "Previous Weight (kg)", class: "form-label modern-label" do %>
+                          <i class="bi bi-graph-down me-2"></i>Previous Weight
+                        <% end %>
+                        <div class="input-container">
+                          <%= form.number_field :prev_weight, 
+                              step: 0.1, 
+                              min: 0,
+                              placeholder: "Enter previous weight",
+                              class: "form-control modern-input" %>
+                          <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Weight from last measurement
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <%= form.label :avg_daily_gain, "Average Daily Gain (kg/day)", class: "form-label modern-label" do %>
+                          <i class="bi bi-graph-up-arrow me-2"></i>Daily Gain
+                        <% end %>
+                        <div class="input-container">
+                          <%= form.number_field :avg_daily_gain, 
+                              step: 0.01, 
+                              min: 0,
+                              placeholder: "Enter daily gain rate",
+                              class: "form-control modern-input" %>
+                          <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Average weight gain per day
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <%= form.label :birth_date, "Birth Date", class: "form-label modern-label" do %>
+                          <i class="bi bi-calendar me-2"></i>Birth Date
+                        <% end %>
+                        <div class="input-container">
+                          <%= form.date_field :birth_date, 
+                              class: "form-control modern-input",
+                              max: Date.current %>
+                          <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            For precise age calculation
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="step-navigation">
+                <button type="button" class="btn btn-primary next-step" data-next="2">
+                  Continue to Characteristics
+                  <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 2: Characteristics -->
+            <div class="form-step" id="step2">
+              <div class="step-header">
+                <h5 class="step-title">
+                  <i class="bi bi-palette me-2"></i>
+                  Cow Characteristics
+                </h5>
+                <p class="step-description">
+                  Breed and physical characteristics for optimal management
+                </p>
+              </div>
+              
+              <div class="form-grid">
+                <div class="form-group">
+                  <%= form.label :breed, class: "form-label modern-label" do %>
+                    <i class="bi bi-award me-2"></i>Breed *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.select :breed, 
+                        options_for_select([
+                          ['Holstein', 'Holstein'],
+                          ['Jersey', 'Jersey'],
+                          ['Guernsey', 'Guernsey'],
+                          ['Ayrshire', 'Ayrshire'],
+                          ['Brown Swiss', 'Brown Swiss'],
+                          ['Friesian', 'Friesian'],
+                          ['Crossbred', 'Crossbred'],
+                          ['Other', 'Other']
+                        ], @cow.breed),
+                        { prompt: 'Select breed' },
+                        { class: "form-select modern-input #{'is-invalid' if @cow.errors[:breed].any?}", 
+                          required: true } %>
+                    <% if @cow.errors[:breed].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @cow.errors[:breed].first %>
+                      </div>
+                    <% else %>
+                      <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Breed affects milk production and care requirements
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <!-- Breed Information Cards -->
+                <div class="breed-info-container full-width">
+                  <div class="breed-cards">
+                    <div class="breed-card" data-breed="Holstein">
+                      <div class="breed-icon">🐄</div>
+                      <div class="breed-name">Holstein</div>
+                      <div class="breed-desc">High milk production, 25-30L/day</div>
+                    </div>
+                    <div class="breed-card" data-breed="Jersey">
+                      <div class="breed-icon">🟤</div>
+                      <div class="breed-name">Jersey</div>
+                      <div class="breed-desc">Rich milk fat, 15-20L/day</div>
+                    </div>
+                    <div class="breed-card" data-breed="Friesian">
+                      <div class="breed-icon">⚫</div>
+                      <div class="breed-name">Friesian</div>
+                      <div class="breed-desc">Excellent production, 20-25L/day</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="step-navigation">
+                <button type="button" class="btn btn-outline-secondary prev-step" data-prev="1">
+                  <i class="bi bi-arrow-left me-2"></i>
+                  Back to Basic Info
+                </button>
+                <button type="button" class="btn btn-primary next-step" data-next="3">
+                  Continue to Management
+                  <i class="bi bi-arrow-right ms-2"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 3: Management -->
+            <div class="form-step" id="step3">
+              <div class="step-header">
+                <h5 class="step-title">
+                  <i class="bi bi-gear me-2"></i>
+                  Management Settings
+                </h5>
+                <p class="step-description">
+                  Group assignment and status for proper herd management
+                </p>
+              </div>
+              
+              <div class="form-grid">
+                <div class="form-group">
+                  <%= form.label :group_name, "Group", class: "form-label modern-label" do %>
+                    <i class="bi bi-collection me-2"></i>Group Assignment
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.select :group_name,
+                        options_for_select([
+                          ['Group 1 - High Producers', 'Group 1'],
+                          ['Group 2 - Medium Producers', 'Group 2'], 
+                          ['Group 3 - Low Producers', 'Group 3'],
+                          ['Group 4 - Special Care', 'Group 4'],
+                          ['Pregnant Group', 'Pregnant'],
+                          ['Dry Cows', 'Dry']
+                        ], @cow.group_name),
+                        { prompt: 'Select group (optional)' },
+                        { class: "form-select modern-input" } %>
+                    <div class="form-text">
+                      <i class="bi bi-info-circle me-1"></i>
+                      Group assignment helps with feeding and management routines
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <%= form.label :status, class: "form-label modern-label" do %>
+                    <i class="bi bi-heart me-2"></i>Current Status *
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.select :status,
+                        options_for_select([
+                          ['Active - Producing milk', 'active'],
+                          ['Pregnant - Expecting calf', 'pregnant'],
+                          ['Sick - Requires attention', 'sick'],
+                          ['Inactive - Not producing', 'inactive']
+                        ], @cow.status),
+                        { prompt: 'Select current status' },
+                        { class: "form-select modern-input #{'is-invalid' if @cow.errors[:status].any?}", 
+                          required: true } %>
+                    <% if @cow.errors[:status].any? %>
+                      <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <%= @cow.errors[:status].first %>
+                      </div>
+                    <% else %>
+                      <div class="form-text">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Status affects production tracking and health monitoring
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+
+                <!-- Status Information -->
+                <div class="status-info-container full-width">
+                  <div class="status-cards">
+                    <div class="status-card active" data-status="active">
+                      <div class="status-indicator green"></div>
+                      <div class="status-label">Active</div>
+                      <div class="status-desc">Currently producing milk</div>
+                    </div>
+                    <div class="status-card pregnant" data-status="pregnant">
+                      <div class="status-indicator orange"></div>
+                      <div class="status-label">Pregnant</div>
+                      <div class="status-desc">Expecting calf, may reduce production</div>
+                    </div>
+                    <div class="status-card sick" data-status="sick">
+                      <div class="status-indicator red"></div>
+                      <div class="status-label">Sick</div>
+                      <div class="status-desc">Requires medical attention</div>
+                    </div>
+                    <div class="status-card inactive" data-status="inactive">
+                      <div class="status-indicator gray"></div>
+                      <div class="status-label">Inactive</div>
+                      <div class="status-desc">Not currently producing</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="step-navigation">
+                <button type="button" class="btn btn-outline-secondary prev-step" data-prev="2">
+                  <i class="bi bi-arrow-left me-2"></i>
+                  Back to Characteristics
+                </button>
+                <div class="submit-container">
+                  <%= form.submit "Add Cow to Herd", 
+                      class: "btn btn-success btn-lg submit-button",
+                      data: { loading_text: "Adding Cow..." } %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Scripts and Styles -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('cowForm');
+  const steps = document.querySelectorAll('.form-step');
+  const progressSteps = document.querySelectorAll('.progress-step');
+  const nextButtons = document.querySelectorAll('.next-step');
+  const prevButtons = document.querySelectorAll('.prev-step');
+  const submitButton = document.querySelector('.submit-button');
+  const breedSelect = document.querySelector('select[name="cow[breed]"]');
+  const statusSelect = document.querySelector('select[name="cow[status]"]');
+  const breedCards = document.querySelectorAll('.breed-card');
+  const statusCards = document.querySelectorAll('.status-card');
+  
+  let currentStep = 1;
+
+  // Step Navigation
+  nextButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const nextStep = parseInt(this.dataset.next);
+      if (validateCurrentStep()) {
+        goToStep(nextStep);
+      }
+    });
+  });
+
+  prevButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const prevStep = parseInt(this.dataset.prev);
+      goToStep(prevStep);
+    });
+  });
+
+  function goToStep(stepNumber) {
+    // Hide current step
+    steps[currentStep - 1].classList.remove('active');
+    progressSteps[currentStep - 1].classList.remove('active');
+    
+    // Show new step
+    steps[stepNumber - 1].classList.add('active');
+    progressSteps[stepNumber - 1].classList.add('active');
+    
+    // Mark previous steps as completed
+    for (let i = 0; i < stepNumber - 1; i++) {
+      progressSteps[i].classList.add('completed');
+    }
+    
+    currentStep = stepNumber;
+    
+    // Add entrance animation
+    steps[stepNumber - 1].style.animation = 'slideInRight 0.3s ease-out';
+    setTimeout(() => {
+      steps[stepNumber - 1].style.animation = '';
+    }, 300);
+  }
+
+  function validateCurrentStep() {
+    const currentStepElement = steps[currentStep - 1];
+    const requiredInputs = currentStepElement.querySelectorAll('[required]');
+    let isValid = true;
+
+    requiredInputs.forEach(input => {
+      if (!input.value.trim()) {
+        input.classList.add('is-invalid');
+        isValid = false;
+        
+        // Add shake animation
+        input.style.animation = 'shake 0.5s ease-in-out';
+        setTimeout(() => {
+          input.style.animation = '';
+        }, 500);
+      } else {
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+      }
+    });
+
+    return isValid;
+  }
+
+  // Breed card selection
+  breedCards.forEach(card => {
+    card.addEventListener('click', function() {
+      const breed = this.dataset.breed;
+      breedSelect.value = breed;
+      
+      // Update visual selection
+      breedCards.forEach(c => c.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+
+  // Status card selection
+  statusCards.forEach(card => {
+    card.addEventListener('click', function() {
+      const status = this.dataset.status;
+      statusSelect.value = status;
+      
+      // Update visual selection
+      statusCards.forEach(c => c.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+
+  // Update card selection based on dropdown
+  breedSelect.addEventListener('change', function() {
+    breedCards.forEach(card => {
+      card.classList.toggle('selected', card.dataset.breed === this.value);
+    });
+  });
+
+  statusSelect.addEventListener('change', function() {
+    statusCards.forEach(card => {
+      card.classList.toggle('selected', card.dataset.status === this.value);
+    });
+  });
+
+  // Real-time validation
+  const inputs = document.querySelectorAll('.modern-input');
+  inputs.forEach(input => {
+    input.addEventListener('input', function() {
+      if (this.hasAttribute('required') && this.value.trim()) {
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+      }
+    });
+    
+    input.addEventListener('blur', function() {
+      if (this.hasAttribute('required') && !this.value.trim()) {
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+      }
+    });
+  });
+
+  // Form submission enhancement
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      if (submitButton) {
+        const originalText = submitButton.textContent;
+        const loadingText = submitButton.dataset.loadingText || 'Adding Cow...';
+        
+        submitButton.disabled = true;
+        submitButton.innerHTML = `
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+          ${loadingText}
+        `;
+        
+        // Re-enable after timeout (fallback)
+        setTimeout(() => {
+          submitButton.disabled = false;
+          submitButton.textContent = originalText;
+        }, 10000);
+      }
+    });
+  }
+
+  // Input focus effects
+  inputs.forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement.classList.add('focused');
+    });
+    
+    input.addEventListener('blur', function() {
+      this.parentElement.classList.remove('focused');
+    });
+  });
+});
+</script>
+
+<style>
+/* Cow Form Enhanced Styles */
+.breed-info-container,
+.status-info-container {
+  grid-column: 1 / -1;
+  margin-top: 1rem;
+}
+
+.breed-cards,
+.status-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.breed-card,
+.status-card {
+  background: var(--muted-bg);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.breed-card:hover,
+.status-card:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.breed-card.selected,
+.status-card.selected {
+  border-color: var(--primary-color);
+  background: rgba(var(--primary-rgb), 0.1);
+}
+
+.breed-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.breed-name,
+.status-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.breed-desc,
+.status-desc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.status-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin: 0 auto 0.75rem;
+}
+
+.status-indicator.green {
+  background: var(--success-color);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.status-indicator.orange {
+  background: var(--warning-color);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.status-indicator.red {
+  background: var(--danger-color);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
+
+.status-indicator.gray {
+  background: var(--text-muted);
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.2);
+}
+
+/* Progress Steps for 3 steps */
+.progress-step {
+  min-width: 120px;
+}
+
+.progress-line {
+  flex: 1;
+  height: 2px;
+  background: rgba(255,255,255,0.3);
+  margin: 0 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .breed-cards,
+  .status-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .progress-step {
+    min-width: auto;
+    flex: 1;
+  }
+  
+  .step-label {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .form-card-header {
+    padding: 1rem;
+  }
+  
+  .form-card-body {
+    padding: 1rem;
+  }
+  
+  .breed-card,
+  .status-card {
+    padding: 1rem;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const motherSelect = document.getElementById('cow_mother_id');
+  const weightTrackingSection = document.getElementById('weightTrackingSection');
+  
+  // Function to toggle weight tracking section
+  function toggleWeightTracking() {
+    if (motherSelect.value && motherSelect.value !== '') {
+      weightTrackingSection.style.display = 'block';
+    } else {
+      weightTrackingSection.style.display = 'none';
+    }
+  }
+  
+  // Initial check
+  toggleWeightTracking();
+  
+  // Listen for changes
+  motherSelect.addEventListener('change', toggleWeightTracking);
+  
+  // Auto-calculate weight gain when both weights are entered
+  const currentWeightField = document.getElementById('cow_current_weight');
+  const prevWeightField = document.getElementById('cow_prev_weight');
+  
+  function calculateWeightGain() {
+    const currentWeight = parseFloat(currentWeightField.value) || 0;
+    const prevWeight = parseFloat(prevWeightField.value) || 0;
+    
+    if (currentWeight > 0 && prevWeight > 0) {
+      const weightGain = currentWeight - prevWeight;
+      // You could auto-fill a weight_gain field here if you add one
+      console.log('Weight gain:', weightGain, 'kg');
+    }
+  }
+  
+  if (currentWeightField && prevWeightField) {
+    currentWeightField.addEventListener('input', calculateWeightGain);
+    prevWeightField.addEventListener('input', calculateWeightGain);
+  }
+});
+</script>

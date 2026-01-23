@@ -1,0 +1,896 @@
+<% content_for :title, "Animal Management" %>
+
+<!-- Enhanced Header -->
+<div class="page-header mb-5">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center">
+        <div class="page-icon me-3">
+          <i class="bi bi-heart-fill"></i>
+        </div>
+        <div>
+          <h1 class="page-title mb-0">🐄 Animal Management</h1>
+          <p class="text-muted mb-0">
+            <% if @farm %>
+              Managing animals at <strong><%= @farm.name %></strong>
+            <% else %>
+              Comprehensive livestock overview
+            <% end %>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 text-end">
+      <div class="action-buttons">
+        <% if @farm %>
+          <%= link_to new_farm_cow_path(@farm), class: "btn btn-success me-2" do %>
+            <i class="bi bi-plus-circle me-2"></i>Add New Cow
+          <% end %>
+          <%= link_to @farm, class: "btn btn-outline-primary" do %>
+            <i class="bi bi-arrow-left me-2"></i>Back to Farm
+          <% end %>
+        <% else %>
+          <%= link_to farms_path, class: "btn btn-outline-primary me-2" do %>
+            <i class="bi bi-building me-2"></i>View Farms
+          <% end %>
+          <%= link_to new_cow_path, class: "btn btn-success" do %>
+            <i class="bi bi-plus-circle me-2"></i>Add New Cow
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-5">
+  <div class="col-lg-3 col-md-6">
+    <div class="summary-card bg-success">
+      <div class="summary-icon">
+        <i class="bi bi-heart-fill"></i>
+      </div>
+      <div class="summary-content">
+        <div class="summary-number"><%= @cows.where(status: 'active').count %></div>
+        <div class="summary-label">
+          <%= params[:animal_type] == 'calves' ? 'Active Calves' : 
+              params[:animal_type] == 'adults' ? 'Active Adult Cows' : 
+              'Active Animals' %>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6">
+    <div class="summary-card bg-info">
+      <div class="summary-icon">
+        <i class="bi bi-<%= params[:animal_type] == 'calves' ? 'baby-carriage' : 'droplet-fill' %>"></i>
+      </div>
+      <div class="summary-content">
+        <div class="summary-number">
+          <% if params[:animal_type] == 'calves' %>
+            <%= @stats[:avg_weight] || 0 %>kg
+          <% elsif params[:animal_type] == 'adults' %>
+            <%= Cow.adult_cows.joins(:calves).distinct.count %>
+          <% else %>
+            0.0L
+          <% end %>
+        </div>
+        <div class="summary-label">
+          <% if params[:animal_type] == 'calves' %>
+            Avg Weight
+          <% elsif params[:animal_type] == 'adults' %>
+            Have Calves
+          <% else %>
+            Today's Production
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6">
+    <div class="summary-card bg-warning">
+      <div class="summary-icon">
+        <i class="bi bi-<%= params[:animal_type] == 'adults' ? 'collection' : 'calendar-week' %>"></i>
+      </div>
+      <div class="summary-content">
+        <div class="summary-number">
+          <% if params[:animal_type] == 'calves' %>
+            <%= @stats[:avg_daily_gain] || 0 %>kg/day
+          <% elsif params[:animal_type] == 'adults' %>
+            <%= Cow.joins(:calves).sum { |cow| cow.calves.count } %>
+          <% else %>
+            0.0L
+          <% end %>
+        </div>
+        <div class="summary-label">
+          <% if params[:animal_type] == 'calves' %>
+            Avg Daily Gain
+          <% elsif params[:animal_type] == 'adults' %>
+            Total Calves
+          <% else %>
+            Avg Daily (Week)
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6">
+    <div class="summary-card bg-primary">
+      <div class="summary-icon">
+        <i class="bi bi-graph-up"></i>
+      </div>
+      <div class="summary-content">
+        <div class="summary-number">
+          <% if params[:animal_type] == 'calves' %>
+            <%= @stats[:fast_growing_count] || 0 %>
+          <% else %>
+            <%= @cows.count %>
+          <% end %>
+        </div>
+        <div class="summary-label">
+          <% if params[:animal_type] == 'calves' %>
+            Fast Growing
+          <% elsif params[:animal_type] == 'adults' %>
+            Total Adults
+          <% else %>
+            Total Animals
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Animal Type Tabs -->
+<div class="card mb-4">
+  <div class="card-body p-0">
+    <ul class="nav nav-tabs nav-tabs-custom" id="animalTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <%= link_to "🐄 Adult Cows", 
+                    request.params.merge(animal_type: 'adults'), 
+                    class: "nav-link #{'active' if params[:animal_type] == 'adults'}",
+                    id: "adults-tab",
+                    data: { turbo_action: "replace" } %>
+      </li>
+      <li class="nav-item" role="presentation">
+        <%= link_to "🐮 Calves", 
+                    request.params.merge(animal_type: 'calves'), 
+                    class: "nav-link #{'active' if params[:animal_type] == 'calves'}",
+                    id: "calves-tab",
+                    data: { turbo_action: "replace" } %>
+      </li>
+      <li class="nav-item" role="presentation">
+        <%= link_to "📋 All Animals", 
+                    request.params.except(:animal_type), 
+                    class: "nav-link #{'active' if params[:animal_type].blank?}",
+                    id: "all-tab",
+                    data: { turbo_action: "replace" } %>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<% if params[:animal_type] == 'calves' && @cows.any? %>
+<!-- Calves Analytics Section -->
+<div class="row mb-4">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-graph-up me-2"></i>
+          Growth Progress Chart
+        </h5>
+      </div>
+      <div class="card-body">
+        <canvas id="calvesGrowthChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-pie-chart me-2"></i>
+          Weight Distribution
+        </h5>
+      </div>
+      <div class="card-body">
+        <canvas id="weightDistributionChart" width="300" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-heart-fill me-2"></i>
+          Calves by Mother
+        </h5>
+      </div>
+      <div class="card-body">
+        <canvas id="calvesByMotherChart" width="300" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-speedometer me-2"></i>
+          Growth Performance
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6">
+            <div class="stat-item">
+              <div class="stat-number text-success"><%= @stats[:avg_weight] || 0 %>kg</div>
+              <div class="stat-label">Average Weight</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="stat-item">
+              <div class="stat-number text-info"><%= @stats[:avg_daily_gain] || 0 %>kg/day</div>
+              <div class="stat-label">Avg Daily Gain</div>
+            </div>
+          </div>
+          <div class="col-6 mt-3">
+            <div class="stat-item">
+              <div class="stat-number text-warning"><%= @stats[:fast_growing_count] || 0 %></div>
+              <div class="stat-label">Fast Growing</div>
+            </div>
+          </div>
+          <div class="col-6 mt-3">
+            <div class="stat-item">
+              <div class="stat-number text-primary"><%= @stats[:birth_this_year] || 0 %></div>
+              <div class="stat-label">Born This Year</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<% end %>
+
+<% if @cows.any? %>
+  <!-- Enhanced Cows Grid -->
+  <div class="cows-grid">
+    <% @cows.each do |cow| %>
+      <div class="cow-card">
+        <div class="cow-card-header">
+          <div class="d-flex align-items-center">
+            <div class="cow-avatar me-3">
+              <i class="bi bi-heart-fill"></i>
+              <div class="cow-status <%= cow.status || 'active' %>"></div>
+            </div>
+            <div>
+              <h5 class="cow-name mb-1"><%= cow.name %></h5>
+              <div class="cow-tag">
+                <i class="bi bi-tag me-1"></i>
+                <%= cow.tag_number %>
+              </div>
+            </div>
+          </div>
+          
+          <div class="cow-actions">
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-three-dots"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <%= link_to cow_path(cow), class: "dropdown-item" do %>
+                    <i class="bi bi-eye me-2"></i>View Details
+                  <% end %>
+                </li>
+                <li>
+                  <%= link_to edit_cow_path(cow), class: "dropdown-item" do %>
+                    <i class="bi bi-pencil me-2"></i>Edit
+                  <% end %>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <%= link_to cow_path(cow), method: :delete, 
+                             class: "dropdown-item text-danger", 
+                             confirm: "Are you sure?" do %>
+                    <i class="bi bi-trash me-2"></i>Delete
+                  <% end %>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div class="cow-card-body">
+          <div class="cow-details-grid">
+            <div class="detail-item">
+              <i class="bi bi-heart detail-icon"></i>
+              <div>
+                <div class="detail-label">Breed</div>
+                <div class="detail-value"><%= cow.breed || 'Unknown' %></div>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <i class="bi bi-calendar detail-icon"></i>
+              <div>
+                <div class="detail-label">Age</div>
+                <div class="detail-value"><%= cow.age || 0 %> years</div>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <i class="bi bi-building detail-icon"></i>
+              <div>
+                <div class="detail-label">Farm</div>
+                <div class="detail-value"><%= cow.farm.name %></div>
+              </div>
+            </div>
+            
+            <% if cow.mother.present? %>
+            <div class="detail-item">
+              <i class="bi bi-heart-fill detail-icon text-warning"></i>
+              <div>
+                <div class="detail-label">Mother</div>
+                <div class="detail-value">
+                  <span class="text-primary fw-bold"><%= cow.mother.tag_number %></span>
+                  <br>
+                  <small class="text-muted"><%= cow.mother.name %></small>
+                </div>
+              </div>
+            </div>
+            <% end %>
+            
+            <% if cow.is_calf? && cow.current_weight.present? %>
+            <div class="detail-item">
+              <i class="bi bi-speedometer detail-icon text-info"></i>
+              <div>
+                <div class="detail-label">Current Weight</div>
+                <div class="detail-value"><%= cow.current_weight %> kg</div>
+              </div>
+            </div>
+            <% end %>
+            
+            <% if cow.is_calf? && cow.weight_gain.present? %>
+            <div class="detail-item">
+              <i class="bi bi-graph-up detail-icon text-success"></i>
+              <div>
+                <div class="detail-label">Weight Gain</div>
+                <div class="detail-value">+<%= cow.weight_gain %> kg</div>
+              </div>
+            </div>
+            <% end %>
+            
+            <% if cow.is_calf? && cow.avg_daily_gain.present? %>
+            <div class="detail-item">
+              <i class="bi bi-lightning-fill detail-icon text-warning"></i>
+              <div>
+                <div class="detail-label">Daily Gain</div>
+                <div class="detail-value">
+                  <%= cow.avg_daily_gain %> kg/day
+                  <br>
+                  <small class="text-<%= cow.avg_daily_gain >= 0.7 ? 'success' : cow.avg_daily_gain >= 0.4 ? 'warning' : 'danger' %>">
+                    <%= cow.growth_rate_category %>
+                  </small>
+                </div>
+              </div>
+            </div>
+            <% end %>
+            
+            <% if cow.is_calf? && cow.age_in_days %>
+            <div class="detail-item">
+              <i class="bi bi-calendar-check detail-icon text-primary"></i>
+              <div>
+                <div class="detail-label">Age (Days)</div>
+                <div class="detail-value"><%= cow.age_in_days %> days</div>
+              </div>
+            </div>
+            <% end %>
+            
+            <div class="detail-item">
+              <i class="bi bi-circle-fill detail-icon"></i>
+              <div>
+                <div class="detail-label">Status</div>
+                <div class="detail-value"><%= (cow.status || 'active').humanize %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="cow-card-footer">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="status-badge status-<%= cow.status || 'active' %>">
+              <i class="bi bi-circle-fill me-1"></i>
+              <%= (cow.status || 'active').humanize %>
+            </span>
+            
+            <div class="quick-actions">
+              <%= link_to cow_path(cow), class: "btn btn-sm btn-outline-primary me-1", title: "View Details" do %>
+                <i class="bi bi-eye"></i>
+              <% end %>
+              <%= link_to edit_cow_path(cow), class: "btn btn-sm btn-outline-secondary", title: "Edit" do %>
+                <i class="bi bi-pencil"></i>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="text-center py-5">
+    <i class="bi bi-circle display-1 text-muted"></i>
+    <h3 class="mt-3">No cows registered</h3>
+    <p class="text-muted">
+      <% if @farm %>
+        Start by adding the first cow to this farm.
+      <% else %>
+        No cows are registered in any farm yet.
+      <% end %>
+    </p>
+    <% if @farm %>
+      <%= link_to "Add First Cow", new_farm_cow_path(@farm), class: "btn btn-success" %>
+    <% else %>
+      <%= link_to "View Farms", farms_path, class: "btn btn-primary" %>
+    <% end %>
+  </div>
+<% end %>
+
+<style>
+  /* Animal Type Tabs */
+  .nav-tabs-custom {
+    border-bottom: 2px solid #e2e8f0;
+    padding: 0 20px;
+  }
+  
+  .nav-tabs-custom .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #718096;
+    font-weight: 500;
+    padding: 15px 20px;
+    margin-right: 10px;
+    border-radius: 0;
+    transition: all 0.3s ease;
+  }
+  
+  .nav-tabs-custom .nav-link:hover {
+    border-color: transparent;
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+  }
+  
+  .nav-tabs-custom .nav-link.active {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    border-bottom-color: #667eea;
+    font-weight: 600;
+  }
+  
+  /* Page Header */
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+  }
+  
+  .page-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+  }
+  
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  
+  .summary-card {
+    border-radius: 15px;
+    color: white;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .summary-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .summary-card.bg-success {
+    background: linear-gradient(135deg, #48bb78, #38a169) !important;
+  }
+  
+  .summary-card.bg-info {
+    background: linear-gradient(135deg, #4299e1, #3182ce) !important;
+  }
+  
+  .summary-card.bg-warning {
+    background: linear-gradient(135deg, #ed8936, #dd6b20) !important;
+  }
+  
+  .summary-card.bg-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  }
+  
+  .summary-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  
+  .summary-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+  
+  .cows-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+  }
+  
+  .cow-card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+  
+  .cow-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15);
+    border-color: rgba(102, 126, 234, 0.2);
+  }
+  
+  .cow-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  
+  .cow-avatar {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+  }
+  
+  .cow-status {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid white;
+  }
+  
+  .cow-status.active {
+    background: #48bb78;
+  }
+  
+  .cow-status.inactive {
+    background: #e53e3e;
+  }
+  
+  .cow-name {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2d3748;
+  }
+  
+  .cow-tag {
+    color: #718096;
+    font-size: 0.9rem;
+  }
+  
+  .cow-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .detail-icon {
+    color: #667eea;
+    font-size: 1.1rem;
+  }
+  
+  .detail-label {
+    font-size: 0.8rem;
+    color: #718096;
+    margin-bottom: 2px;
+  }
+  
+  .detail-value {
+    font-weight: 600;
+    color: #2d3748;
+  }
+  
+  .cow-card-footer {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 15px;
+    margin-top: 20px;
+  }
+  
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  
+  .status-badge.status-active {
+    background: rgba(72, 187, 120, 0.1);
+    color: #276749;
+  }
+  
+  .status-badge.status-inactive {
+    background: rgba(229, 62, 62, 0.1);
+    color: #822727;
+  }
+  
+  /* Mother and Calf Info Badges */
+  .mother-info-badge {
+    background: rgba(237, 137, 54, 0.1);
+    color: #9c4221;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    border-left: 3px solid #ed8936;
+  }
+  
+  .calf-info-badge {
+    background: rgba(66, 153, 225, 0.1);
+    color: #2c5aa0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    border-left: 3px solid #4299e1;
+  }
+  
+  .calves-info-badge {
+    background: rgba(72, 187, 120, 0.1);
+    color: #22543d;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    border-left: 3px solid #48bb78;
+  }
+  
+  @media (max-width: 768px) {
+    .cows-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .cow-details-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Calves Analytics Styles */
+  .stat-item {
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  
+  .stat-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+  }
+  
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+  
+  canvas {
+    max-height: 300px !important;
+  }
+  
+  /* Loading states for tab switching */
+  .tab-loading {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  
+  .loading-overlay {
+    position: relative;
+  }
+  
+  .loading-overlay::after {
+    content: 'Loading...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: 600;
+    color: #667eea;
+    z-index: 1000;
+  }
+</style>
+
+<% if params[:animal_type] == 'calves' && @cows.any? %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Calves Growth Chart
+  fetch('<%= @farm ? farm_cows_chart_data_path(@farm) : chart_data_cows_path %>?chart_type=calves_growth')
+    .then(response => response.json())
+    .then(data => {
+      const ctx = document.getElementById('calvesGrowthChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Current vs Previous Weight (kg)'
+            },
+            legend: {
+              display: true
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Weight (kg)'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Calves'
+              }
+            }
+          }
+        }
+      });
+    });
+
+  // Weight Distribution Chart
+  fetch('<%= @farm ? farm_cows_chart_data_path(@farm) : chart_data_cows_path %>?chart_type=calves_weight_distribution')
+    .then(response => response.json())
+    .then(data => {
+      const ctx = document.getElementById('weightDistributionChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Weight Distribution'
+            },
+            legend: {
+              display: true,
+              position: 'bottom'
+            }
+          }
+        }
+      });
+    });
+
+  // Calves by Mother Chart
+  fetch('<%= @farm ? farm_cows_chart_data_path(@farm) : chart_data_cows_path %>?chart_type=calves_by_mother')
+    .then(response => response.json())
+    .then(data => {
+      const ctx = document.getElementById('calvesByMotherChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'pie',
+        data: data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Calves by Mother'
+            },
+            legend: {
+              display: true,
+              position: 'right'
+            }
+          }
+        }
+      });
+    });
+});
+</script>
+<% end %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle tab navigation with loading states
+  const tabLinks = document.querySelectorAll('.nav-tabs-custom .nav-link');
+  
+  tabLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      // Remove active class from all tabs
+      tabLinks.forEach(tab => tab.classList.remove('active'));
+      
+      // Add active class to clicked tab
+      this.classList.add('active');
+      
+      // Add loading state
+      this.style.opacity = '0.6';
+      
+      // Remove loading state after a short delay
+      setTimeout(() => {
+        this.style.opacity = '1';
+      }, 500);
+    });
+  });
+});
+
+// Handle Turbo navigation events
+document.addEventListener('turbo:visit', function() {
+  // Show loading indicator
+  const activeTab = document.querySelector('.nav-tabs-custom .nav-link.active');
+  if (activeTab) {
+    activeTab.style.opacity = '0.6';
+  }
+});
+
+document.addEventListener('turbo:load', function() {
+  // Remove loading indicator
+  const activeTab = document.querySelector('.nav-tabs-custom .nav-link.active');
+  if (activeTab) {
+    activeTab.style.opacity = '1';
+  }
+});
+</script>

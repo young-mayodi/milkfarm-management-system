@@ -1,0 +1,420 @@
+<div class="row">
+  <div class="col-md-8">
+    <h1><%= @cow.name %></h1>
+    <p class="lead text-muted">
+      Tag: <%= @cow.tag_number %> • 
+      <%= @cow.breed %> • 
+      <%= @cow.age %> years old
+      <span class="badge bg-<%= @cow.status_badge_class %> ms-2">
+        <%= @cow.status.humanize %>
+      </span>
+    </p>
+  </div>
+  <div class="col-md-4 text-end">
+    <%= link_to "Edit Cow", edit_farm_cow_path(@cow.farm, @cow), class: "btn btn-primary me-2" %>
+    <%= link_to "Back to Farm", @cow.farm, class: "btn btn-outline-secondary" %>
+  </div>
+</div>
+
+<!-- Cow Info -->
+<div class="row mb-4">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Cow Information</h5>
+        <dl class="row">
+          <dt class="col-sm-3">Farm:</dt>
+          <dd class="col-sm-9"><%= link_to @cow.farm.name, @cow.farm, class: "text-decoration-none" %></dd>
+          
+          <dt class="col-sm-3">Tag Number:</dt>
+          <dd class="col-sm-9"><%= @cow.tag_number %></dd>
+          
+          <dt class="col-sm-3">Breed:</dt>
+          <dd class="col-sm-9"><%= @cow.breed %></dd>
+          
+          <dt class="col-sm-3">Age:</dt>
+          <dd class="col-sm-9"><%= @cow.age %> years</dd>
+          
+          <% if @cow.group_name.present? %>
+            <dt class="col-sm-3">Group:</dt>
+            <dd class="col-sm-9"><%= @cow.group_name %></dd>
+          <% end %>
+          
+          <dt class="col-sm-3">Status:</dt>
+          <dd class="col-sm-9">
+            <span class="badge bg-<%= @cow.status_badge_class %>">
+              <%= @cow.status.humanize %>
+            </span>
+          </dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title"><i class="bi bi-speedometer2"></i> Production Performance</h5>
+        <div class="text-center mb-3">
+          <h4 class="text-primary"><%= number_with_precision(@average_production, precision: 1) %>L</h4>
+          <small class="text-muted">Average Daily (30 days)</small>
+          
+          <% avg_benchmark = 20.0 %>
+          <div class="progress mt-2" style="height: 10px;">
+            <div class="progress-bar bg-success" 
+                 style="width: <%= [(@average_production / avg_benchmark * 100), 100].min %>%">
+            </div>
+          </div>
+          <small class="text-muted">
+            <%= ((@average_production / avg_benchmark) * 100).round(1) %>% of target (20L/day)
+          </small>
+        </div>
+        
+        <hr>
+        
+        <div class="row text-center">
+          <div class="col-6">
+            <div class="metric-box">
+              <% if @cow.latest_production %>
+                <div class="fw-bold text-success">
+                  <%= number_with_precision(@cow.latest_production.total_production, precision: 1) %>L
+                </div>
+                <small class="text-muted">Latest (<%= @cow.latest_production.production_date.strftime("%b %d") %>)</small>
+              <% else %>
+                <div class="text-muted">No recent data</div>
+              <% end %>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="metric-box">
+              <div class="fw-bold text-info">
+                <%= @cow.production_records.where(production_date: 7.days.ago..Date.current).count %>
+              </div>
+              <small class="text-muted">Records (7 days)</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Production Charts -->
+<div class="row mb-4">
+  <!-- Debug info -->
+  <div class="col-12 mb-3">
+    <div class="alert alert-info">
+      <h6 class="mb-1"><i class="bi bi-graph-up"></i> Individual Production Analytics for <%= @cow.name %></h6>
+      <small>
+        <strong>Chart Status:</strong> 
+        <%= @production_chart_data[:datasets].first[:data].length %> daily records available |
+        <%= @weekly_chart_data[:datasets].first[:data].length %> weeks of data |
+        <%= @cow.production_records.count %> total production records
+      </small>
+    </div>
+  </div>
+  
+  <div class="col-lg-8">
+    <div class="card chart-card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-bar-chart-line"></i> Daily Production Breakdown (30 days)</h5>
+        <small class="opacity-75">Morning, Noon, Evening & Total production trends</small>
+      </div>
+      <div class="card-body" style="height: 400px;">
+        <canvas id="productionChart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-4">
+    <div class="card chart-card">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-calendar-week"></i> Weekly Averages</h5>
+        <small class="opacity-75">Performance by week</small>
+      </div>
+      <div class="card-body" style="height: 400px;">
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Additional Analytics -->
+<div class="row mb-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Production Trends</h5>
+        <small>Performance analysis over time</small>
+      </div>
+      <div class="card-body">
+        <% last_7_days = @cow.production_records.where(production_date: 7.days.ago..Date.current) %>
+        <% prev_7_days = @cow.production_records.where(production_date: 14.days.ago..8.days.ago) %>
+        
+        <% current_avg = last_7_days.average(:total_production) || 0 %>
+        <% previous_avg = prev_7_days.average(:total_production) || 0 %>
+        <% change_pct = previous_avg > 0 ? ((current_avg - previous_avg) / previous_avg * 100) : 0 %>
+        
+        <div class="row text-center">
+          <div class="col-6">
+            <div class="metric-item">
+              <h6 class="text-primary"><%= number_with_precision(current_avg, precision: 1) %>L</h6>
+              <small class="text-muted">Last 7 Days Avg</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="metric-item">
+              <h6 class="<%= change_pct >= 0 ? 'text-success' : 'text-danger' %>">
+                <i class="bi bi-arrow-<%= change_pct >= 0 ? 'up' : 'down' %>"></i>
+                <%= change_pct.abs.round(1) %>%
+              </h6>
+              <small class="text-muted">vs Previous Week</small>
+            </div>
+          </div>
+        </div>
+        
+        <hr>
+        
+        <!-- Quick Stats -->
+        <div class="row small text-center">
+          <div class="col-4">
+            <div class="text-success">
+              <strong><%= (@cow.production_records.maximum(:total_production) || 0).round(1) %>L</strong><br>
+              <span class="text-muted">Best Day</span>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="text-warning">
+              <strong><%= (@cow.production_records.minimum(:total_production) || 0).round(1) %>L</strong><br>
+              <span class="text-muted">Lowest Day</span>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="text-info">
+              <strong><%= (@cow.production_records.sum(:total_production) || 0).round(1) %>L</strong><br>
+              <span class="text-muted">Total Ever</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h5>
+        <small>Last 5 production records</small>
+      </div>
+      <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+        <% @cow.production_records.recent.limit(5).each do |record| %>
+          <div class="d-flex justify-content-between align-items-center mb-2 p-2 rounded" style="background: rgba(0,0,0,0.05);">
+            <div>
+              <small class="text-muted"><%= record.production_date.strftime("%b %d, %Y") %></small>
+              <div class="small">
+                <span class="badge bg-warning">M: <%= record.morning_production.round(1) %>L</span>
+                <span class="badge bg-primary">N: <%= record.noon_production.round(1) %>L</span>
+                <span class="badge bg-secondary">E: <%= record.evening_production.round(1) %>L</span>
+              </div>
+            </div>
+            <div class="text-end">
+              <strong class="text-success"><%= record.total_production.round(1) %>L</strong>
+            </div>
+          </div>
+        <% end %>
+        
+        <% if @cow.production_records.empty? %>
+          <div class="text-center py-3 text-muted">
+            <i class="bi bi-calendar-x" style="font-size: 2rem;"></i>
+            <p class="mt-2 mb-0">No production records yet</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions for Cow -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Quick Actions</h5>
+        <div class="row">
+          <div class="col-md-3">
+            <%= link_to "Add Production Record", new_farm_cow_production_record_path(@cow.farm, @cow), class: "btn btn-success w-100" %>
+          </div>
+          <div class="col-md-3">
+            <%= link_to "View All Records", farm_cow_production_records_path(@cow.farm, @cow), class: "btn btn-info w-100" %>
+          </div>
+          <div class="col-md-3">
+            <%= link_to "Production Trends", production_trends_reports_path(cow_id: @cow.id), class: "btn btn-primary w-100" %>
+          </div>
+          <div class="col-md-3">
+            <%= link_to "Edit Cow", edit_farm_cow_path(@cow.farm, @cow), class: "btn btn-warning w-100" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="btn-group" role="group">
+      <%= link_to farm_cow_production_records_path(@cow.farm, @cow), class: "btn btn-outline-info" do %>
+        <i class="bi bi-clipboard-data me-1"></i>View Production Records
+      <% end %>
+      <%= link_to new_farm_cow_production_record_path(@cow.farm, @cow), class: "btn btn-outline-success" do %>
+        <i class="bi bi-plus me-1"></i>Add Production Record
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Production Records -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between">
+        <h5 class="mb-0">Recent Production Records</h5>
+        <%= link_to "View All", farm_cow_production_records_path(@cow.farm, @cow), class: "btn btn-sm btn-primary" %>
+      </div>
+      <div class="card-body">
+        <% if @recent_production.any? %>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Morning</th>
+                  <th>Noon</th>
+                  <th>Evening</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @recent_production.each do |record| %>
+                  <tr>
+                    <td><%= record.production_date.strftime("%b %d, %Y") %></td>
+                    <td><%= number_with_precision(record.morning_production, precision: 1) %>L</td>
+                    <td><%= number_with_precision(record.noon_production, precision: 1) %>L</td>
+                    <td><%= number_with_precision(record.evening_production, precision: 1) %>L</td>
+                    <td>
+                      <span class="badge bg-primary">
+                        <%= number_with_precision(record.total_production, precision: 1) %>L
+                      </span>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p class="text-muted">No production records yet.</p>
+          <%= link_to "Add first record", new_farm_cow_production_record_path(@cow.farm, @cow), class: "btn btn-sm btn-primary" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize production chart
+  const productionCtx = document.getElementById('productionChart');
+  if (productionCtx) {
+    new Chart(productionCtx, {
+      type: 'line',
+      data: <%= chart_data_json(@production_chart_data) %>,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Daily Production by Milking Session'
+          },
+          legend: {
+            display: true,
+            position: 'top'
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Production (Liters)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Date'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Initialize weekly averages chart
+  const weeklyCtx = document.getElementById('weeklyChart');
+  if (weeklyCtx) {
+    new Chart(weeklyCtx, {
+      type: 'bar',
+      data: <%= chart_data_json(@weekly_chart_data) %>,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Weekly Average Production'
+          },
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Average Production (Liters)'
+            }
+          }
+        }
+      }
+    });
+  }
+});
+</script>
+
+<style>
+  .chart-card {
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+  }
+  
+  .chart-card:hover {
+    border-color: var(--bs-primary);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  }
+  
+  .metric-box {
+    padding: 1rem;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.02);
+    border: 1px solid rgba(0,0,0,0.1);
+  }
+  
+  .metric-item {
+    padding: 0.5rem;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.02);
+  }
+</style>

@@ -1,0 +1,50 @@
+<!-- Enhanced Data Visualization Dashboard -->
+<div class="production-trends-widget mb-4">
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-gradient-primary text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-graph-up me-2"></i>
+        Production Trends for <%= @date.strftime("%B %d") %>
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-8">
+          <!-- Mini Chart showing last 7 days trends -->
+          <canvas id="weeklyTrendChart" width="400" height="200"></canvas>
+        </div>
+        <div class="col-md-4">
+          <div class="trend-summary">
+            <div class="trend-item">
+              <div class="trend-icon text-success">
+                <i class="bi bi-arrow-up-circle-fill"></i>
+              </div>
+              <div class="trend-details">
+                <div class="trend-value">+12.5%</div>
+                <small class="text-muted">vs Last Week</small>
+              </div>
+            </div>
+            <div class="trend-item">
+              <div class="trend-icon text-info">
+                <i class="bi bi-bullseye"></i>
+              </div>
+              <div class="trend-details">
+                <div class="trend-value">87%</div>
+                <small class="text-muted">Target Achievement</small>
+              </div>
+            </div>
+            <div class="trend-item">
+              <div class="trend-icon text-warning">
+                <i class="bi bi-clock-fill"></i>
+              </div>
+              <div class="trend-details">
+                <div class="trend-value">2.3 min</div>
+                <small class="text-muted">Avg Entry Time</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

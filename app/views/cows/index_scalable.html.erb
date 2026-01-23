@@ -1,0 +1,451 @@
+<%# filepath: /Users/youngmayodi/craftsman/farm-bar/milk_production_system/app/views/cows/index_table_view.html.erb %>
+<% content_for :title, "Animal Management" %>
+
+<!-- Enhanced Header with View Toggle -->
+<div class="page-header mb-4">
+  <div class="row align-items-center">
+    <div class="col-lg-6">
+      <div class="d-flex align-items-center">
+        <div class="page-icon me-3">
+          <i class="bi bi-heart-fill"></i>
+        </div>
+        <div>
+          <h1 class="page-title mb-0">🐄 Animal Management</h1>
+          <p class="text-muted mb-0">
+            <span class="fw-semibold"><%= @total_count %></span> animals 
+            <% if @farm %>
+              at <strong><%= @farm.name %></strong>
+            <% else %>
+              across all farms
+            <% end %>
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-6">
+      <div class="row g-2 align-items-center">
+        <!-- View Toggle -->
+        <div class="col-auto">
+          <div class="btn-group" role="group" aria-label="View toggle">
+            <%= link_to cows_path(view: 'table', **request.query_parameters.except('view')), 
+                        class: "btn btn-sm #{'btn-primary' if params[:view] != 'cards'} #{'btn-outline-primary' if params[:view] == 'cards'}" do %>
+              <i class="bi bi-table me-1"></i>Table
+            <% end %>
+            <%= link_to cows_path(view: 'cards', **request.query_parameters.except('view')), 
+                        class: "btn btn-sm #{'btn-primary' if params[:view] == 'cards'} #{'btn-outline-primary' if params[:view] != 'cards'}" do %>
+              <i class="bi bi-grid-3x3-gap me-1"></i>Cards
+            <% end %>
+          </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="col">
+          <div class="d-flex justify-content-end gap-2">
+            <% if @farm %>
+              <%= link_to new_farm_cow_path(@farm), class: "btn btn-success btn-sm" do %>
+                <i class="bi bi-plus-circle me-1"></i>Add Cow
+              <% end %>
+            <% else %>
+              <%= link_to new_cow_path, class: "btn btn-success btn-sm" do %>
+                <i class="bi bi-plus-circle me-1"></i>Add Cow
+              <% end %>
+            <% end %>
+            
+            <div class="btn-group">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-download me-1"></i>Export
+              </button>
+              <ul class="dropdown-menu">
+                <li><%= link_to "CSV Export", cows_path(format: :csv), class: "dropdown-item" %></li>
+                <li><%= link_to "PDF Report", cows_path(format: :pdf), class: "dropdown-item" %></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Advanced Filters & Search -->
+<div class="filters-section mb-4">
+  <div class="card border-0 shadow-sm">
+    <div class="card-body py-3">
+      <%= form_with url: cows_path, method: :get, local: true, class: "filters-form" do |form| %>
+        <%= form.hidden_field :view, value: params[:view] %>
+        
+        <div class="row g-3 align-items-end">
+          <!-- Quick Search -->
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Quick Search</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-search"></i>
+              </span>
+              <%= form.text_field :search, 
+                                 value: params[:search], 
+                                 placeholder: "Name, tag, or breed...", 
+                                 class: "form-control" %>
+            </div>
+          </div>
+          
+          <!-- Farm Filter -->
+          <% unless @farm %>
+            <div class="col-md-2">
+              <label class="form-label small fw-semibold">Farm</label>
+              <%= form.collection_select :farm_id, 
+                      Farm.all, :id, :name, 
+                      { include_blank: "All Farms", selected: params[:farm_id] }, 
+                      { class: "form-select" } %>
+            </div>
+          <% end %>
+          
+          <!-- Status Filter -->
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Status</label>
+            <%= form.select :status, 
+                options_for_select([
+                  ['All Status', ''],
+                  ['Active', 'active'],
+                  ['Sick', 'sick'],
+                  ['Dry', 'dry'],
+                  ['Pregnant', 'pregnant'],
+                  ['Retired', 'retired']
+                ], params[:status]), 
+                {}, { class: "form-select" } %>
+          </div>
+          
+          <!-- Breed Filter -->
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Breed</label>
+            <%= form.collection_select :breed, 
+                    Cow.distinct.pluck(:breed).compact, :to_s, :to_s,
+                    { include_blank: "All Breeds", selected: params[:breed] }, 
+                    { class: "form-select" } %>
+          </div>
+          
+          <!-- Age Range -->
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold">Age Range</label>
+            <%= form.select :age_range,
+                options_for_select([
+                  ['All Ages', ''],
+                  ['0-2 years', '0-2'],
+                  ['3-5 years', '3-5'],
+                  ['6-8 years', '6-8'],
+                  ['9+ years', '9+']
+                ], params[:age_range]),
+                {}, { class: "form-select" } %>
+          </div>
+          
+          <!-- Actions -->
+          <div class="col-md-1">
+            <div class="d-flex gap-1">
+              <%= form.submit "Filter", class: "btn btn-primary btn-sm" %>
+              <%= link_to cows_path(view: params[:view]), class: "btn btn-outline-secondary btn-sm" do %>
+                <i class="bi bi-arrow-clockwise"></i>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-card bg-success">
+      <i class="bi bi-heart-fill stat-icon"></i>
+      <div>
+        <div class="stat-value"><%= @stats[:active_count] %></div>
+        <div class="stat-label">Active</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card bg-info">
+      <i class="bi bi-droplet-fill stat-icon"></i>
+      <div>
+        <div class="stat-value"><%= number_with_precision(@stats[:total_production], precision: 1) %>L</div>
+        <div class="stat-label">Today's Production</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card bg-warning">
+      <i class="bi bi-graph-up stat-icon"></i>
+      <div>
+        <div class="stat-value"><%= number_with_precision(@stats[:avg_production], precision: 1) %>L</div>
+        <div class="stat-label">Average Daily</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card bg-primary">
+      <i class="bi bi-collection stat-icon"></i>
+      <div>
+        <div class="stat-value"><%= @total_count %></div>
+        <div class="stat-label">Total Animals</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- High-Performance Table View -->
+<% if params[:view] != 'cards' %>
+  <div class="table-container">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+          <i class="bi bi-table me-2"></i>
+          Animals List 
+          <span class="badge bg-primary ms-2"><%= @cows.count %></span>
+        </h6>
+        
+        <div class="table-controls">
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-secondary" onclick="selectAll()">
+              <i class="bi bi-check2-all me-1"></i>Select All
+            </button>
+            <button class="btn btn-outline-secondary" onclick="clearSelection()">
+              <i class="bi bi-x-circle me-1"></i>Clear
+            </button>
+            <div class="btn-group">
+              <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-three-dots"></i>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" onclick="bulkAction('activate')">
+                  <i class="bi bi-heart-fill me-2"></i>Activate Selected
+                </a></li>
+                <li><a class="dropdown-item" href="#" onclick="bulkAction('deactivate')">
+                  <i class="bi bi-heart me-2"></i>Deactivate Selected  
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger" href="#" onclick="bulkAction('delete')">
+                  <i class="bi bi-trash me-2"></i>Delete Selected
+                </a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0" id="cowsTable">
+          <thead class="table-dark sticky-top">
+            <tr>
+              <th width="40">
+                <input type="checkbox" class="form-check-input" id="selectAllCheckbox" onchange="toggleSelectAll()">
+              </th>
+              <th width="60">Photo</th>
+              <th>
+                <%= link_to cows_path(sort: 'name', direction: next_sort_direction('name'), **filter_params), 
+                            class: "text-white text-decoration-none" do %>
+                  Name
+                  <i class="bi bi-arrow-<%= sort_arrow('name') %>"></i>
+                <% end %>
+              </th>
+              <th>
+                <%= link_to cows_path(sort: 'tag_number', direction: next_sort_direction('tag_number'), **filter_params), 
+                            class: "text-white text-decoration-none" do %>
+                  Tag
+                  <i class="bi bi-arrow-<%= sort_arrow('tag_number') %>"></i>
+                <% end %>
+              </th>
+              <th>Breed</th>
+              <th>
+                <%= link_to cows_path(sort: 'age', direction: next_sort_direction('age'), **filter_params), 
+                            class: "text-white text-decoration-none" do %>
+                  Age
+                  <i class="bi bi-arrow-<%= sort_arrow('age') %>"></i>
+                <% end %>
+              </th>
+              <% unless @farm %>
+                <th>Farm</th>
+              <% end %>
+              <th>
+                <%= link_to cows_path(sort: 'status', direction: next_sort_direction('status'), **filter_params), 
+                            class: "text-white text-decoration-none" do %>
+                  Status
+                  <i class="bi bi-arrow-<%= sort_arrow('status') %>"></i>
+                <% end %>
+              </th>
+              <th>Last Production</th>
+              <th>Total (30d)</th>
+              <th width="100">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @cows.each do |cow| %>
+              <% 
+                last_production = cow.production_records.recent.first
+                monthly_production = cow.production_records.where('production_date > ?', 30.days.ago).sum(:total_production)
+              %>
+              <tr class="cow-row" data-cow-id="<%= cow.id %>">
+                <td>
+                  <input type="checkbox" class="form-check-input cow-checkbox" value="<%= cow.id %>">
+                </td>
+                <td>
+                  <div class="cow-avatar-small">
+                    <i class="bi bi-heart-fill"></i>
+                    <div class="status-indicator status-<%= cow.status || 'active' %>"></div>
+                  </div>
+                </td>
+                <td>
+                  <%= link_to cow_path(cow), class: "fw-semibold text-decoration-none cow-name-link" do %>
+                    <%= cow.name %>
+                  <% end %>
+                </td>
+                <td>
+                  <span class="badge bg-secondary"><%= cow.tag_number %></span>
+                </td>
+                <td>
+                  <span class="text-muted"><%= cow.breed || 'Unknown' %></span>
+                </td>
+                <td>
+                  <% if cow.age %>
+                    <%= cow.age %> <small class="text-muted">years</small>
+                  <% else %>
+                    <span class="text-muted">Unknown</span>
+                  <% end %>
+                </td>
+                <% unless @farm %>
+                  <td>
+                    <%= link_to cow.farm.name, farm_path(cow.farm), class: "text-decoration-none" %>
+                  </td>
+                <% end %>
+                <td>
+                  <span class="badge badge-status-<%= cow.status || 'active' %>">
+                    <i class="bi bi-circle-fill me-1"></i>
+                    <%= (cow.status || 'active').humanize %>
+                  </span>
+                </td>
+                <td>
+                  <% if last_production %>
+                    <div class="production-cell">
+                      <strong><%= number_with_precision(last_production.total_production, precision: 1) %>L</strong>
+                      <small class="text-muted d-block"><%= time_ago_in_words(last_production.production_date) %> ago</small>
+                    </div>
+                  <% else %>
+                    <span class="text-muted">No records</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if monthly_production > 0 %>
+                    <div class="monthly-production">
+                      <strong class="text-primary"><%= number_with_precision(monthly_production, precision: 1) %>L</strong>
+                      <small class="text-muted d-block">
+                        <%= number_with_precision(monthly_production / 30, precision: 1) %>L/day avg
+                      </small>
+                    </div>
+                  <% else %>
+                    <span class="text-muted">No data</span>
+                  <% end %>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <%= link_to cow_path(cow), class: "btn btn-outline-primary btn-sm", title: "View Details" do %>
+                      <i class="bi bi-eye"></i>
+                    <% end %>
+                    <%= link_to edit_cow_path(cow), class: "btn btn-outline-secondary btn-sm", title: "Edit" do %>
+                      <i class="bi bi-pencil"></i>
+                    <% end %>
+                    <div class="btn-group">
+                      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li>
+                          <%= link_to farm_cow_production_records_path(cow.farm, cow), class: "dropdown-item" do %>
+                            <i class="bi bi-graph-up me-2"></i>Production History
+                          <% end %>
+                        </li>
+                        <li>
+                          <%= link_to "#", class: "dropdown-item", onclick: "addHealthRecord(#{cow.id})" do %>
+                            <i class="bi bi-clipboard-pulse me-2"></i>Health Record
+                          <% end %>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                          <%= link_to cow_path(cow), method: :delete, 
+                                     class: "dropdown-item text-danger", 
+                                     confirm: "Are you sure you want to delete #{cow.name}?" do %>
+                            <i class="bi bi-trash me-2"></i>Delete
+                          <% end %>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="card-footer bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="table-info">
+            <small class="text-muted">
+              Showing <%= @cows.size %> of <%= @total_count %> animals
+            </small>
+          </div>
+          
+          <div class="pagination-wrapper">
+            <%= paginate @cows, pagination_class: "pagination pagination-sm mb-0" %>
+          </div>
+          
+          <div class="per-page-selector">
+            <%= form_with url: cows_path, method: :get, local: true, class: "d-inline" do |form| %>
+              <%= form.hidden_field :search, value: params[:search] %>
+              <%= form.hidden_field :farm_id, value: params[:farm_id] %>
+              <%= form.hidden_field :status, value: params[:status] %>
+              <%= form.hidden_field :breed, value: params[:breed] %>
+              <%= form.hidden_field :sort, value: params[:sort] %>
+              <%= form.hidden_field :direction, value: params[:direction] %>
+              <%= form.hidden_field :view, value: params[:view] %>
+              
+              <div class="input-group input-group-sm">
+                <%= form.select :per_page, 
+                    options_for_select([
+                      ['25 per page', 25],
+                      ['50 per page', 50],
+                      ['100 per page', 100],
+                      ['250 per page', 250]
+                    ], params[:per_page] || 50),
+                    {}, { 
+                      class: "form-select form-select-sm", 
+                      onchange: "this.form.submit()",
+                      style: "width: auto;"
+                    } %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<% else %>
+  <!-- Compact Cards View (for smaller datasets) -->
+  <div class="cards-container">
+    <div class="row g-3">
+      <% @cows.each do |cow| %>
+        <div class="col-lg-4 col-md-6">
+          <!-- Compact card implementation here -->
+          <%= render 'cow_card_compact', cow: cow %>
+        </div>
+      <% end %>
+    </div>
+    
+    <!-- Cards Pagination -->
+    <div class="d-flex justify-content-center mt-4">
+      <%= paginate @cows, theme: 'twitter-bootstrap-4' %>
+    </div>
+  </div>
+<% end %>

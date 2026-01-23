@@ -1,0 +1,167 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>Sales Records</h1>
+    <% if @farm %>
+      <p class="lead text-muted">Farm: <%= @farm.name %></p>
+    <% end %>
+  </div>
+  <div>
+    <% if @farm %>
+      <%= link_to "Add Sale", new_farm_sales_record_path(@farm), class: "btn btn-success me-2" %>
+    <% else %>
+      <%= link_to "Add Sale", new_sales_record_path, class: "btn btn-success me-2" %>
+    <% end %>
+    <%= link_to "Export CSV", request.url + (request.query_string.present? ? "&format=csv" : "?format=csv"), 
+                class: "btn btn-info me-2" %>
+    <% if @farm %>
+      <%= link_to "Back to Farm", @farm, class: "btn btn-outline-secondary" %>
+    <% else %>
+      <%= link_to "Dashboard", root_path, class: "btn btn-outline-secondary" %>
+    <% end %>
+  </div>
+</div>
+
+<!-- Date Filter -->
+<div class="card mb-4">
+  <div class="card-body">
+    <%= form_with url: request.path, method: :get, local: true, class: "row g-3" do |form| %>
+      <div class="col-md-3">
+        <%= form.label :start_date, "From Date", class: "form-label" %>
+        <%= form.date_field :start_date, value: params[:start_date], class: "form-control" %>
+      </div>
+      <div class="col-md-3">
+        <%= form.label :end_date, "To Date", class: "form-label" %>
+        <%= form.date_field :end_date, value: params[:end_date], class: "form-control" %>
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <%= form.submit "Filter", class: "btn btn-primary me-2" %>
+        <%= link_to "Clear", request.path, class: "btn btn-outline-secondary" %>
+      </div>
+      <div class="col-md-3">
+        <% if params[:start_date].present? || params[:end_date].present? %>
+          <div class="alert alert-info mb-0 py-2">
+            <small>
+              <i class="bi bi-funnel"></i>
+              Filtered results
+            </small>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card bg-light">
+      <div class="card-body text-center">
+        <h5 class="text-primary"><%= @sales_records.count %></h5>
+        <small class="text-muted">Total Records</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-light">
+      <div class="card-body text-center">
+        <h5 class="text-success">
+          <%= number_with_precision(@sales_records.sum(:milk_sold), precision: 1) %>L
+        </h5>
+        <small class="text-muted">Total Milk Sold</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-light">
+      <div class="card-body text-center">
+        <h5 class="text-info">
+          KES <%= number_with_precision(@sales_records.sum(:total_sales), precision: 0) %>
+        </h5>
+        <small class="text-muted">Total Revenue</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-light">
+      <div class="card-body text-center">
+        <h5 class="text-warning">
+          <%= @sales_records.any? ? number_with_precision(@sales_records.sum(:total_sales) / @sales_records.sum(:milk_sold), precision: 0) : 0 %>
+        </h5>
+        <small class="text-muted">Avg Price/Liter (KES)</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if @sales_records.any? %>
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <% unless @farm %>
+                <th>Farm</th>
+              <% end %>
+              <th>Buyer</th>
+              <th>Milk Sold (L)</th>
+              <th>Cash (KES)</th>
+              <th>M-Pesa (KES)</th>
+              <th>Total (KES)</th>
+              <th>Price/L</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @sales_records.each do |record| %>
+              <tr>
+                <td><%= record.sale_date.strftime("%B %d, %Y") %></td>
+                <% unless @farm %>
+                  <td>
+                    <%= link_to record.farm.name, record.farm, class: "text-decoration-none" %>
+                  </td>
+                <% end %>
+                <td><%= record.buyer %></td>
+                <td><%= number_with_precision(record.milk_sold, precision: 1) %></td>
+                <td><%= number_with_precision(record.cash_sales, precision: 0) %></td>
+                <td><%= number_with_precision(record.mpesa_sales, precision: 0) %></td>
+                <td>
+                  <span class="badge bg-success">
+                    <%= number_with_precision(record.total_sales, precision: 0) %>
+                  </span>
+                </td>
+                <td>
+                  <span class="badge bg-primary">
+                    <%= number_with_precision(record.total_sales / record.milk_sold, precision: 0) %>
+                  </span>
+                </td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <%= link_to "Edit", edit_sales_record_path(record), 
+                                class: "btn btn-sm btn-outline-secondary" %>
+                    <%= link_to "Delete", record, method: :delete, 
+                                confirm: "Are you sure?", 
+                                class: "btn btn-sm btn-outline-danger" %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="d-flex justify-content-center mt-4">
+      <%= paginate @sales_records %>
+    </div>
+  </div>
+<% else %>
+  <div class="text-center py-5">
+    <i class="bi bi-currency-dollar display-1 text-muted"></i>
+    <h3 class="mt-3">No sales records</h3>
+    <p class="text-muted">Start recording milk sales.</p>
+    <%= link_to "Add First Sale", new_sales_record_path, class: "btn btn-success" %>
+  </div>
+<% end %>

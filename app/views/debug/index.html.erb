@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Chart Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .chart-container { width: 500px; height: 300px; margin: 20px 0; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Chart Debug Page</h1>
+    
+    <div class="debug-section">
+        <h3>Test Chart Data (JSON):</h3>
+        <pre><%= JSON.pretty_generate(@test_chart_data) %></pre>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Weekly Trend Chart Data (JSON):</h3>
+        <pre><%= JSON.pretty_generate(@weekly_trend_chart) %></pre>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Test Chart with Manual JavaScript:</h3>
+        <div class="chart-container">
+            <canvas id="manualTestChart" width="500" height="300"></canvas>
+        </div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Test Chart with Stimulus Controller:</h3>
+        <div class="chart-container">
+            <canvas id="stimulusTestChart"
+                    data-controller="chart" 
+                    data-chart-type-value="line"
+                    data-chart-data-value="<%= chart_data_json(@test_chart_data) %>"
+                    data-chart-options-value="<%= chart_options_json({responsive: true, maintainAspectRatio: false}) %>"
+                    width="500" height="300">
+            </canvas>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        console.log('=== Chart Debug Page ===');
+        console.log('Chart.js loaded:', typeof Chart !== 'undefined');
+        
+        if (typeof Chart !== 'undefined') {
+            console.log('Chart.js version:', Chart.version);
+            
+            // Create manual chart
+            try {
+                const ctx = document.getElementById('manualTestChart').getContext('2d');
+                const testData = <%= @test_chart_data.to_json %>;
+                console.log('Test data from Ruby:', testData);
+                
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: testData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                console.log('Manual chart created successfully:', chart);
+            } catch (error) {
+                console.error('Error creating manual chart:', error);
+            }
+        }
+        
+        // Check Stimulus connection after a delay
+        setTimeout(() => {
+            const stimulusCanvas = document.getElementById('stimulusTestChart');
+            console.log('Stimulus canvas element:', stimulusCanvas);
+            console.log('Has data-controller:', stimulusCanvas.hasAttribute('data-controller'));
+            console.log('Data values:', {
+                type: stimulusCanvas.getAttribute('data-chart-type-value'),
+                data: stimulusCanvas.getAttribute('data-chart-data-value'),
+                options: stimulusCanvas.getAttribute('data-chart-options-value')
+            });
+        }, 1000);
+    </script>
+</body>
+</html>

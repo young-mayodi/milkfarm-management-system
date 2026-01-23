@@ -1,0 +1,937 @@
+<% content_for :title, "Bulk Milk Production Entry" %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1><i class="bi bi-table me-2"></i>Bulk Production Entry</h1>
+    <p class="text-muted">Excel-like interface for quick data entry</p>
+  </div>
+  <div>
+    <%= link_to "Regular Entry", new_production_record_path, class: "btn btn-outline-primary me-2" %>
+    <%= link_to "View Records", production_records_path, class: "btn btn-outline-secondary" %>
+  </div>
+</div>
+
+<!-- Date and Farm Selection -->
+<div class="card mb-4">
+  <div class="card-body">
+    <%= form_with url: bulk_entry_production_records_path, method: :get, local: true, class: "row g-3 align-items-end" do |form| %>
+      <div class="col-md-4">
+        <%= form.label :date, "Production Date", class: "form-label" %>
+        <%= form.date_field :date, value: @date, max: Date.current, class: "form-control", id: "production_date" %>
+        <div class="form-text">Cannot enter future dates</div>
+      </div>
+      <div class="col-md-4">
+        <%= form.label :farm_id, "Select Farm", class: "form-label" %>
+        <%= form.collection_select :farm_id, 
+                current_user.accessible_farms, :id, :name, 
+                { selected: @farm&.id }, 
+                { class: "form-select" } %>
+      </div>
+      <div class="col-md-4">
+        <%= form.submit "Load Data", class: "btn btn-primary w-100" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @cows.any? %>
+  <!-- Excel-like Data Entry Table -->
+  <%= form_with url: bulk_update_production_records_path, method: :post, local: true, id: "bulk_entry_form" do |form| %>
+    <%= form.hidden_field :date, value: @date %>
+    <%= form.hidden_field :farm_id, value: @farm&.id %>
+    
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-calendar3 me-2"></i>
+          <%= @date.strftime("%A, %B %d, %Y") %>
+          <span class="badge bg-primary ms-2"><%= @farm.name if @farm %></span>
+        </h5>
+        <div>
+          <button type="button" class="btn btn-info btn-sm me-1" id="show_shortcuts" title="Keyboard shortcuts">
+            <i class="bi bi-keyboard me-1"></i>Help
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm me-1" id="recalculate_totals" title="Recalculate all totals">
+            <i class="bi bi-calculator me-1"></i>Recalc
+          </button>
+          <button type="button" class="btn btn-success btn-sm" id="auto_save_toggle">
+            <i class="bi bi-cloud-arrow-up me-1"></i>Auto-save: <span id="auto_save_status">ON</span>
+          </button>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-save me-1"></i>Save All
+          </button>
+        </div>
+      </div>
+      
+      <!-- Summary Statistics -->
+      <div class="summary-stats">
+        <div class="row text-center">
+          <div class="col-md-3">
+            <div class="h4 mb-1" id="completion_percentage">0%</div>
+            <small>Completion</small>
+            <div class="progress-indicator">
+              <div class="progress-bar" id="completion_bar" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="h4 mb-1" id="total_cows"><%= @cows.count %></div>
+            <small>Total Cows</small>
+          </div>
+          <div class="col-md-3">
+            <div class="h4 mb-1" id="avg_production">0.0L</div>
+            <small>Avg per Cow</small>
+          </div>
+          <div class="col-md-3">
+            <div class="h4 mb-1" id="daily_total">0.0L</div>
+            <small>Daily Total</small>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Quick Fill Tools -->
+      <div class="quick-fill-tools">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-2">
+            <label class="form-label small mb-1">Quick Fill:</label>
+          </div>
+          <div class="col-md-2">
+            <input type="number" class="form-control form-control-sm" id="bulk_morning" placeholder="Morning" step="0.1" min="0" max="50">
+          </div>
+          <div class="col-md-2">
+            <input type="number" class="form-control form-control-sm" id="bulk_noon" placeholder="Noon" step="0.1" min="0" max="50">
+          </div>
+          <div class="col-md-2">
+            <input type="number" class="form-control form-control-sm" id="bulk_evening" placeholder="Evening" step="0.1" min="0" max="50">
+          </div>
+          <div class="col-md-2">
+            <button type="button" class="btn btn-outline-primary btn-sm w-100" id="apply_bulk_fill">
+              <i class="bi bi-arrow-down-circle me-1"></i>Fill Empty
+            </button>
+          </div>
+          <div class="col-md-2">
+            <button type="button" class="btn btn-outline-warning btn-sm w-100" id="clear_all">
+              <i class="bi bi-x-circle me-1"></i>Clear All
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" id="production_table">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 200px; position: sticky; left: 0; background-color: inherit;">
+                  <i class="bi bi-heart me-1"></i>COW NAME
+                </th>
+                <th style="width: 120px;" class="text-center">
+                  <i class="bi bi-sunrise me-1"></i>MORNING
+                </th>
+                <th style="width: 120px;" class="text-center">
+                  <i class="bi bi-sun me-1"></i>NOON  
+                </th>
+                <th style="width: 120px;" class="text-center">
+                  <i class="bi bi-sunset me-1"></i>EVENING
+                </th>
+                <th style="width: 120px;" class="text-center">
+                  <i class="bi bi-calculator me-1"></i>TOTAL
+                </th>
+                <th style="width: 80px;" class="text-center">STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @records.each_with_index do |record, index| %>
+                <tr data-cow-id="<%= record.cow.id %>" class="production-row">
+                  <td style="position: sticky; left: 0; background-color: white;" class="cow-name">
+                    <div class="d-flex align-items-center">
+                      <span class="badge bg-secondary me-2"><%= record.cow.tag_number %></span>
+                      <div>
+                        <strong><%= record.cow.name %></strong>
+                        <br><small class="text-muted"><%= record.cow.breed %></small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <%= form.fields_for "records[#{record.cow.id}]", record do |record_fields| %>
+                      <%= record_fields.number_field :morning_production, 
+                            value: record.morning_production > 0 ? number_with_precision(record.morning_production, precision: 1) : '',
+                            step: 0.1, min: 0, max: 100,
+                            class: "form-control text-center production-input morning-input",
+                            placeholder: "0.0",
+                            data: { 
+                              cow_id: record.cow.id,
+                              session: 'morning',
+                              auto_save: true
+                            } %>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%= form.fields_for "records[#{record.cow.id}]", record do |record_fields| %>
+                      <%= record_fields.number_field :noon_production, 
+                            value: record.noon_production > 0 ? number_with_precision(record.noon_production, precision: 1) : '',
+                            step: 0.1, min: 0, max: 100,
+                            class: "form-control text-center production-input noon-input",
+                            placeholder: "0.0",
+                            data: { 
+                              cow_id: record.cow.id,
+                              session: 'noon',
+                              auto_save: true
+                            } %>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%= form.fields_for "records[#{record.cow.id}]", record do |record_fields| %>
+                      <%= record_fields.number_field :evening_production, 
+                            value: record.evening_production > 0 ? number_with_precision(record.evening_production, precision: 1) : '',
+                            step: 0.1, min: 0, max: 100,
+                            class: "form-control text-center production-input evening-input",
+                            placeholder: "0.0",
+                            data: { 
+                              cow_id: record.cow.id,
+                              session: 'evening',
+                              auto_save: true
+                            } %>
+                    <% end %>
+                  </td>
+                  <td>
+                    <div class="text-center">
+                      <span class="badge bg-primary total-display" data-cow-id="<%= record.cow.id %>">
+                        <%= number_with_precision(record.total_production, precision: 1) %>L
+                      </span>
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <span class="save-status" data-cow-id="<%= record.cow.id %>">
+                      <i class="bi bi-circle-fill text-muted" title="No changes"></i>
+                    </span>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+            <tfoot class="table-light">
+              <tr>
+                <th style="position: sticky; left: 0; background-color: inherit;">
+                  <strong>TOTALS</strong>
+                </th>
+                <th class="text-center">
+                  <span id="morning_total" class="badge bg-warning">0.0L</span>
+                </th>
+                <th class="text-center">
+                  <span id="noon_total" class="badge bg-info">0.0L</span>
+                </th>
+                <th class="text-center">
+                  <span id="evening_total" class="badge bg-success">0.0L</span>
+                </th>
+                <th class="text-center">
+                  <span id="grand_total" class="badge bg-primary fs-6">0.0L</span>
+                </th>
+                <th class="text-center">
+                  <span id="records_count" class="badge bg-secondary">0</span>
+                </th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% end %>
+  
+  <!-- Keyboard Shortcuts Overlay -->
+  <div class="keyboard-shortcuts" id="keyboard_shortcuts">
+    <h6><i class="bi bi-keyboard me-1"></i>Keyboard Shortcuts</h6>
+    <div class="row">
+      <div class="col-6">
+        <strong>Navigation:</strong><br>
+        <kbd>Tab</kbd> Next field<br>
+        <kbd>Shift+Tab</kbd> Previous field<br>
+        <kbd>↑↓</kbd> Same column<br>
+        <kbd>Enter</kbd> Next row<br>
+      </div>
+      <div class="col-6">
+        <strong>Actions:</strong><br>
+        <kbd>Ctrl+S</kbd> Save all<br>
+        <kbd>Ctrl+R</kbd> Recalculate<br>
+        <kbd>Esc</kbd> Close help<br>
+        <kbd>F5</kbd> Refresh data<br>
+      </div>
+    </div>
+    <div class="text-center mt-2">
+      <small>Press <kbd>Esc</kbd> or click anywhere to close</small>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  <div class="card mt-3">
+    <div class="card-body">
+      <h6><i class="bi bi-info-circle me-1"></i>Enhanced Features & Instructions:</h6>
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="text-primary">📊 Smart Features:</h6>
+          <ul class="mb-3 small">
+            <li><strong>Live Statistics:</strong> See completion progress, averages, and totals in real-time</li>
+            <li><strong>Visual Indicators:</strong> Row highlighting shows completion status</li>
+            <li><strong>Smart Totals:</strong> Color-coded badges based on production levels</li>
+            <li><strong>Quick Fill:</strong> Bulk apply values to empty fields</li>
+            <li><strong>Auto-save:</strong> Data saves automatically as you type</li>
+          </ul>
+          
+          <h6 class="text-success">⚡ Productivity Tools:</h6>
+          <ul class="mb-0 small">
+            <li><strong>Bulk Fill:</strong> Enter values in Quick Fill boxes, then click "Fill Empty"</li>
+            <li><strong>Clear All:</strong> Reset all data with one click</li>
+            <li><strong>Recalc Button:</strong> Manual total recalculation</li>
+            <li><strong>Help Button:</strong> Show/hide keyboard shortcuts</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-info">⌨️ Keyboard Navigation:</h6>
+          <ul class="mb-3 small">
+            <li><strong>Tab/Shift+Tab:</strong> Move between fields</li>
+            <li><strong>Arrow Keys:</strong> Navigate up/down in same column</li>
+            <li><strong>Enter:</strong> Move to next row</li>
+            <li><strong>Ctrl+S:</strong> Save all data</li>
+            <li><strong>Ctrl+R:</strong> Recalculate totals</li>
+          </ul>
+          
+          <h6 class="text-warning">✨ Visual Indicators:</h6>
+          <ul class="mb-0 small">
+            <li><strong>Status Icons:</strong> 🟢 Saved, 🟡 Modified, 🔴 Error, ⚫ No changes</li>
+            <li><strong>Row Colors:</strong> Light blue = has data, green border = complete</li>
+            <li><strong>Total Badges:</strong> Green = high production, Blue = medium, Yellow = low</li>
+            <li><strong>Changed Fields:</strong> Yellow background during editing</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<% else %>
+  <div class="text-center py-5">
+    <i class="bi bi-exclamation-circle display-1 text-muted"></i>
+    <h3 class="mt-3">No cows available</h3>
+    <p class="text-muted">
+      <% if @farm %>
+        No active cows found for <%= @farm.name %>
+      <% else %>
+        Please select a farm to view cows
+      <% end %>
+    </p>
+  </div>
+<% end %>
+
+<style>
+.production-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe;
+  background-color: #fff;
+}
+
+.production-input {
+  transition: all 0.2s ease;
+  border: 1px solid #dee2e6;
+}
+
+.production-input:hover {
+  border-color: #adb5bd;
+  background-color: #f8f9fa;
+}
+
+.production-input.changed {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+}
+
+.production-row {
+  transition: background-color 0.2s ease;
+}
+
+.production-row:hover {
+  background-color: #f8f9fa;
+}
+
+.production-row.has-data {
+  background-color: #f0f9ff;
+}
+
+.production-row.completed {
+  background-color: #f0fdf4;
+  border-left: 3px solid #22c55e;
+}
+
+.cow-name {
+  border-right: 2px solid #dee2e6;
+  font-weight: 500;
+}
+
+.table th {
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+#production_table {
+  font-size: 0.9rem;
+}
+
+.save-status {
+  font-size: 1.2rem;
+}
+
+.total-display {
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 60px;
+  display: inline-block;
+}
+
+.progress-indicator {
+  height: 4px;
+  background: #e9ecef;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+  transition: width 0.3s ease;
+}
+
+.keyboard-shortcuts {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  display: none;
+  z-index: 1000;
+}
+
+.keyboard-shortcuts.show {
+  display: block;
+}
+
+.summary-stats {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.quick-fill-tools {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+/* Fix for grayed out morning inputs */
+.morning-input {
+  background-color: white !important;
+  color: #000 !important;
+  opacity: 1 !important;
+  cursor: text !important;
+}
+
+.morning-input:focus {
+  background-color: white !important;
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+.production-input {
+  background-color: white !important;
+  color: #000 !important;
+  opacity: 1 !important;
+}
+
+/* Override any potential disabled styling */
+input[type="number"]:disabled {
+  background-color: #e9ecef !important;
+  opacity: 0.65 !important;
+}
+
+.morning-input:focus, .noon-input:focus, .evening-input:focus {
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+.morning-input.saving {
+  border-color: #ffc107 !important;
+  background-color: #fff3cd !important;
+}
+
+.morning-input.saved {
+  border-color: #28a745 !important;
+  background-color: #d4edda !important;
+}
+
+.morning-input.updated {
+  border-color: #17a2b8 !important;
+  background-color: #d1ecf1 !important;
+  animation: pulseUpdate 0.5s ease-in-out;
+}
+
+@keyframes pulseUpdate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.real-time-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 300px;
+  max-width: 400px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+</style>
+
+<script>
+// EMERGENCY FIX - Simple Working JavaScript
+console.log('🚨 EMERGENCY FIX LOADING...');
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🔧 Fixing ALL input fields...');
+  
+  // FORCE FIX ALL INPUTS
+  setTimeout(function() {
+    // Fix ALL production inputs
+    document.querySelectorAll('input[type="number"]').forEach(function(input, index) {
+      input.disabled = false;
+      input.readOnly = false;
+      input.style.backgroundColor = 'white';
+      input.style.color = '#000';
+      input.style.opacity = '1';
+      input.style.cursor = 'text';
+      
+      if (input.classList.contains('morning-input')) {
+        input.style.border = '3px solid #28a745'; // Green border for morning
+        console.log('✅ Fixed morning input #' + index);
+      }
+      
+      // Add calculation on input
+      input.addEventListener('input', function() {
+        console.log('📊 Input changed:', input.className, input.value);
+        calculateTotals();
+        
+        // Auto-save after 2 seconds of no typing
+        clearTimeout(window.autoSaveTimer);
+        window.autoSaveTimer = setTimeout(() => {
+          autoSaveRow(input);
+        }, 2000);
+      });
+    });
+    
+    console.log('✅ ALL inputs fixed!');
+    calculateTotals();
+  }, 100);
+  
+  // Simple total calculation
+  function calculateTotals() {
+    console.log('🧮 Calculating totals...');
+    
+    let grandTotal = 0;
+    let morningTotal = 0;
+    let noonTotal = 0;
+    let eveningTotal = 0;
+    let recordsCount = 0;
+    
+    document.querySelectorAll('.production-row').forEach(function(row) {
+      const morningInput = row.querySelector('.morning-input');
+      const noonInput = row.querySelector('.noon-input');
+      const eveningInput = row.querySelector('.evening-input');
+      const totalDisplay = row.querySelector('.total-display');
+      
+      if (morningInput && noonInput && eveningInput && totalDisplay) {
+        const morning = parseFloat(morningInput.value) || 0;
+        const noon = parseFloat(noonInput.value) || 0;
+        const evening = parseFloat(eveningInput.value) || 0;
+        const total = morning + noon + evening;
+        
+        // Update row total
+        totalDisplay.textContent = total.toFixed(1) + 'L';
+        
+        // Add to column totals
+        morningTotal += morning;
+        noonTotal += noon;
+        eveningTotal += evening;
+        grandTotal += total;
+        
+        if (total > 0) {
+          recordsCount++;
+        }
+      }
+    });
+    
+    // Update column totals
+    const morningTotalEl = document.getElementById('morning_total');
+    const noonTotalEl = document.getElementById('noon_total');
+    const eveningTotalEl = document.getElementById('evening_total');
+    const grandTotalEl = document.getElementById('grand_total');
+    const recordsCountEl = document.getElementById('records_count');
+    
+    if (morningTotalEl) morningTotalEl.textContent = morningTotal.toFixed(1) + 'L';
+    if (noonTotalEl) noonTotalEl.textContent = noonTotal.toFixed(1) + 'L';
+    if (eveningTotalEl) eveningTotalEl.textContent = eveningTotal.toFixed(1) + 'L';
+    if (grandTotalEl) grandTotalEl.textContent = grandTotal.toFixed(1) + 'L';
+    if (recordsCountEl) recordsCountEl.textContent = recordsCount;
+    
+    // Update summary stats
+    const avgProductionEl = document.getElementById('avg_production');
+    const dailyTotalEl = document.getElementById('daily_total');
+    
+    const avgProduction = recordsCount > 0 ? grandTotal / recordsCount : 0;
+    if (avgProductionEl) avgProductionEl.textContent = avgProduction.toFixed(1) + 'L';
+    if (dailyTotalEl) dailyTotalEl.textContent = grandTotal.toFixed(1) + 'L';
+    
+    console.log('📊 Totals updated:', {
+      morning: morningTotal.toFixed(1) + 'L',
+      noon: noonTotal.toFixed(1) + 'L', 
+      evening: eveningTotal.toFixed(1) + 'L',
+      grand: grandTotal.toFixed(1) + 'L',
+      records: recordsCount,
+      average: avgProduction.toFixed(1) + 'L'
+    });
+  }
+  
+  // Test function
+  window.testInputs = function() {
+    console.log('🧪 Testing inputs...');
+    document.querySelectorAll('.morning-input').forEach((input, i) => {
+      input.value = (i + 1) * 2;
+      input.dispatchEvent(new Event('input'));
+    });
+  };
+  
+  // Auto-save individual row function
+  function autoSaveRow(input) {
+    const row = input.closest('.production-row');
+    const cowId = row.dataset.cowId;
+    
+    const morningInput = row.querySelector('.morning-input');
+    const noonInput = row.querySelector('.noon-input');
+    const eveningInput = row.querySelector('.evening-input');
+    
+    const morning = parseFloat(morningInput.value) || 0;
+    const noon = parseFloat(noonInput.value) || 0;
+    const evening = parseFloat(eveningInput.value) || 0;
+    
+    // Only save if there's actual data
+    if (morning > 0 || noon > 0 || evening > 0) {
+      console.log('💾 Auto-saving cow #' + cowId + ':', { morning, noon, evening });
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('date', '<%= @date %>');
+      formData.append('farm_id', '<%= @farm&.id %>');
+      formData.append(`records[${cowId}][morning_production]`, morning);
+      formData.append(`records[${cowId}][noon_production]`, noon);
+      formData.append(`records[${cowId}][evening_production]`, evening);
+      
+      // Get CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                        document.querySelector('input[name="authenticity_token"]')?.value;
+      
+      // Save via AJAX
+      fetch('<%= bulk_update_production_records_path %>', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRF-Token': csrfToken,
+          'Accept': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          console.log('✅ Auto-saved cow #' + cowId);
+          // Show visual feedback with new CSS classes
+          input.classList.add('saved');
+          setTimeout(() => {
+            input.classList.remove('saved');
+          }, 2000);
+        } else {
+          console.error('❌ Failed to auto-save cow #' + cowId, data.errors);
+          input.style.borderColor = '#dc3545';
+          showNotification(`❌ Failed to save ${row.querySelector('.cow-name')?.textContent || 'record'}`, 'danger');
+        }
+      })
+      .catch(error => {
+        console.error('❌ Auto-save error:', error);
+        input.style.borderColor = '#dc3545';
+        showNotification('❌ Auto-save failed - please try again', 'danger');
+      });
+    }
+  }
+  
+  // Real-time updates using Server-Sent Events
+  let eventSource = null;
+  
+  function initializeRealTimeUpdates() {
+    if (typeof(EventSource) === "undefined") {
+      console.warn('⚠️  Server-Sent Events not supported, falling back to periodic refresh');
+      // Fallback to polling every 30 seconds
+      setInterval(refreshDataFromServer, 30000);
+      return;
+    }
+    
+    const streamUrl = '<%= bulk_entry_stream_production_records_path(farm_id: @farm&.id, date: @date) %>';
+    console.log('🔗 Connecting to real-time updates:', streamUrl);
+    
+    eventSource = new EventSource(streamUrl);
+    
+    eventSource.onopen = function(event) {
+      console.log('✅ Real-time connection established');
+      showNotification('🔄 Real-time sync enabled', 'success');
+    };
+    
+    eventSource.onmessage = function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        handleRealTimeUpdate(data);
+      } catch (e) {
+        console.warn('⚠️  Invalid real-time data:', event.data);
+      }
+    };
+    
+    eventSource.onerror = function(event) {
+      console.error('❌ Real-time connection error:', event);
+      showNotification('⚠️  Real-time sync interrupted', 'warning');
+      
+      // Reconnect after 5 seconds
+      setTimeout(() => {
+        if (eventSource.readyState === EventSource.CLOSED) {
+          console.log('🔄 Attempting to reconnect...');
+          initializeRealTimeUpdates();
+        }
+      }, 5000);
+    };
+  }
+  
+  function handleRealTimeUpdate(data) {
+    if (data.type === 'production_update' && data.updates) {
+      console.log('📡 Received real-time updates:', data.updates.length, 'records');
+      
+      data.updates.forEach(update => {
+        updateCowRowFromRealTime(update);
+      });
+      
+      // Recalculate totals
+      calculateTotals();
+      
+      // Show notification
+      const count = data.updates.length;
+      showNotification(`📡 ${count} record${count > 1 ? 's' : ''} updated by another user`, 'info');
+    } else if (data.type === 'heartbeat') {
+      console.log('💓 Heartbeat received');
+    }
+  }
+  
+  function updateCowRowFromRealTime(update) {
+    const row = document.querySelector(`[data-cow-id="${update.cow_id}"]`);
+    if (!row) return;
+    
+    // Don't update if the user is currently editing this row
+    const activeElement = document.activeElement;
+    if (activeElement && row.contains(activeElement)) {
+      console.log('⏭️  Skipping update for cow #' + update.cow_id + ' (user is editing)');
+      return;
+    }
+    
+    // Update the input values
+    const morningInput = row.querySelector('.morning-input');
+    const noonInput = row.querySelector('.noon-input');
+    const eveningInput = row.querySelector('.evening-input');
+    
+    if (morningInput && parseFloat(morningInput.value || 0) !== update.morning_production) {
+      morningInput.value = update.morning_production || '';
+      flashInput(morningInput, 'updated');
+    }
+    
+    if (noonInput && parseFloat(noonInput.value || 0) !== update.noon_production) {
+      noonInput.value = update.noon_production || '';
+      flashInput(noonInput, 'updated');
+    }
+    
+    if (eveningInput && parseFloat(eveningInput.value || 0) !== update.evening_production) {
+      eveningInput.value = update.evening_production || '';
+      flashInput(eveningInput, 'updated');
+    }
+    
+    console.log('🔄 Updated cow #' + update.cow_id + ' from real-time data');
+  }
+  
+  function flashInput(input, type) {
+    // Use CSS classes for better visual feedback
+    input.classList.add(type);
+    
+    setTimeout(() => {
+      input.classList.remove(type);
+    }, 2000);
+  }
+  
+  function showNotification(message, type = 'info') {
+    // Create a simple notification
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show real-time-notification`;
+    notification.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.classList.add('fade');
+        setTimeout(() => {
+          notification.remove();
+        }, 300);
+      }
+    }, 4000);
+  }
+  
+  function refreshDataFromServer() {
+    // Fallback function for browsers without SSE support
+    console.log('🔄 Polling for updates...');
+    fetch(window.location.href, {
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Handle polling response if needed
+      console.log('📊 Polled data received');
+    })
+    .catch(error => {
+      console.warn('⚠️  Polling failed:', error);
+    });
+  }
+  
+  // Initialize real-time updates
+  initializeRealTimeUpdates();
+  
+  // Clean up on page unload
+  window.addEventListener('beforeunload', () => {
+    if (eventSource) {
+      eventSource.close();
+    }
+  });
+
+  // Quick Fill Functionality
+  document.getElementById('apply_bulk_fill')?.addEventListener('click', function() {
+    const morningValue = document.getElementById('bulk_morning').value;
+    const noonValue = document.getElementById('bulk_noon').value;
+    const eveningValue = document.getElementById('bulk_evening').value;
+    
+    if (!morningValue && !noonValue && !eveningValue) {
+      alert('Please enter at least one value to fill.');
+      return;
+    }
+    
+    let filledCount = 0;
+    document.querySelectorAll('.production-row').forEach(row => {
+      const morningInput = row.querySelector('.morning-input');
+      const noonInput = row.querySelector('.noon-input');
+      const eveningInput = row.querySelector('.evening-input');
+      
+      // Only fill empty fields
+      if (morningValue && morningInput && (!morningInput.value || morningInput.value === '0')) {
+        morningInput.value = morningValue;
+        filledCount++;
+      }
+      if (noonValue && noonInput && (!noonInput.value || noonInput.value === '0')) {
+        noonInput.value = noonValue;
+        filledCount++;
+      }
+      if (eveningValue && eveningInput && (!eveningInput.value || eveningInput.value === '0')) {
+        eveningInput.value = eveningValue;
+        filledCount++;
+      }
+    });
+    
+    calculateTotals();
+    console.log('📝 Bulk filled ' + filledCount + ' fields');
+    showNotification(`📝 Filled ${filledCount} empty fields`, 'success');
+  });
+  
+  document.getElementById('clear_all')?.addEventListener('click', function() {
+    if (confirm('Are you sure you want to clear all production data? This cannot be undone.')) {
+      document.querySelectorAll('.production-input').forEach(input => {
+        input.value = '';
+      });
+      calculateTotals();
+      console.log('🧹 Cleared all production data');
+      showNotification('🧹 All production data cleared', 'warning');
+    }
+  });
+  
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function(e) {
+    // Ctrl+S to save all
+    if (e.ctrlKey && e.key === 's') {
+      e.preventDefault();
+      document.querySelector('input[type="submit"]')?.click();
+      return;
+    }
+    
+    // Ctrl+T to test inputs
+    if (e.ctrlKey && e.key === 't') {
+      e.preventDefault();
+      testInputs();
+      return;
+    }
+    
+    // Handle navigation with arrow keys
+    const activeElement = document.activeElement;
+    if (activeElement && activeElement.classList.contains('production-input')) {
+      const row = activeElement.closest('.production-row');
+      const allRows = Array.from(document.querySelectorAll('.production-row'));
+      const currentRowIndex = allRows.indexOf(row);
+      
+      if (e.key === 'ArrowUp' && currentRowIndex > 0) {
+        e.preventDefault();
+        const prevRow = allRows[currentRowIndex - 1];
+        const sameColumnInput = prevRow.querySelector(`.${activeElement.className.split(' ').find(c => c.includes('-input'))}`);
+        sameColumnInput?.focus();
+      } else if (e.key === 'ArrowDown' && currentRowIndex < allRows.length - 1) {
+        e.preventDefault();
+        const nextRow = allRows[currentRowIndex + 1];
+        const sameColumnInput = nextRow.querySelector(`.${activeElement.className.split(' ').find(c => c.includes('-input'))}`);
+        sameColumnInput?.focus();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        // Move to next row, same column
+        if (currentRowIndex < allRows.length - 1) {
+          const nextRow = allRows[currentRowIndex + 1];
+          const sameColumnInput = nextRow.querySelector(`.${activeElement.className.split(' ').find(c => c.includes('-input'))}`);
+          sameColumnInput?.focus();
+        }
+      }
+    }
+  });
+  
+  // Calculate totals on page load
+  calculateTotals();
+  
+  console.log('✅ Emergency fix complete!');
+  console.log('💡 Try typing in morning column or run: testInputs()');
+  console.log('💾 Auto-save enabled - data saves 2 seconds after you stop typing');
+  console.log('📡 Real-time sync enabled - changes from other windows will appear automatically');
+  console.log('⌨️  Keyboard shortcuts: Ctrl+S (save), Ctrl+T (test), ↑↓ (navigate), Enter (next row)');
+});
+</script>

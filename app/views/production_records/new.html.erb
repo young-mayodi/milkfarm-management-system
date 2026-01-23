@@ -1,0 +1,147 @@
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="mb-0">Record Milk Production</h4>
+      </div>
+      <div class="card-body">
+        <%= form_with model: @production_record, local: true, class: "needs-validation", novalidate: true do |form| %>
+          <% if @production_record.errors.any? %>
+            <div class="alert alert-danger">
+              <h6>Please fix the following errors:</h6>
+              <ul class="mb-0">
+                <% @production_record.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <%= form.label :production_date, "Production Date", class: "form-label" %>
+                <%= form.date_field :production_date, class: "form-control #{'is-invalid' if @production_record.errors[:production_date].any?}", required: true %>
+                <% if @production_record.errors[:production_date].any? %>
+                  <div class="invalid-feedback">
+                    <%= @production_record.errors[:production_date].first %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <% unless @farm %>
+            <div class="mb-3">
+              <%= form.label :farm_id, "Farm", class: "form-label" %>
+              <%= form.select :farm_id,
+                  options_from_collection_for_select(@farms, :id, :name, @production_record.farm_id),
+                  { prompt: 'Select farm' },
+                  { class: "form-select #{'is-invalid' if @production_record.errors[:farm_id].any?}", required: true } %>
+              <% if @production_record.errors[:farm_id].any? %>
+                <div class="invalid-feedback">
+                  <%= @production_record.errors[:farm_id].first %>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <%= form.hidden_field :farm_id, value: @farm.id %>
+          <% end %>
+
+          <div class="mb-3">
+            <%= form.label :cow_id, "Cow", class: "form-label" %>
+            <%= form.select :cow_id,
+                options_from_collection_for_select(@cows, :id, lambda { |cow| "#{cow.name} (#{cow.tag_number})" }, @production_record.cow_id),
+                { prompt: 'Select cow' },
+                { class: "form-select #{'is-invalid' if @production_record.errors[:cow_id].any?}", required: true } %>
+            <% if @production_record.errors[:cow_id].any? %>
+              <div class="invalid-feedback">
+                <%= @production_record.errors[:cow_id].first %>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <div class="mb-3">
+                <%= form.label :morning_production, "Morning Production (Liters)", class: "form-label" %>
+                <%= form.number_field :morning_production, 
+                    step: 0.1, min: 0, 
+                    class: "form-control #{'is-invalid' if @production_record.errors[:morning_production].any?}", 
+                    required: true %>
+                <% if @production_record.errors[:morning_production].any? %>
+                  <div class="invalid-feedback">
+                    <%= @production_record.errors[:morning_production].first %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="mb-3">
+                <%= form.label :noon_production, "Noon Production (Liters)", class: "form-label" %>
+                <%= form.number_field :noon_production, 
+                    step: 0.1, min: 0, 
+                    class: "form-control #{'is-invalid' if @production_record.errors[:noon_production].any?}", 
+                    required: true %>
+                <% if @production_record.errors[:noon_production].any? %>
+                  <div class="invalid-feedback">
+                    <%= @production_record.errors[:noon_production].first %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="mb-3">
+                <%= form.label :evening_production, "Evening Production (Liters)", class: "form-label" %>
+                <%= form.number_field :evening_production, 
+                    step: 0.1, min: 0, 
+                    class: "form-control #{'is-invalid' if @production_record.errors[:evening_production].any?}", 
+                    required: true %>
+                <% if @production_record.errors[:evening_production].any? %>
+                  <div class="invalid-feedback">
+                    <%= @production_record.errors[:evening_production].first %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Note:</strong> Total production will be calculated automatically as the sum of morning, noon, and evening productions.
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <%= link_to "Cancel", production_records_path, class: "btn btn-secondary" %>
+            <%= form.submit "Record Production", class: "btn btn-success" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-calculate total when individual production values change
+  const morningInput = document.getElementById('production_record_morning_production');
+  const noonInput = document.getElementById('production_record_noon_production');
+  const eveningInput = document.getElementById('production_record_evening_production');
+  
+  function updateTotal() {
+    const morning = parseFloat(morningInput.value) || 0;
+    const noon = parseFloat(noonInput.value) || 0;
+    const evening = parseFloat(eveningInput.value) || 0;
+    const total = morning + noon + evening;
+    
+    // You could add a total display here if needed
+    console.log('Total production:', total);
+  }
+  
+  if (morningInput) morningInput.addEventListener('input', updateTotal);
+  if (noonInput) noonInput.addEventListener('input', updateTotal);
+  if (eveningInput) eveningInput.addEventListener('input', updateTotal);
+});
+</script>

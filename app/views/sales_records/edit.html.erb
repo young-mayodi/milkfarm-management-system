@@ -1,0 +1,85 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>Edit Sales Record</h1>
+    <p class="lead text-muted">
+      <%= @sales_record.sale_date.strftime("%B %d, %Y") %> - <%= @sales_record.farm.name %>
+    </p>
+  </div>
+  <div>
+    <% if @farm %>
+      <%= link_to "Back to Sales", farm_sales_records_path(@farm), class: "btn btn-outline-secondary" %>
+    <% else %>
+      <%= link_to "Back to Sales", sales_records_path, class: "btn btn-outline-secondary" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8 col-xl-6">
+    <div class="card">
+      <div class="card-body">
+        <%= form_with model: [@farm, @sales_record].compact, local: true, class: "row g-3" do |form| %>
+          <% if @sales_record.errors.any? %>
+            <div class="alert alert-danger">
+              <h4><%= pluralize(@sales_record.errors.count, "error") %> prohibited this sales record from being saved:</h4>
+              <ul class="mb-0">
+                <% @sales_record.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <% unless @farm %>
+            <div class="col-12">
+              <%= form.label :farm_id, class: "form-label" %>
+              <%= form.select :farm_id, options_from_collection_for_select(@farms, :id, :name, @sales_record.farm_id), 
+                              { prompt: "Select Farm" }, { class: "form-select" } %>
+            </div>
+          <% else %>
+            <%= form.hidden_field :farm_id, value: @farm.id %>
+          <% end %>
+
+          <div class="col-md-6">
+            <%= form.label :sale_date, class: "form-label" %>
+            <%= form.date_field :sale_date, class: "form-control" %>
+          </div>
+
+          <div class="col-md-6">
+            <%= form.label :buyer, class: "form-label" %>
+            <%= form.text_field :buyer, class: "form-control", placeholder: "Buyer name" %>
+          </div>
+
+          <div class="col-md-6">
+            <%= form.label :milk_sold, "Milk Sold (Liters)", class: "form-label" %>
+            <%= form.number_field :milk_sold, step: 0.1, min: 0, class: "form-control", 
+                                  placeholder: "0.0" %>
+          </div>
+
+          <div class="col-md-6">
+            <%= form.label :cash_sales, "Cash Sales (KES)", class: "form-label" %>
+            <%= form.number_field :cash_sales, step: 0.01, min: 0, class: "form-control", 
+                                  placeholder: "0.00" %>
+          </div>
+
+          <div class="col-md-6">
+            <%= form.label :mpesa_sales, "M-Pesa Sales (KES)", class: "form-label" %>
+            <%= form.number_field :mpesa_sales, step: 0.01, min: 0, class: "form-control", 
+                                  placeholder: "0.00" %>
+          </div>
+
+          <div class="col-12">
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <% if @farm %>
+                <%= link_to "Cancel", farm_sales_records_path(@farm), class: "btn btn-outline-secondary" %>
+              <% else %>
+                <%= link_to "Cancel", sales_records_path, class: "btn btn-outline-secondary" %>
+              <% end %>
+              <%= form.submit "Update Sales Record", class: "btn btn-primary" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

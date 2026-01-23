@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  cow: one
+  farm: one
+  production_date: 2026-01-22
+  morning_production: 9.99
+  noon_production: 9.99
+  evening_production: 9.99
+  total_production: 9.99
+
+two:
+  cow: two
+  farm: two
+  production_date: 2026-01-22
+  morning_production: 9.99
+  noon_production: 9.99
+  evening_production: 9.99
+  total_production: 9.99

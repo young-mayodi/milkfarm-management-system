@@ -1,0 +1,48 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>Data Export</h1>
+    <p class="lead text-muted">Export your data in CSV format</p>
+  </div>
+  <div>
+    <%= link_to "Back to Reports", reports_path, class: "btn btn-outline-secondary" %>
+  </div>
+</div>
+
+<div class="row">
+  <% @export_options.each do |option| %>
+    <div class="col-md-6 col-lg-3 mb-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <i class="bi bi-file-earmark-spreadsheet display-4 text-success mb-3"></i>
+          <h5 class="card-title"><%= option[:name] %></h5>
+          <p class="card-text text-muted">Download as <%= option[:format] %></p>
+          
+          <!-- Note: CSV export would require implementing CSV format in controllers -->
+          <button class="btn btn-success" onclick="window.location.href='<%= option[:endpoint] %>'">
+            <i class="bi bi-download"></i> Download CSV
+          </button>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">Export Instructions</h5>
+  </div>
+  <div class="card-body">
+    <p>The exported CSV files contain the following data:</p>
+    <ul>
+      <li><strong>Production Records:</strong> All milk production data with cow and farm information</li>
+      <li><strong>Sales Records:</strong> All sales transactions with payment method breakdown</li>
+      <li><strong>Cow Information:</strong> Complete cow registry with farm assignments</li>
+      <li><strong>Farm Summary:</strong> Farm details with aggregated statistics</li>
+    </ul>
+    
+    <div class="alert alert-info mt-3">
+      <i class="bi bi-info-circle"></i>
+      <strong>Note:</strong> CSV export functionality would require additional implementation in the controllers to respond to CSV format requests.
+    </div>
+  </div>
+</div>
