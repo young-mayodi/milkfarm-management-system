@@ -29,7 +29,7 @@ class VaccinationRecordsController < ApplicationController
     @vaccination_record = @cow ? @cow.vaccination_records.build : VaccinationRecord.new
     @vaccination_record.vaccination_date = Date.current
     @vaccination_record.administered_by = current_user.name
-    @cows = Cow.active.order(:name) unless @cow
+    @cows = current_farm.cows.active.order(:name) unless @cow
   end
 
   def create
@@ -38,7 +38,7 @@ class VaccinationRecordsController < ApplicationController
     if @vaccination_record.save
       redirect_to @vaccination_record, notice: "Vaccination record was successfully created."
     else
-      @cows = Cow.active.order(:name) unless @cow
+      @cows = current_farm.cows.active.order(:name) unless @cow
       render :new, status: :unprocessable_entity
     end
   end

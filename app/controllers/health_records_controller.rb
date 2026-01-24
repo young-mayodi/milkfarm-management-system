@@ -29,7 +29,7 @@ class HealthRecordsController < ApplicationController
     @health_record = @cow ? @cow.health_records.build : HealthRecord.new
     @health_record.recorded_at = Time.current
     @health_record.recorded_by = current_user.name
-    @cows = Cow.active.order(:name) unless @cow
+    @cows = current_farm.cows.active.order(:name) unless @cow
   end
 
   def create
@@ -39,7 +39,7 @@ class HealthRecordsController < ApplicationController
     if @health_record.save
       redirect_to @health_record, notice: "Health record was successfully created."
     else
-      @cows = Cow.active.order(:name) unless @cow
+      @cows = current_farm.cows.active.order(:name) unless @cow
       render :new, status: :unprocessable_entity
     end
   end

@@ -28,7 +28,7 @@ class BreedingRecordsController < ApplicationController
   def new
     @breeding_record = @cow ? @cow.breeding_records.build : BreedingRecord.new
     @breeding_record.breeding_date = Date.current
-    @cows = Cow.active.adult_cows.order(:name) unless @cow
+    @cows = current_farm.cows.active.adult_cows.order(:name) unless @cow
   end
 
   def create
@@ -37,7 +37,7 @@ class BreedingRecordsController < ApplicationController
     if @breeding_record.save
       redirect_to @breeding_record, notice: "Breeding record was successfully created."
     else
-      @cows = Cow.active.adult_cows.order(:name) unless @cow
+      @cows = current_farm.cows.active.adult_cows.order(:name) unless @cow
       render :new, status: :unprocessable_entity
     end
   end

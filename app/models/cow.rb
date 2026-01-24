@@ -349,6 +349,11 @@ class Cow < ApplicationRecord
     end
   end
 
+  # Display methods
+  def display_name
+    "#{name} (#{tag_number})"
+  end
+
   private
 
   def increment_active_count_if_needed
