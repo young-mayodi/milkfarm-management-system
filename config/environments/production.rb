@@ -3,8 +3,8 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
-  # Secret key base for production
-  config.secret_key_base = ENV["SECRET_KEY_BASE"] || ENV["RAILS_MASTER_KEY"]
+  # Secret key base for production - use environment variable or generate one
+  config.secret_key_base = ENV["SECRET_KEY_BASE"] || "3fae742e1731a15c1828dce87e2893f0766947653c12b9f0f7a1e2a82ed5ccfc70130109f4f46b52a03ba34685b8be19c49624c3d0b9dcc87704827dfd16df25"
 
   # Code is not reloaded between requests.
   config.enable_reloading = false

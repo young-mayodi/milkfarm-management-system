@@ -37,7 +37,7 @@ class MilkProductionSystemTest < Minitest::Test
     refute invalid_cow.valid?, "Cow should require name and farm"
     
     # Test valid models
-    valid_farm = Farm.new(name: "Test Farm", location: "Test Location")
+    valid_farm = Farm.new(name: "Test Farm", location: "Test Location", owner: "Test Owner")
     assert valid_farm.valid?, "Valid farm should pass validation"
     
     puts "   ✅ Model validations working"
@@ -102,8 +102,9 @@ class MilkProductionSystemTest < Minitest::Test
     end
     
     # Test financial overview generation
-    date_range = 1.month.ago.to_date..Date.current
-    overview = controller.send(:generate_financial_overview, date_range)
+    controller.instance_variable_set(:@farm, Farm.first)
+    controller.instance_variable_set(:@date_range, 1.month.ago.to_date..Date.current)
+    overview = controller.send(:generate_financial_overview)
     
     assert overview.is_a?(Hash), "Financial overview should return hash"
     assert overview.key?(:revenue), "Overview should include revenue"
@@ -237,6 +238,7 @@ class MilkProductionSystemTest < Minitest::Test
       name: 'Test Farm',
       location: 'Test Location',
       farm_size: 100,
+      owner: 'Test Owner',
       established_date: 5.years.ago
     )
   end
@@ -254,7 +256,7 @@ class MilkProductionSystemTest < Minitest::Test
 
   def create_test_financial_data
     # Clean up existing test data
-    @farm.sales_records.where(buyer_name: 'Test Buyer').destroy_all
+    @farm.sales_records.where(buyer: 'Test Buyer').destroy_all
     @farm.expenses.where(description: 'Test feed expense').destroy_all
     @cow.production_records.where(production_date: Date.current).destroy_all
     
@@ -262,9 +264,10 @@ class MilkProductionSystemTest < Minitest::Test
     @farm.sales_records.create!(
       sale_date: Date.current,
       milk_sold: 100,
-      price_per_liter: 50,
+      cash_sales: 2000,
+      mpesa_sales: 3000,
       total_sales: 5000,
-      buyer_name: 'Test Buyer'
+      buyer: 'Test Buyer'
     )
 
     @farm.expenses.create!(
