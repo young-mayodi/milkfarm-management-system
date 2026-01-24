@@ -3,6 +3,7 @@ class Farm < ApplicationRecord
   has_many :cows, dependent: :destroy
   has_many :production_records, dependent: :destroy
   has_many :sales_records, dependent: :destroy
+  has_many :expenses, dependent: :destroy
   has_many :users, dependent: :destroy
 
   # Validations
@@ -11,15 +12,15 @@ class Farm < ApplicationRecord
   validates :contact_phone, presence: true, format: { with: /\A[\+\-\s0-9]{10,20}\z/, message: "must be a valid phone number" }
 
   # Scopes
-  scope :active, -> { where(status: 'active') }
+  scope :active, -> { where(status: "active") }
 
   # Instance methods
   def total_cows
-    cows.count
+    cows_count || 0
   end
 
   def active_cows
-    cows.where(status: 'active').count
+    active_cows_count || 0
   end
 
   def today_production
@@ -34,15 +35,15 @@ class Farm < ApplicationRecord
 
   # User management methods
   def farm_owners
-    users.where(role: 'farm_owner')
+    users.where(role: "farm_owner")
   end
 
   def farm_managers
-    users.where(role: 'farm_manager')
+    users.where(role: "farm_manager")
   end
 
   def farm_workers
-    users.where(role: 'farm_worker')
+    users.where(role: "farm_worker")
   end
 
   def all_staff

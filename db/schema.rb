@@ -10,9 +10,40 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_23_093755) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_24_203444) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "animal_sales", force: :cascade do |t|
+    t.bigint "cow_id", null: false
+    t.bigint "farm_id", null: false
+    t.date "sale_date"
+    t.decimal "sale_price"
+    t.string "buyer"
+    t.string "animal_type"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "buyer_contact"
+    t.decimal "weight_at_sale"
+    t.index ["cow_id"], name: "index_animal_sales_on_cow_id"
+    t.index ["farm_id"], name: "index_animal_sales_on_farm_id"
+  end
+
+  create_table "breeding_records", force: :cascade do |t|
+    t.bigint "cow_id", null: false
+    t.date "breeding_date"
+    t.string "bull_name"
+    t.string "breeding_method"
+    t.date "expected_due_date"
+    t.date "actual_due_date"
+    t.string "breeding_status"
+    t.text "notes"
+    t.string "veterinarian"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cow_id"], name: "index_breeding_records_on_cow_id"
+  end
 
   create_table "cows", force: :cascade do |t|
     t.string "name"
@@ -36,6 +67,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_23_093755) do
     t.index ["tag_number"], name: "index_cows_on_tag_number", unique: true
   end
 
+  create_table "expenses", force: :cascade do |t|
+    t.bigint "farm_id", null: false
+    t.string "expense_type"
+    t.decimal "amount"
+    t.text "description"
+    t.date "expense_date"
+    t.string "category"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["farm_id"], name: "index_expenses_on_farm_id"
+  end
+
   create_table "farms", force: :cascade do |t|
     t.string "name"
     t.string "location"
@@ -43,6 +86,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_23_093755) do
     t.string "owner"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "cows_count"
+    t.integer "active_cows_count", default: 0, null: false
+  end
+
+  create_table "health_records", force: :cascade do |t|
+    t.bigint "cow_id", null: false
+    t.string "health_status"
+    t.decimal "temperature"
+    t.decimal "weight"
+    t.text "notes"
+    t.string "recorded_by"
+    t.datetime "recorded_at"
+    t.string "veterinarian"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cow_id"], name: "index_health_records_on_cow_id"
   end
 
   create_table "production_records", force: :cascade do |t|
@@ -98,10 +157,30 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_23_093755) do
     t.index ["farm_id"], name: "index_users_on_farm_id"
   end
 
+  create_table "vaccination_records", force: :cascade do |t|
+    t.bigint "cow_id", null: false
+    t.string "vaccine_name"
+    t.date "vaccination_date"
+    t.date "next_due_date"
+    t.string "administered_by"
+    t.string "batch_number"
+    t.text "notes"
+    t.string "veterinarian"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cow_id"], name: "index_vaccination_records_on_cow_id"
+  end
+
+  add_foreign_key "animal_sales", "cows"
+  add_foreign_key "animal_sales", "farms"
+  add_foreign_key "breeding_records", "cows"
   add_foreign_key "cows", "cows", column: "mother_id"
   add_foreign_key "cows", "farms"
+  add_foreign_key "expenses", "farms"
+  add_foreign_key "health_records", "cows"
   add_foreign_key "production_records", "cows"
   add_foreign_key "production_records", "farms"
   add_foreign_key "sales_records", "farms"
   add_foreign_key "users", "farms"
+  add_foreign_key "vaccination_records", "cows"
 end

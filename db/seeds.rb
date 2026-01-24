@@ -14,7 +14,7 @@ Farm.destroy_all
 puts "Creating farms..."
 bama_farm = Farm.create!(
   name: "BAMA DAIRY FARM",
-  owner: "Bama Farm Owner", 
+  owner: "Bama Farm Owner",
   location: "Kiambu County, Kenya",
   contact_phone: "+254-700-123456"
 )
@@ -22,7 +22,7 @@ bama_farm = Farm.create!(
 green_valley = Farm.create!(
   name: "Green Valley Dairy",
   owner: "John Kamau",
-  location: "Nakuru County, Kenya", 
+  location: "Nakuru County, Kenya",
   contact_phone: "+254-722-987654"
 )
 
@@ -76,32 +76,32 @@ end_date = Date.current
 (start_date..end_date).each do |date|
   # Skip some days randomly to simulate real data, but less skipping for more data
   next if rand(20) < 1 # Skip only about 5% of days randomly
-  
+
   Farm.all.each do |farm|
     farm.cows.active.each do |cow|
       # Skip fewer cows on fewer days for more comprehensive data
       next if rand(20) < 1 # Skip only about 5% of cow-days
-      
+
       # Generate realistic production data based on cow breed
       base_production = case cow.breed
-                       when 'Holstein' then 25
-                       when 'Friesian' then 23  
-                       when 'Jersey' then 18
-                       when 'Crossbred' then 15
-                       else 12
-                       end
-      
+      when 'Holstein' then 25
+      when 'Friesian' then 23
+      when 'Jersey' then 18
+      when 'Crossbred' then 15
+      else 12
+      end
+
       # Add some randomness (-20% to +30%) with seasonal variation
       seasonal_factor = 1 + 0.1 * Math.sin(2 * Math::PI * date.yday / 365.0)
       variation = 1 + (rand - 0.5) * 0.5
       daily_total = (base_production * variation * seasonal_factor).round(1)
-      
+
       # Distribute across three milkings (morning largest, evening second, noon smallest)
       morning = (daily_total * (0.45 + rand * 0.1)).round(1)
-      evening = (daily_total * (0.35 + rand * 0.1)).round(1) 
+      evening = (daily_total * (0.35 + rand * 0.1)).round(1)
       noon = (daily_total - morning - evening).round(1)
-      noon = [noon, 0].max # Ensure non-negative
-      
+      noon = [ noon, 0 ].max # Ensure non-negative
+
       ProductionRecord.create!(
         cow: cow,
         farm: farm,
@@ -119,23 +119,23 @@ puts "Creating sales records..."
 (start_date..end_date).each do |date|
   # Skip fewer sales days for better chart data
   next if rand(10) < 2 # Skip some days but less frequently
-  
+
   Farm.all.each do |farm|
     daily_production = ProductionRecord.daily_farm_total(farm, date)
     next if daily_production == 0
-    
+
     # Sell 80-95% of production
     milk_sold = (daily_production * (0.8 + rand * 0.15)).round(1)
     price_per_liter = 45 + rand * 10 # KES 45-55 per liter
     total_amount = (milk_sold * price_per_liter).round(0)
-    
+
     # Split between cash and M-Pesa (60-40 to 40-60)
     cash_percentage = 0.4 + rand * 0.2
     cash_sales = (total_amount * cash_percentage).round(0)
     mpesa_sales = total_amount - cash_sales
-    
-    buyers = ["Local Dairy Co-op", "Brookside Dairy", "KCC", "Direct Sales", "Local Market"]
-    
+
+    buyers = [ "Local Dairy Co-op", "Brookside Dairy", "KCC", "Direct Sales", "Local Market" ]
+
     SalesRecord.create!(
       farm: farm,
       sale_date: date,
@@ -162,7 +162,7 @@ bama_farm.users.create!([
     phone: "+254-700-123456"
   },
   {
-    email: "manager@bamafarm.com", 
+    email: "manager@bamafarm.com",
     password: "password123",
     password_confirmation: "password123",
     first_name: "Mary",
@@ -172,7 +172,7 @@ bama_farm.users.create!([
   },
   {
     email: "worker1@bamafarm.com",
-    password: "password123", 
+    password: "password123",
     password_confirmation: "password123",
     first_name: "Peter",
     last_name: "Kipchoge",
@@ -182,7 +182,7 @@ bama_farm.users.create!([
   {
     email: "vet@bamafarm.com",
     password: "password123",
-    password_confirmation: "password123", 
+    password_confirmation: "password123",
     first_name: "Dr. Sarah",
     last_name: "Muthoni",
     role: "veterinarian",
@@ -197,14 +197,14 @@ green_valley.users.create!([
     password: "password123",
     password_confirmation: "password123",
     first_name: "John",
-    last_name: "Kamau", 
+    last_name: "Kamau",
     role: "farm_owner",
     phone: "+254-722-987654"
   },
   {
     email: "manager@greenvalley.com",
     password: "password123",
-    password_confirmation: "password123", 
+    password_confirmation: "password123",
     first_name: "Grace",
     last_name: "Njeri",
     role: "farm_manager",
@@ -215,9 +215,118 @@ green_valley.users.create!([
 puts "Seed data created successfully!"
 puts "Created:"
 puts "- #{Farm.count} farms"
-puts "- #{Cow.count} cows"  
+puts "- #{Cow.count} cows"
 puts "- #{ProductionRecord.count} production records"
 puts "- #{SalesRecord.count} sales records"
+puts "Creating sample expenses..."
+
+# Create sample expense records for financial analysis
+bama_farm.expenses.create!([
+  {
+    expense_type: "Feed Purchase",
+    amount: 15000.00,
+    description: "Monthly feed supply for 20 cows",
+    expense_date: 1.month.ago,
+    category: "feed"
+  },
+  {
+    expense_type: "Veterinary Services",
+    amount: 3500.00,
+    description: "Monthly health checkups and vaccinations",
+    expense_date: 1.month.ago,
+    category: "veterinary"
+  },
+  {
+    expense_type: "Labor Costs",
+    amount: 12000.00,
+    description: "Farm worker salaries",
+    expense_date: 1.month.ago,
+    category: "labor"
+  },
+  {
+    expense_type: "Equipment Maintenance",
+    amount: 2500.00,
+    description: "Milking machine servicing",
+    expense_date: 1.month.ago,
+    category: "maintenance"
+  },
+  {
+    expense_type: "Utilities",
+    amount: 1800.00,
+    description: "Electricity and water bills",
+    expense_date: 1.month.ago,
+    category: "utilities"
+  },
+  {
+    expense_type: "Transport",
+    amount: 1200.00,
+    description: "Milk delivery costs",
+    expense_date: 1.month.ago,
+    category: "transport"
+  },
+  {
+    expense_type: "Feed Purchase",
+    amount: 16200.00,
+    description: "Monthly feed supply for 20 cows",
+    expense_date: Date.current,
+    category: "feed"
+  },
+  {
+    expense_type: "Veterinary Services",
+    amount: 4200.00,
+    description: "Monthly health checkups and treatments",
+    expense_date: Date.current,
+    category: "veterinary"
+  },
+  {
+    expense_type: "Labor Costs",
+    amount: 12000.00,
+    description: "Farm worker salaries",
+    expense_date: Date.current,
+    category: "labor"
+  },
+  {
+    expense_type: "New Milking Equipment",
+    amount: 45000.00,
+    description: "Upgraded milking machine",
+    expense_date: 2.months.ago,
+    category: "equipment"
+  },
+  {
+    expense_type: "Breeding Services",
+    amount: 8000.00,
+    description: "AI services and pregnancy monitoring",
+    expense_date: 1.month.ago,
+    category: "breeding"
+  }
+])
+
+# Create expenses for Green Valley Farm too
+green_valley.expenses.create!([
+  {
+    expense_type: "Feed Purchase",
+    amount: 18000.00,
+    description: "Premium feed for 25 cows",
+    expense_date: 1.month.ago,
+    category: "feed"
+  },
+  {
+    expense_type: "Veterinary Services",
+    amount: 5000.00,
+    description: "Comprehensive health program",
+    expense_date: 1.month.ago,
+    category: "veterinary"
+  },
+  {
+    expense_type: "Labor Costs",
+    amount: 15000.00,
+    description: "Farm staff salaries",
+    expense_date: 1.month.ago,
+    category: "labor"
+  }
+])
+
+puts "- #{Expense.count} expense records"
 puts "- #{User.count} users"
 puts ""
 puts "Sample login credentials:"

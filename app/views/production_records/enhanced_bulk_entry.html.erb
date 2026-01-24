@@ -1,23 +1,10 @@
-<% content_for :title, "Enhanced Bulk Milk Production Entry" %>
+<% content_for :title, "Production Entry" %>
 
 <% content_for :header_content do %>
   <div class="container-fluid">
     <!-- ...existing header code... -->
   </div>
 <% end %>
-
-<!-- DEBUG INFO (remove in production) -->
-<div class="alert alert-info mb-3" style="font-size: 0.85rem;">
-  <strong>🔍 Debug Information:</strong><br>
-  <strong>Current Date:</strong> <%= Date.current %><br>
-  <strong>Entry Date:</strong> <%= @date %><br>
-  <strong>Days Back:</strong> <%= @days_back %><br>
-  <strong>Can Edit Old Records:</strong> <%= @can_edit_old_records %><br>
-  <strong>Readonly Mode:</strong> <%= @readonly_mode %><br>
-  <strong>Current User Role:</strong> <%= current_user.role %><br>
-  <strong>Farm Manager:</strong> <%= current_user.farm_manager? %><br>
-  <strong>Farm Owner:</strong> <%= current_user.farm_owner? %>
-</div>
 
 <% if @days_back > 3 && @readonly_mode %>
   <!-- Access Control Warning -->
@@ -36,8 +23,8 @@
 <div class="bulk-entry-header">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h1><i class="bi bi-grid-3x3 me-2 text-primary"></i>Enhanced Bulk Production Entry</h1>
-      <p class="text-muted mb-2">Excel-like interface with smart data capture features</p>
+      <h1><i class="bi bi-grid-3x3 me-2 text-primary"></i>Production Entry</h1>
+      <p class="text-muted mb-2">Smart data capture for cows and graduated calves</p>
       <% if @readonly_mode %>
         <div class="alert alert-warning d-inline-flex align-items-center py-2 px-3">
           <i class="bi bi-lock-fill me-2"></i>
@@ -46,9 +33,9 @@
       <% end %>
     </div>
     <div class="header-actions">
-      <%= link_to "📊 View Analytics", production_records_path, class: "btn btn-outline-success me-2" %>
+      <%= link_to "📊 Analytics", production_records_path, class: "btn btn-outline-success me-2" %>
       <%= link_to "➕ Single Entry", new_production_record_path, class: "btn btn-outline-primary me-2" %>
-      <%= link_to "📋 View Records", production_records_path, class: "btn btn-outline-secondary" %>
+      <%= link_to "📋 All Records", production_records_path, class: "btn btn-outline-secondary" %>
     </div>
   </div>
 </div>
@@ -300,7 +287,8 @@
                 <tr>
                   <th style="width: 50px;" class="text-center">#</th>
                   <th style="width: 250px; position: sticky; left: 0; background-color: inherit; z-index: 10;">
-                    <i class="bi bi-heart-fill me-1 text-danger"></i>COW DETAILS
+                    <i class="bi bi-heart-fill me-1 text-danger"></i>ANIMAL DETAILS
+                    <div class="session-subtitle">Cows & Graduated Calves</div>
                   </th>
                   <th style="width: 140px;" class="text-center session-header morning-header">
                     <i class="bi bi-sunrise me-1 text-warning"></i>MORNING
@@ -332,18 +320,30 @@
                       <span class="badge bg-secondary"><%= index + 1 %></span>
                     </td>
                     
-                    <!-- Cow Details -->
+                    <!-- Animal Details -->
                     <td style="position: sticky; left: 0; background-color: white; z-index: 5;" class="cow-details">
                       <div class="d-flex align-items-center">
                         <div class="cow-avatar me-2">
-                          <span class="badge bg-primary rounded-pill"><%= record.cow.tag_number %></span>
+                          <% if record.cow.status == 'graduated_to_dairy' %>
+                            <span class="badge bg-success rounded-pill" title="Graduated Calf"><%= record.cow.tag_number %></span>
+                          <% else %>
+                            <span class="badge bg-primary rounded-pill" title="Adult Cow"><%= record.cow.tag_number %></span>
+                          <% end %>
                         </div>
                         <div class="cow-info">
-                          <div class="cow-name fw-bold"><%= record.cow.name %></div>
+                          <div class="cow-name fw-bold">
+                            <%= record.cow.name %>
+                            <% if record.cow.status == 'graduated_to_dairy' %>
+                              <span class="badge bg-success ms-1" style="font-size: 0.6rem;">🥛 GRAD</span>
+                            <% end %>
+                          </div>
                           <div class="cow-meta">
                             <small class="text-muted">
                               <%= record.cow.breed %> • 
                               <span class="cow-age">Age: <%= record.cow.age %></span>
+                              <% if record.cow.status == 'graduated_to_dairy' %>
+                                • <span class="text-success fw-bold">Graduated Calf</span>
+                              <% end %>
                             </small>
                           </div>
                         </div>
@@ -449,9 +449,12 @@
         <div class="card-footer bg-light">
           <div class="d-flex justify-content-between align-items-center">
             <div class="save-info">
-              <span class="text-muted">
+              <span class="text-muted me-3">
                 <i class="bi bi-info-circle me-1"></i>
                 <span id="unsaved_changes">No unsaved changes</span>
+              </span>
+              <span class="save-status-indicator">
+                <i class="bi bi-cloud-check text-muted"></i> Auto-saved
               </span>
             </div>
             <div class="save-actions">
@@ -778,6 +781,16 @@
     animation: pulse-warning 2s infinite;
   }
   
+  /* Spinning animation for auto-save indicator */
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+  
   /* Focus improvements */
   .production-input:focus + .total-value {
     box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.25);
@@ -1079,6 +1092,53 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.saveDraft();
                 }
             }, 30000);
+            
+            // Add click listener for manual save draft button
+            document.getElementById('save_draft')?.addEventListener('click', () => {
+                this.saveDraft();
+            });
+        },
+        
+        async saveDraft() {
+            // Show saving indicator
+            const saveIndicator = document.getElementById('unsaved_changes');
+            const originalContent = saveIndicator.innerHTML;
+            saveIndicator.innerHTML = '<i class="bi bi-arrow-clockwise spin me-1"></i>Saving draft...';
+            
+            try {
+                const formData = new FormData(document.getElementById('enhanced_bulk_entry_form'));
+                
+                const response = await fetch('/production_records/save_draft', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.hasUnsavedChanges = false;
+                    saveIndicator.innerHTML = 
+                        `<i class="bi bi-check-circle-fill text-success me-1"></i>Auto-saved at ${result.timestamp}`;
+                    
+                    // Show subtle success notification
+                    this.showNotification(`💾 ${result.message}`, 'success');
+                    
+                    console.log('✅ Draft auto-saved successfully:', result);
+                } else {
+                    console.error('❌ Auto-save failed:', result.message);
+                    saveIndicator.innerHTML = originalContent;
+                    this.showNotification(`❌ Auto-save failed: ${result.message}`, 'danger');
+                }
+                
+            } catch (error) {
+                console.error('❌ Auto-save error:', error);
+                saveIndicator.innerHTML = originalContent;
+                this.showNotification('❌ Auto-save failed due to connection error', 'danger');
+            }
         },
         
         markUnsavedChanges() {

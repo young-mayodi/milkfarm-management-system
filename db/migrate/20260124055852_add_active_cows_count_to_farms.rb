@@ -1,0 +1,5 @@
+class AddActiveCowsCountToFarms < ActiveRecord::Migration[8.0]
+  def change
+    add_column :farms, :active_cows_count, :integer, default: 0, null: false
+  end
+end

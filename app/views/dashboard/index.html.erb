@@ -118,6 +118,100 @@
   </div>
 </div>
 
+<!-- Notifications & Alerts Section -->
+<% if @overdue_vaccinations_count > 0 || @due_vaccinations_count > 0 || @overdue_births_count > 0 || @due_births_count > 0 %>
+<div class="row mb-4">
+  <div class="col">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-warning text-white">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>🚨 Farm Alerts & Notifications</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Vaccination Alerts -->
+          <% if @overdue_vaccinations_count > 0 || @due_vaccinations_count > 0 %>
+          <div class="col-md-6 mb-3">
+            <h6 class="text-warning"><i class="bi bi-shield-check me-2"></i>Vaccination Alerts</h6>
+            
+            <% if @overdue_vaccinations_count > 0 %>
+              <div class="alert alert-danger alert-sm d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>⚠️ <%= @overdue_vaccinations_count %> Overdue Vaccinations</strong>
+                  <small class="d-block">Immediate attention required</small>
+                </div>
+                <%= link_to vaccination_records_path, class: "btn btn-danger btn-sm" do %>
+                  <i class="bi bi-arrow-right"></i> View
+                <% end %>
+              </div>
+            <% end %>
+            
+            <% if @due_vaccinations_count > 0 %>
+              <div class="alert alert-warning alert-sm d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>📅 <%= @due_vaccinations_count %> Due This Week</strong>
+                  <small class="d-block">Schedule soon</small>
+                </div>
+                <%= link_to vaccination_records_path, class: "btn btn-warning btn-sm" do %>
+                  <i class="bi bi-arrow-right"></i> View
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+          <% end %>
+
+          <!-- Breeding Alerts -->
+          <% if @overdue_births_count > 0 || @due_births_count > 0 %>
+          <div class="col-md-6 mb-3">
+            <h6 class="text-primary"><i class="bi bi-heart-pulse me-2"></i>Breeding Alerts</h6>
+            
+            <% if @overdue_births_count > 0 %>
+              <div class="alert alert-danger alert-sm d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>🚨 <%= @overdue_births_count %> Overdue Births</strong>
+                  <small class="d-block">Check immediately</small>
+                </div>
+                <%= link_to breeding_records_path, class: "btn btn-danger btn-sm" do %>
+                  <i class="bi bi-arrow-right"></i> View
+                <% end %>
+              </div>
+            <% end %>
+            
+            <% if @due_births_count > 0 %>
+              <div class="alert alert-info alert-sm d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>🤱 <%= @due_births_count %> Due This Week</strong>
+                  <small class="d-block">Prepare for births</small>
+                </div>
+                <%= link_to breeding_records_path, class: "btn btn-info btn-sm" do %>
+                  <i class="bi bi-arrow-right"></i> View
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+          <% end %>
+        </div>
+
+        <!-- Quick Resolution Actions -->
+        <div class="mt-3 pt-3 border-top">
+          <h6 class="text-muted mb-2">Quick Resolution Actions</h6>
+          <div class="btn-group btn-group-sm" role="group">
+            <%= link_to new_vaccination_record_path, class: "btn btn-outline-warning" do %>
+              <i class="bi bi-plus-circle me-1"></i>Add Vaccination
+            <% end %>
+            <%= link_to new_breeding_record_path, class: "btn btn-outline-primary" do %>
+              <i class="bi bi-plus-circle me-1"></i>Add Breeding Record
+            <% end %>
+            <%= link_to animal_management_dashboard_path, class: "btn btn-outline-success" do %>
+              <i class="bi bi-heart-pulse me-1"></i>Animal Dashboard
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<% end %>
+
 <!-- Quick Actions & Status Dashboard -->
 <div class="row g-4 mb-5">
   <div class="col-lg-6">
@@ -191,14 +285,8 @@
               <div class="col-md-6">
                 <%= link_to enhanced_bulk_entry_production_records_path, class: "btn btn-primary w-100" do %>
                   <i class="bi bi-grid-3x3 me-2"></i>
-                  Enhanced Entry
-                  <span class="badge bg-light text-primary ms-1">NEW</span>
-                <% end %>
-              </div>
-              <div class="col-md-6">
-                <%= link_to bulk_entry_production_records_path, class: "btn btn-success w-100" do %>
-                  <i class="bi bi-table me-2"></i>
-                  Bulk Entry
+                  Production Entry
+                  <span class="badge bg-light text-primary ms-1">SMART</span>
                 <% end %>
               </div>
               <div class="col-md-6">
@@ -301,7 +389,7 @@
           <div class="text-center py-4">
             <i class="bi bi-building text-muted" style="font-size: 3rem;"></i>
             <p class="text-muted mt-2">No production data for today yet.</p>
-            <%= link_to "Start Recording", bulk_entry_production_records_path, class: "btn btn-primary btn-sm" %>
+            <%= link_to "Start Recording", enhanced_bulk_entry_production_records_path, class: "btn btn-primary btn-sm" %>
           </div>
         <% end %>
       </div>
@@ -1164,10 +1252,18 @@ document.addEventListener('DOMContentLoaded', function() {
                   <small class="text-muted">Daily Avg</small>
                 </div>
                 <div class="col-4">
-                  <div class="h6 mb-0 text-<%= @weekly_trends[latest_week][:trend] == 'increasing' ? 'success' : 'warning' %>">
-                    <i class="bi bi-arrow-<%= @weekly_trends[latest_week][:trend] == 'increasing' ? 'up' : 'down' %>"></i>
-                    <%= @weekly_trends[latest_week][:trend].capitalize %>
-                  </div>
+                  <% trend = @weekly_trends[latest_week][:trend] %>
+                  <% if trend.present? %>
+                    <div class="h6 mb-0 text-<%= trend == 'increasing' ? 'success' : 'warning' %>">
+                      <i class="bi bi-arrow-<%= trend == 'increasing' ? 'up' : 'down' %>"></i>
+                      <%= trend.capitalize %>
+                    </div>
+                  <% else %>
+                    <div class="h6 mb-0 text-info">
+                      <i class="bi bi-dash-circle"></i>
+                      Stable
+                    </div>
+                  <% end %>
                   <small class="text-muted">Trend</small>
                 </div>
               </div>
@@ -1249,7 +1345,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="text-center py-4">
             <i class="bi bi-heart text-muted" style="font-size: 3rem;"></i>
             <p class="text-muted mt-2">No production data this week yet</p>
-            <%= link_to "Start Recording", bulk_entry_production_records_path, class: "btn btn-primary btn-sm" %>
+            <%= link_to "Start Recording", enhanced_bulk_entry_production_records_path, class: "btn btn-primary btn-sm" %>
           </div>
         <% end %>
       </div>
@@ -1288,15 +1384,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         <!-- Quick Cow Stats -->
         <div id="cow-search-results">
-          <% recent_active_cows = Cow.where(status: 'active')
-                                     .joins(:production_records)
-                                     .where(production_records: { production_date: 1.week.ago..Date.current })
-                                     .group('cows.id')
-                                     .select('cows.*, AVG(production_records.total_production) as avg_production')
-                                     .limit(5)
-                                     .order('avg_production DESC') %>
-          
-          <% recent_active_cows.each do |cow| %>
+          <% @recent_active_cows.each do |cow| %>
             <%= link_to cow_path(cow), class: "text-decoration-none", data: { turbo: false } do %>
               <div class="cow-item d-flex justify-content-between align-items-center mb-2 p-2 rounded cow-search-item">
                 <div>
@@ -1318,7 +1406,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <% end %>
           <% end %>
           
-          <% if recent_active_cows.empty? %>
+          <% if @recent_active_cows.empty? %>
             <div class="text-center py-3">
               <i class="bi bi-search text-muted" style="font-size: 2rem;"></i>
               <p class="text-muted mt-2 small">No active cows with recent production</p>

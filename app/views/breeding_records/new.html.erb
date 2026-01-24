@@ -1,0 +1,298 @@
+<div class="breeding-records-container">
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="bi bi-heart"></i>
+          <% if @cow %>
+            New Breeding Record for <%= @cow.tag_number %>
+          <% else %>
+            New Breeding Record
+          <% end %>
+        </h2>
+        <p class="text-muted">Record breeding activity and pregnancy tracking</p>
+      </div>
+      <div class="header-actions">
+        <%= link_to breeding_records_path, class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-arrow-left"></i>
+          Back to Breeding Records
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <%= form_with model: [@cow, @breeding_record].compact, local: true, class: "breeding-form" do |form| %>
+            <% if @breeding_record.errors.any? %>
+              <div class="alert alert-danger">
+                <h6>Please fix the following errors:</h6>
+                <ul class="mb-0">
+                  <% @breeding_record.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <div class="row">
+              <!-- Animal Selection (if not cow-specific) -->
+              <% unless @cow %>
+                <div class="col-md-6 mb-3">
+                  <%= form.label :cow_id, "Animal", class: "form-label required" %>
+                  <%= form.select :cow_id, 
+                      options_from_collection_for_select(@cows || [], :id, :display_name, @breeding_record.cow_id),
+                      { prompt: "Select an animal..." },
+                      { class: "form-select", required: true, onchange: "updateExpectedDueDate()" } %>
+                </div>
+              <% else %>
+                <%= form.hidden_field :cow_id, value: @cow.id %>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Animal</label>
+                  <div class="form-control-plaintext">
+                    <strong><%= @cow.display_name %></strong>
+                    <small class="text-muted d-block">
+                      <%= @cow.breed %> • <%= @cow.age %> years old
+                    </small>
+                  </div>
+                </div>
+              <% end %>
+
+              <!-- Breeding Date -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :breeding_date, "Breeding Date", class: "form-label required" %>
+                <%= form.date_field :breeding_date, 
+                    class: "form-control", 
+                    required: true,
+                    max: Date.current,
+                    onchange: "updateExpectedDueDate()" %>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Bull Name -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :bull_name, "Bull Name/ID", class: "form-label" %>
+                <%= form.text_field :bull_name, 
+                    class: "form-control",
+                    placeholder: "Bull identification or name" %>
+              </div>
+
+              <!-- Breeding Method -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :breeding_method, "Breeding Method", class: "form-label" %>
+                <%= form.select :breeding_method,
+                    options_for_select([
+                      ['Natural Service', 'natural'],
+                      ['Artificial Insemination', 'ai'],
+                      ['Embryo Transfer', 'et']
+                    ], @breeding_record.breeding_method),
+                    { prompt: "Select method..." },
+                    { class: "form-select" } %>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Expected Due Date -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :expected_due_date, "Expected Due Date", class: "form-label" %>
+                <%= form.date_field :expected_due_date, 
+                    class: "form-control",
+                    min: Date.current %>
+                <small class="form-text text-muted">
+                  Cattle gestation: ~283 days (auto-calculated)
+                </small>
+              </div>
+
+              <!-- Breeding Status -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :breeding_status, "Breeding Status", class: "form-label" %>
+                <%= form.select :breeding_status,
+                    options_for_select([
+                      ['Bred', 'bred'],
+                      ['Confirmed Pregnant', 'pregnant'],
+                      ['Not Pregnant', 'not_pregnant'],
+                      ['Calved', 'calved'],
+                      ['Aborted', 'aborted']
+                    ], @breeding_record.breeding_status),
+                    { prompt: "Select status..." },
+                    { class: "form-select" } %>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Veterinarian -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :veterinarian, "Veterinarian", class: "form-label" %>
+                <%= form.text_field :veterinarian, 
+                    class: "form-control",
+                    placeholder: "Veterinarian name (if applicable)" %>
+              </div>
+
+              <!-- Service Cost -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :service_cost, "Service Cost (KES)", class: "form-label" %>
+                <%= form.number_field :service_cost, 
+                    class: "form-control",
+                    step: 0.01,
+                    min: 0,
+                    placeholder: "0.00" %>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-3">
+              <%= form.label :notes, "Notes", class: "form-label" %>
+              <%= form.text_area :notes, 
+                  class: "form-control",
+                  rows: 3,
+                  placeholder: "Additional observations, breeding details, or notes..." %>
+            </div>
+
+            <!-- Submit Actions -->
+            <div class="form-actions">
+              <%= form.submit "Record Breeding", 
+                  class: "btn btn-success btn-lg",
+                  data: { disable_with: "Recording..." } %>
+              
+              <%= link_to "Cancel", breeding_records_path, 
+                  class: "btn btn-outline-secondary btn-lg ms-2" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar with Breeding Guidelines -->
+    <div class="col-lg-4">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="card-title mb-0">
+            <i class="bi bi-info-circle"></i>
+            Breeding Guidelines
+          </h6>
+        </div>
+        <div class="card-body">
+          <h6 class="text-success">Gestation Period:</h6>
+          <ul class="list-unstyled small">
+            <li><strong>Cattle:</strong> 283 days (~9.5 months)</li>
+            <li><strong>Range:</strong> 279-287 days</li>
+          </ul>
+
+          <hr>
+
+          <h6 class="text-info">Heat Cycle:</h6>
+          <ul class="list-unstyled small">
+            <li>• Cycle length: 18-24 days</li>
+            <li>• Standing heat: 12-18 hours</li>
+            <li>• Best breeding time: 6-12 hours after onset</li>
+          </ul>
+
+          <hr>
+
+          <h6 class="text-warning">Signs of Heat:</h6>
+          <ul class="list-unstyled small">
+            <li>• Standing to be mounted</li>
+            <li>• Clear vaginal discharge</li>
+            <li>• Restlessness</li>
+            <li>• Reduced appetite</li>
+            <li>• Swollen vulva</li>
+          </ul>
+
+          <hr>
+
+          <h6 class="text-primary">Pregnancy Check:</h6>
+          <ul class="list-unstyled small">
+            <li>• First check: 35-40 days</li>
+            <li>• Confirm: 60-90 days</li>
+            <li>• Final check: 150+ days</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Recent breeding history (if cow-specific) -->
+      <% if @cow && @cow.breeding_records.any? %>
+        <div class="card mt-3">
+          <div class="card-header">
+            <h6 class="card-title mb-0">
+              <i class="bi bi-clock-history"></i>
+              Recent Breeding History
+            </h6>
+          </div>
+          <div class="card-body">
+            <% @cow.breeding_records.recent.limit(3).each do |record| %>
+              <div class="breeding-history-item mb-2 pb-2 border-bottom">
+                <strong><%= record.breeding_date.strftime("%B %d, %Y") %></strong>
+                <br>
+                <small class="text-muted">
+                  <%= record.breeding_method.titleize if record.breeding_method %>
+                  • Status: <%= record.breeding_status.titleize if record.breeding_status %>
+                </small>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<style>
+.breeding-records-container {
+  padding: 20px;
+}
+
+.page-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.breeding-form .form-label.required::after {
+  content: " *";
+  color: #dc3545;
+}
+
+.form-actions {
+  border-top: 1px solid #e9ecef;
+  padding-top: 20px;
+  margin-top: 30px;
+}
+
+.breeding-history-item:last-child {
+  border-bottom: none !important;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 12px;
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+</style>
+
+<script>
+function updateExpectedDueDate() {
+  const breedingDateField = document.querySelector('input[name="breeding_record[breeding_date]"]');
+  const expectedDueDateField = document.querySelector('input[name="breeding_record[expected_due_date]"]');
+  
+  if (breedingDateField && expectedDueDateField && breedingDateField.value) {
+    const breedingDate = new Date(breedingDateField.value);
+    const expectedDueDate = new Date(breedingDate);
+    expectedDueDate.setDate(expectedDueDate.getDate() + 283); // Add 283 days
+    
+    expectedDueDateField.value = expectedDueDate.toISOString().split('T')[0];
+  }
+}
+
+// Auto-calculate when page loads if breeding date is already set
+document.addEventListener('DOMContentLoaded', function() {
+  updateExpectedDueDate();
+});
+</script>

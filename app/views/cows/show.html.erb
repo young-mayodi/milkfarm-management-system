@@ -259,6 +259,81 @@
   </div>
 </div>
 
+<!-- Lifecycle Management Actions -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-warning">
+      <div class="card-body">
+        <h5 class="card-title">
+          <i class="bi bi-arrow-repeat me-2"></i>Lifecycle Management
+          <span class="badge bg-secondary"><%= @cow.status.humanize %></span>
+        </h5>
+        <div class="row g-3">
+          <% if @cow.calf? && @cow.ready_for_dairy? %>
+            <div class="col-md-6 col-lg-3">
+              <%= link_to "Graduate to Dairy Cow", 
+                    farm_cow_graduate_to_dairy_path(@cow.farm, @cow), 
+                    method: :patch,
+                    data: { 
+                      confirm: "Graduate #{@cow.name} to dairy cow status? This will change the animal's classification." 
+                    },
+                    class: "btn btn-success w-100" %>
+              <small class="text-muted">Ready for dairy production</small>
+            </div>
+          <% elsif @cow.calf? %>
+            <div class="col-md-6 col-lg-3">
+              <button class="btn btn-outline-secondary w-100" disabled>
+                Graduate to Dairy
+              </button>
+              <small class="text-muted">Not ready (needs age ≥1.5y, weight ≥80kg)</small>
+            </div>
+          <% end %>
+          
+          <% if @cow.status.in?(['active', 'inactive', 'sick', 'pregnant']) %>
+            <div class="col-md-6 col-lg-3">
+              <%= link_to "Mark as Sold", 
+                    new_farm_animal_sale_path(@cow.farm, cow_id: @cow.id), 
+                    class: "btn btn-warning w-100" %>
+              <small class="text-muted">Record sale transaction</small>
+            </div>
+            
+            <div class="col-md-6 col-lg-3">
+              <%= link_to "Mark as Deceased", 
+                    farm_cow_mark_as_deceased_path(@cow.farm, @cow), 
+                    method: :patch,
+                    data: { 
+                      confirm: "Mark #{@cow.name} as deceased? This action can be reversed if needed." 
+                    },
+                    class: "btn btn-danger w-100" %>
+              <small class="text-muted">Record animal death</small>
+            </div>
+          <% elsif @cow.status.in?(['sold', 'deceased']) %>
+            <div class="col-md-6 col-lg-3">
+              <%= link_to "Reactivate Animal", 
+                    farm_cow_reactivate_path(@cow.farm, @cow), 
+                    method: :patch,
+                    data: { 
+                      confirm: "Reactivate #{@cow.name}? This will change status back to active." 
+                    },
+                    class: "btn btn-primary w-100" %>
+              <small class="text-muted">Return to active status</small>
+            </div>
+          <% end %>
+          
+          <% if @cow.can_be_milked? %>
+            <div class="col-md-6 col-lg-3">
+              <%= link_to "Quick Milk Entry", 
+                    enhanced_bulk_entry_production_records_path(cow_id: @cow.id, date: Date.current), 
+                    class: "btn btn-info w-100" %>
+              <small class="text-muted">Add today's production</small>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Actions -->
 <div class="row mb-4">
   <div class="col-12">

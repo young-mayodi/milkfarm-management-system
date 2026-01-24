@@ -1,0 +1,555 @@
+<% content_for :title, "Calves Management" %>
+
+<div class="calves-header mb-4">
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <h1 class="display-6 mb-1 gradient-text">
+        🐮 Calves Management
+      </h1>
+      <p class="lead text-muted mb-0">Monitor and manage young calves growth and development</p>
+    </div>
+    <div class="header-actions d-flex gap-2">
+      <%= link_to new_calf_path, class: "btn btn-success" do %>
+        <i class="bi bi-plus-circle me-2"></i>
+        Add New Calf
+      <% end %>
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+          <i class="bi bi-download me-2"></i>Export
+        </button>
+        <ul class="dropdown-menu">
+          <li>
+            <%= link_to calves_path(format: :csv), class: "dropdown-item" do %>
+              <i class="bi bi-file-earmark-text me-2"></i>CSV Report
+            <% end %>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <span class="dropdown-item text-muted">
+              <i class="bi bi-info-circle me-2"></i>Excel & PDF coming soon
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Statistics Cards -->
+<div class="row g-4 mb-5">
+  <div class="col-xl-3 col-md-6">
+    <div class="card metric-card card-gradient-success text-white h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="metric-value"><%= @calf_stats[:total_calves] %></div>
+            <div class="metric-label">Total Calves</div>
+            <div class="metric-change">
+              <i class="bi bi-heart-fill"></i>
+              <small><%= @calf_stats[:with_mothers] %> with mothers</small>
+            </div>
+          </div>
+          <div class="metric-icon">
+            <i class="bi bi-heart-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-xl-3 col-md-6">
+    <div class="card metric-card card-gradient-primary text-white h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="metric-value"><%= @calf_stats[:healthy_calves] %></div>
+            <div class="metric-label">Healthy Calves</div>
+            <div class="metric-change">
+              <i class="bi bi-check-circle"></i>
+              <small><%= number_with_precision((@calf_stats[:healthy_calves] / @calf_stats[:total_calves].to_f * 100), precision: 1) %>% healthy</small>
+            </div>
+          </div>
+          <div class="metric-icon">
+            <i class="bi bi-shield-check"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-xl-3 col-md-6">
+    <div class="card metric-card card-gradient-info text-white h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="metric-value"><%= number_with_precision(@calf_stats[:average_age], precision: 1) %></div>
+            <div class="metric-label">Avg Age (months)</div>
+            <div class="metric-change">
+              <i class="bi bi-calendar"></i>
+              <small>Average age across all calves</small>
+            </div>
+          </div>
+          <div class="metric-icon">
+            <i class="bi bi-calendar3"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-xl-3 col-md-6">
+    <div class="card metric-card card-gradient-warning text-white h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="metric-value"><%= number_with_precision(@growth_stats[:average_daily_gain], precision: 2) %>kg</div>
+            <div class="metric-label">Avg Daily Gain</div>
+            <div class="metric-change">
+              <i class="bi bi-graph-up"></i>
+              <small>Per day weight gain</small>
+            </div>
+          </div>
+          <div class="metric-icon">
+            <i class="bi bi-speedometer2"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Analytics Charts for Calves -->
+<% if @calves.any? %>
+  <div class="row g-4 mb-5">
+    <div class="col-lg-4">
+      <div class="card chart-card h-100">
+        <div class="card-header border-0 pb-0">
+          <h5 class="card-title mb-1">
+            <i class="bi bi-pie-chart-fill text-primary me-2"></i>
+            Age Distribution
+          </h5>
+          <p class="text-muted small mb-0">Calves by age groups</p>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;" data-turbo-permanent>
+            <canvas id="age-distribution-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card chart-card h-100">
+        <div class="card-header border-0 pb-0">
+          <h5 class="card-title mb-1">
+            <i class="bi bi-bar-chart text-success me-2"></i>
+            Growth Progress
+          </h5>
+          <p class="text-muted small mb-0">Weight gain and daily growth rates</p>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;" data-turbo-permanent>
+            <canvas id="growth-progress-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-4">
+      <div class="card chart-card h-100">
+        <div class="card-header border-0 pb-0">
+          <h5 class="card-title mb-1">
+            <i class="bi bi-heart-pulse text-danger me-2"></i>
+            Health Status
+          </h5>
+          <p class="text-muted small mb-0">Overall health distribution</p>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;" data-turbo-permanent>
+            <canvas id="health-status-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Top Performers Section -->
+<% if @growth_stats[:best_performers].any? %>
+  <div class="row g-4 mb-5">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header border-0 pb-0">
+          <h5 class="card-title mb-1">
+            🏆 Best Growing Calves
+          </h5>
+          <p class="text-muted small mb-0">Top performers in daily weight gain</p>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <% @growth_stats[:best_performers].each_with_index do |calf, index| %>
+              <div class="col-lg-4 mb-3">
+                <div class="performer-card p-3 rounded">
+                  <div class="d-flex align-items-center">
+                    <div class="rank-badge <%= index == 0 ? 'rank-gold' : index == 1 ? 'rank-silver' : 'rank-bronze' %> me-3">
+                      <%= index + 1 %>
+                    </div>
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1"><%= calf.name %></h6>
+                      <small class="text-muted">Tag: <%= calf.tag_number %></small>
+                    </div>
+                    <div class="text-end">
+                      <div class="fw-bold text-success"><%= number_with_precision(calf.avg_daily_gain, precision: 2) %>kg/day</div>
+                      <small class="text-muted"><%= calf.age %> months old</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Filters and Search -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="card filter-card">
+      <div class="card-body">
+        <%= form_with url: calves_path, method: :get, local: true, class: "row g-3" do |form| %>
+          <div class="col-md-3">
+            <%= form.text_field :search, placeholder: "Search by name or tag...", 
+                               value: params[:search], 
+                               class: "form-control",
+                               autocomplete: "off" %>
+          </div>
+          <div class="col-md-3">
+            <%= form.select :farm_id, 
+                           options_from_collection_for_select(
+                             current_user.accessible_farms, :id, :name, params[:farm_id]
+                           ),
+                           { prompt: "All Farms" },
+                           { class: "form-select" } %>
+          </div>
+          <div class="col-md-3">
+            <%= form.select :status,
+                           options_for_select([
+                             ['All Status', ''],
+                             ['Active', 'active'],
+                             ['Sick', 'sick'],
+                             ['Inactive', 'inactive']
+                           ], params[:status]),
+                           {},
+                           { class: "form-select" } %>
+          </div>
+          <div class="col-md-3">
+            <div class="d-flex gap-2">
+              <%= form.submit "Filter", class: "btn btn-primary" %>
+              <%= link_to "Clear", calves_path, class: "btn btn-outline-secondary" %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Calves Table -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header border-0 pb-0">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">
+            🐮 Calves List (<%= @calves.total_count %> total)
+          </h5>
+          <div class="d-flex gap-2">
+            <small class="text-muted">Showing <%= @calves.count %> of <%= @calves.total_count %></small>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if @calves.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Calf Details</th>
+                  <th>Farm</th>
+                  <th>Mother</th>
+                  <th>Age</th>
+                  <th>Weight Info</th>
+                  <th>Growth Rate</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @calves.each do |calf| %>
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="calf-avatar me-3">
+                          <i class="bi bi-heart-fill text-primary"></i>
+                        </div>
+                        <div>
+                          <h6 class="mb-1"><%= calf.name %></h6>
+                          <small class="text-muted">Tag: <%= calf.tag_number %></small>
+                          <br>
+                          <small class="text-muted"><%= calf.breed %></small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge bg-info"><%= calf.farm.name %></span>
+                    </td>
+                    <td>
+                      <% if calf.mother %>
+                        <div>
+                          <strong><%= calf.mother.name %></strong>
+                          <br>
+                          <small class="text-muted">Tag: <%= calf.mother.tag_number %></small>
+                        </div>
+                      <% else %>
+                        <span class="text-muted">No mother assigned</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <span class="badge bg-secondary"><%= calf.age %> months</span>
+                      <% if calf.birth_date %>
+                        <br>
+                        <small class="text-muted">Born: <%= calf.birth_date.strftime("%m/%d/%y") %></small>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if calf.current_weight %>
+                        <div>
+                          <strong><%= calf.current_weight %>kg</strong>
+                          <% if calf.prev_weight && calf.weight_gain %>
+                            <br>
+                            <small class="text-<%= calf.weight_gain > 0 ? 'success' : 'warning' %>">
+                              <%= calf.weight_gain > 0 ? '+' : '' %><%= calf.weight_gain %>kg
+                            </small>
+                          <% end %>
+                        </div>
+                      <% else %>
+                        <span class="text-muted">Not recorded</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if calf.avg_daily_gain %>
+                        <span class="badge bg-<%= calf.avg_daily_gain > 0.5 ? 'success' : calf.avg_daily_gain > 0.3 ? 'warning' : 'danger' %>">
+                          <%= number_with_precision(calf.avg_daily_gain, precision: 2) %>kg/day
+                        </span>
+                      <% else %>
+                        <span class="text-muted">Not calculated</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <span class="badge bg-<%= calf.status_badge_class %>">
+                        <%= calf.status.capitalize %>
+                      </span>
+                    </td>
+                    <td>
+                      <div class="btn-group btn-group-sm">
+                        <%= link_to calf_path(calf), class: "btn btn-outline-primary", title: "View Details" do %>
+                          <i class="bi bi-eye"></i>
+                        <% end %>
+                        <%= link_to edit_calf_path(calf), class: "btn btn-outline-warning", title: "Edit" do %>
+                          <i class="bi bi-pencil"></i>
+                        <% end %>
+                        <%= link_to calf_path(calf), method: :delete, 
+                                   class: "btn btn-outline-danger", 
+                                   title: "Delete",
+                                   confirm: "Are you sure you want to delete #{calf.name}?" do %>
+                          <i class="bi bi-trash"></i>
+                        <% end %>
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <small class="text-muted">
+              Showing <%= @calves.offset_value + 1 %> to <%= [@calves.offset_value + @calves.count, @calves.total_count].min %> 
+              of <%= @calves.total_count %> calves
+            </small>
+            <%= paginate @calves if respond_to?(:paginate) %>
+          </div>
+        <% else %>
+          <div class="text-center py-5">
+            <i class="bi bi-heart text-muted" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mt-3">No calves found</h4>
+            <p class="text-muted">
+              <% if params[:search].present? || params[:farm_id].present? || params[:status].present? %>
+                Try adjusting your filters or 
+                <%= link_to "clear all filters", calves_path, class: "text-decoration-none" %>
+              <% else %>
+                Get started by adding your first calf to the system
+              <% end %>
+            </p>
+            <%= link_to new_calf_path, class: "btn btn-primary" do %>
+              <i class="bi bi-plus-circle me-2"></i>Add First Calf
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart JavaScript -->
+<% if @calves.any? %>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Age Distribution Chart
+  const ageCtx = document.getElementById('age-distribution-chart');
+  if (ageCtx && <%= @age_distribution.present? %>) {
+    new Chart(ageCtx, {
+      type: 'doughnut',
+      data: {
+        labels: <%= @age_distribution.keys.to_json.html_safe %>,
+        datasets: [{
+          data: <%= @age_distribution.values.to_json.html_safe %>,
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 205, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+  }
+
+  // Growth Progress Chart
+  const growthCtx = document.getElementById('growth-progress-chart');
+  if (growthCtx && <%= @growth_data.present? %>) {
+    new Chart(growthCtx, {
+      type: 'bar',
+      data: {
+        labels: <%= @growth_data.map { |d| d[:name] }.to_json.html_safe %>,
+        datasets: [{
+          label: 'Weight Gain (kg)',
+          data: <%= @growth_data.map { |d| d[:weight_gain] }.to_json.html_safe %>,
+          backgroundColor: 'rgba(75, 192, 192, 0.8)'
+        }, {
+          label: 'Daily Gain (kg)',
+          data: <%= @growth_data.map { |d| d[:daily_gain] }.to_json.html_safe %>,
+          backgroundColor: 'rgba(255, 159, 64, 0.8)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  // Health Status Chart
+  const healthCtx = document.getElementById('health-status-chart');
+  if (healthCtx && <%= @health_status.present? %>) {
+    new Chart(healthCtx, {
+      type: 'pie',
+      data: {
+        labels: <%= @health_status.keys.map(&:capitalize).to_json.html_safe %>,
+        datasets: [{
+          data: <%= @health_status.values.to_json.html_safe %>,
+          backgroundColor: [
+            'rgba(75, 192, 192, 0.8)',   // active - green
+            'rgba(255, 99, 132, 0.8)',   // sick - red  
+            'rgba(255, 205, 86, 0.8)',   // inactive - yellow
+            'rgba(153, 102, 255, 0.8)'   // other - purple
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+  }
+});
+</script>
+<% end %>
+
+<!-- Enhanced Styles for Calves -->
+<style>
+  .calf-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+  
+  .performer-card {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .performer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  .rank-badge {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-size: 0.9rem;
+  }
+  
+  .rank-gold {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+  }
+  
+  .rank-silver {
+    background: linear-gradient(135deg, #C0C0C0, #808080);
+    box-shadow: 0 2px 8px rgba(192, 192, 192, 0.4);
+  }
+  
+  .rank-bronze {
+    background: linear-gradient(135deg, #CD7F32, #A0522D);
+    box-shadow: 0 2px 8px rgba(205, 127, 50, 0.4);
+  }
+  
+  .chart-card {
+    transition: all 0.3s ease;
+  }
+  
+  .chart-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+</style>

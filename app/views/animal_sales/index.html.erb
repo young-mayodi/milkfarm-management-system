@@ -1,0 +1,320 @@
+<% content_for :title, "Animal Sales" %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>
+      <i class="bi bi-bank2 me-2"></i>Animal Sales
+      <% if @farm %>
+        <span class="badge bg-primary"><%= @farm.name %></span>
+      <% end %>
+    </h1>
+    <p class="text-muted">Track animal sales and revenue</p>
+  </div>
+  <div>
+    <%= link_to "Record New Sale", 
+          (@farm ? new_farm_animal_sale_path(@farm) : new_animal_sale_path), 
+          class: "btn btn-primary" %>
+  </div>
+</div>
+
+<!-- Sales Analytics Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card bg-success text-white">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <h5 class="card-title mb-1">Total Revenue</h5>
+            <h3 class="mb-0">$<%= number_with_delimiter(@total_revenue) %></h3>
+          </div>
+          <div class="flex-shrink-0">
+            <i class="bi bi-currency-dollar fs-1"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-info text-white">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <h5 class="card-title mb-1">Average Price</h5>
+            <h3 class="mb-0">$<%= number_with_delimiter(@average_price) %></h3>
+          </div>
+          <div class="flex-shrink-0">
+            <i class="bi bi-graph-up fs-1"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-warning text-white">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <h5 class="card-title mb-1">Recent Sales</h5>
+            <h3 class="mb-0"><%= @recent_sales_count %></h3>
+            <small>Last 30 days</small>
+          </div>
+          <div class="flex-shrink-0">
+            <i class="bi bi-calendar-week fs-1"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card bg-primary text-white">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <h5 class="card-title mb-1">Total Sales</h5>
+            <h3 class="mb-0"><%= @animal_sales.total_count %></h3>
+          </div>
+          <div class="flex-shrink-0">
+            <i class="bi bi-list-ol fs-1"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <%= form_with url: (@farm ? farm_animal_sales_path(@farm) : animal_sales_path), method: :get, local: true, class: "row g-3" do |form| %>
+      <div class="col-md-3">
+        <%= form.label :start_date, "Start Date", class: "form-label" %>
+        <%= form.date_field :start_date, value: params[:start_date], class: "form-control" %>
+      </div>
+      <div class="col-md-3">
+        <%= form.label :end_date, "End Date", class: "form-label" %>
+        <%= form.date_field :end_date, value: params[:end_date], class: "form-control" %>
+      </div>
+      <div class="col-md-2">
+        <%= form.label :animal_type, "Animal Type", class: "form-label" %>
+        <%= form.select :animal_type, 
+              options_for_select([
+                ['All Types', 'all'],
+                ['Cow', 'cow'],
+                ['Calf', 'calf'],
+                ['Bull', 'bull'],
+                ['Heifer', 'heifer']
+              ], params[:animal_type]), 
+              {}, 
+              { class: "form-select" } %>
+      </div>
+      <div class="col-md-2">
+        <%= form.label :buyer, "Buyer", class: "form-label" %>
+        <%= form.text_field :buyer, value: params[:buyer], class: "form-control", placeholder: "Search buyer..." %>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <%= form.submit "Filter", class: "btn btn-primary me-2" %>
+        <%= link_to "Clear", (@farm ? farm_animal_sales_path(@farm) : animal_sales_path), class: "btn btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Sales Charts -->
+<% if @monthly_sales.any? %>
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Monthly Sales Revenue</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="salesRevenueChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Top Buyers</h5>
+        </div>
+        <div class="card-body">
+          <% if @top_buyers.any? %>
+            <% @top_buyers.each do |buyer, total| %>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span><%= buyer %></span>
+                <span class="badge bg-success">$<%= number_with_delimiter(total) %></span>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="text-muted mb-0">No sales data available</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Sales Table -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Sales Records</h5>
+    <div>
+      <%= link_to "Export CSV", 
+            (@farm ? farm_animal_sales_path(@farm, format: :csv) : animal_sales_path(format: :csv)), 
+            class: "btn btn-outline-primary btn-sm" %>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <% if @animal_sales.any? %>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Sale Date</th>
+              <th>Animal</th>
+              <th>Type</th>
+              <th>Buyer</th>
+              <th>Sale Price</th>
+              <th>Weight</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @animal_sales.each do |sale| %>
+              <tr>
+                <td>
+                  <span class="badge bg-light text-dark">
+                    <%= sale.sale_date.strftime("%m/%d/%Y") %>
+                  </span>
+                </td>
+                <td>
+                  <div>
+                    <strong><%= sale.cow.name %></strong>
+                    <br>
+                    <small class="text-muted">
+                      #<%= sale.cow.tag_number %> • <%= sale.cow.breed %>
+                    </small>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge 
+                    <%= case sale.animal_type
+                        when 'cow' then 'bg-primary'
+                        when 'calf' then 'bg-success' 
+                        when 'bull' then 'bg-warning text-dark'
+                        else 'bg-secondary'
+                        end %>">
+                    <%= sale.animal_type.titleize %>
+                  </span>
+                </td>
+                <td>
+                  <div>
+                    <strong><%= sale.buyer %></strong>
+                    <% if sale.buyer_contact.present? %>
+                      <br><small class="text-muted"><%= sale.buyer_contact %></small>
+                    <% end %>
+                  </div>
+                </td>
+                <td>
+                  <strong class="text-success">$<%= number_with_delimiter(sale.sale_price) %></strong>
+                </td>
+                <td>
+                  <% if sale.weight_at_sale.present? %>
+                    <%= sale.weight_at_sale %> lbs
+                  <% else %>
+                    <span class="text-muted">N/A</span>
+                  <% end %>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <%= link_to "View", 
+                          (@farm ? farm_animal_sale_path(@farm, sale) : animal_sale_path(sale)), 
+                          class: "btn btn-outline-primary btn-sm" %>
+                    <%= link_to "Edit", 
+                          (@farm ? edit_farm_animal_sale_path(@farm, sale) : edit_animal_sale_path(sale)), 
+                          class: "btn btn-outline-secondary btn-sm" %>
+                    <%= link_to "Delete", 
+                          (@farm ? farm_animal_sale_path(@farm, sale) : animal_sale_path(sale)), 
+                          method: :delete,
+                          data: { 
+                            confirm: "Are you sure you want to delete this sale record?" 
+                          },
+                          class: "btn btn-outline-danger btn-sm" %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="card-footer">
+        <%= paginate @animal_sales %>
+      </div>
+    <% else %>
+      <div class="text-center py-4">
+        <i class="bi bi-bank2 text-muted" style="font-size: 3rem;"></i>
+        <h4 class="text-muted mt-3">No Sales Records Found</h4>
+        <p class="text-muted">Start by recording your first animal sale.</p>
+        <%= link_to "Record New Sale", 
+              (@farm ? new_farm_animal_sale_path(@farm) : new_animal_sale_path), 
+              class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% if @monthly_sales.any? %>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Monthly Sales Revenue Chart
+      const salesCtx = document.getElementById('salesRevenueChart').getContext('2d');
+      const monthlyData = <%= @monthly_sales.to_json.html_safe %>;
+      
+      // Process data for Chart.js
+      const months = Object.keys(monthlyData).map(month => {
+        return new Date(month).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short' 
+        });
+      });
+      
+      const revenues = Object.values(monthlyData);
+      
+      new Chart(salesCtx, {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'Revenue ($)',
+            data: revenues,
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+            tension: 0.1,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return '$' + value.toLocaleString();
+                }
+              }
+            }
+          }
+        }
+      });
+    });
+  </script>
+<% end %>

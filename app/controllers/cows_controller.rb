@@ -1,15 +1,15 @@
 class CowsController < ApplicationController
-  before_action :set_farm, except: [:index, :show]
-  before_action :set_cow, only: [:show, :edit, :update, :destroy]
+  before_action :set_farm, except: [ :index, :show ]
+  before_action :set_cow, only: [ :show, :edit, :update, :destroy, :graduate_to_dairy, :mark_as_sold, :mark_as_deceased, :reactivate ]
 
   def index
     # Build base query with optimizations for large datasets
     @base_query = Cow.includes(:farm).joins(:farm)
-    
+
     # Apply farm filter
     @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
     @base_query = @base_query.where(farm_id: @farm.id) if @farm
-    
+
     # Apply search filter
     if params[:search].present?
       search_term = "%#{params[:search]}%"
@@ -18,77 +18,77 @@ class CowsController < ApplicationController
         search_term, search_term, search_term
       )
     end
-    
+
     # Apply status filter
     @base_query = @base_query.where(status: params[:status]) if params[:status].present?
-    
+
     # Apply breed filter
     @base_query = @base_query.where(breed: params[:breed]) if params[:breed].present?
-    
+
     # Apply animal type filter
     if params[:animal_type].present?
       case params[:animal_type]
-      when 'adults'
+      when "adults"
         @base_query = @base_query.adult_cows
-      when 'calves'
+      when "calves"
         @base_query = @base_query.calves.includes(:mother)
       end
     end
-    
+
     # Apply age range filter
     if params[:age_range].present?
       case params[:age_range]
-      when '0-2'
-        @base_query = @base_query.where('cows.age' => 0..2)
-      when '3-5'
-        @base_query = @base_query.where('cows.age' => 3..5)
-      when '6-8'
-        @base_query = @base_query.where('cows.age' => 6..8)
-      when '9+'
-        @base_query = @base_query.where('cows.age >= ?', 9)
+      when "0-2"
+        @base_query = @base_query.where("cows.age" => 0..2)
+      when "3-5"
+        @base_query = @base_query.where("cows.age" => 3..5)
+      when "6-8"
+        @base_query = @base_query.where("cows.age" => 6..8)
+      when "9+"
+        @base_query = @base_query.where("cows.age >= ?", 9)
       end
     end
-    
+
     # Apply sorting
-    sort_column = params[:sort] || 'name'
-    sort_direction = params[:direction] || 'asc'
-    
+    sort_column = params[:sort] || "name"
+    sort_direction = params[:direction] || "asc"
+
     # Validate sort parameters to prevent SQL injection
     allowed_sorts = %w[name tag_number age status breed]
-    sort_column = 'name' unless allowed_sorts.include?(sort_column)
-    sort_direction = 'asc' unless %w[asc desc].include?(sort_direction)
-    
+    sort_column = "name" unless allowed_sorts.include?(sort_column)
+    sort_direction = "asc" unless %w[asc desc].include?(sort_direction)
+
     @base_query = @base_query.order("cows.#{sort_column} #{sort_direction}")
-    
+
     # Get total count before pagination (for pagination info)
     @total_count = @base_query.count
-    
+
     # Apply pagination
     per_page = (params[:per_page] || 50).to_i.clamp(25, 250)
     @cows = @base_query.page(params[:page]).per(per_page)
-    
+
     # Ensure @cows is properly initialized for Kaminari
     @cows = @cows.includes(:farm) if @cows.respond_to?(:includes)
-    
+
     # Calculate statistics
     @stats = calculate_cow_stats
-    
+
     # Load production data efficiently for table display
-    load_production_data_for_table if params[:view] != 'cards'
-    
+    load_production_data_for_table if params[:view] != "cards"
+
     # Handle different response formats
     respond_to do |format|
-      format.html { 
+      format.html {
         # Ensure no caching for dynamic content
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        
-        render params[:view] == 'cards' ? :index : :index_scalable 
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+
+        render params[:view] == "cards" ? :index : :index_scalable
       }
       format.csv { send_csv_export }
       format.pdf { send_pdf_export }
-      format.json { 
+      format.json {
         render json: {
           cows: @cows.as_json(include: :farm),
           total_count: @total_count,
@@ -103,71 +103,71 @@ class CowsController < ApplicationController
     Rails.logger.info "Cow ID: #{params[:id]}"
     Rails.logger.info "Cow Name: #{@cow.name}"
     Rails.logger.info "Current User: #{current_user&.email}"
-    
+
     # Use service for cow performance analytics with caching
     @analytics_service = ProductionAnalyticsService.new
     @cow_performance = @analytics_service.cow_performance_metrics(@cow.id)
-    
+
     # Optimized recent production with limited fields
     @recent_production = @cow.production_records
       .select(:id, :production_date, :total_production, :morning_production, :noon_production, :evening_production)
       .recent
       .limit(10)
-    
+
     @average_production = @cow.average_daily_production(30)
-    
+
     Rails.logger.info "Recent production count: #{@recent_production.count}"
     Rails.logger.info "Average production: #{@average_production}"
-    
+
     # Chart data for last 30 days production
     daily_production = @cow.production_records
       .where(production_date: 30.days.ago..Date.current)
       .order(:production_date)
-    
+
     Rails.logger.info "Daily production records: #{daily_production.count}"
-    
+
     @production_chart_data = {
-      labels: daily_production.map { |record| record.production_date.strftime('%m/%d') },
+      labels: daily_production.map { |record| record.production_date.strftime("%m/%d") },
       datasets: [
         {
-          label: 'Morning (L)',
+          label: "Morning (L)",
           data: daily_production.map { |record| record.morning_production.round(1).to_f },
-          borderColor: 'rgba(255, 159, 64, 1)',
-          backgroundColor: 'rgba(255, 159, 64, 0.2)',
+          borderColor: "rgba(255, 159, 64, 1)",
+          backgroundColor: "rgba(255, 159, 64, 0.2)",
           tension: 0.4
         },
         {
-          label: 'Noon (L)',
+          label: "Noon (L)",
           data: daily_production.map { |record| record.noon_production.round(1).to_f },
-          borderColor: 'rgba(54, 162, 235, 1)',
-          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: "rgba(54, 162, 235, 1)",
+          backgroundColor: "rgba(54, 162, 235, 0.2)",
           tension: 0.4
         },
         {
-          label: 'Evening (L)',
+          label: "Evening (L)",
           data: daily_production.map { |record| record.evening_production.round(1).to_f },
-          borderColor: 'rgba(153, 102, 255, 1)',
-          backgroundColor: 'rgba(153, 102, 255, 0.2)',
+          borderColor: "rgba(153, 102, 255, 1)",
+          backgroundColor: "rgba(153, 102, 255, 0.2)",
           tension: 0.4
         },
         {
-          label: 'Total (L)',
+          label: "Total (L)",
           data: daily_production.map { |record| record.total_production.round(1).to_f },
-          borderColor: 'rgba(75, 192, 192, 1)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: "rgba(75, 192, 192, 1)",
+          backgroundColor: "rgba(75, 192, 192, 0.2)",
           tension: 0.4,
           borderWidth: 3
         }
       ]
     }
-    
+
     Rails.logger.info "Chart data labels count: #{@production_chart_data[:labels].count}"
-    
+
     # Weekly production summary - simplified approach
     recent_records = @cow.production_records
       .where(production_date: 4.weeks.ago..Date.current)
       .order(:production_date)
-    
+
     # Group by week manually
     weekly_data = {}
     recent_records.each do |record|
@@ -175,25 +175,25 @@ class CowsController < ApplicationController
       weekly_data[week_start] ||= []
       weekly_data[week_start] << record.total_production
     end
-    
+
     # Calculate averages
     weekly_averages = weekly_data.transform_values do |productions|
       productions.sum.to_f / productions.count
     end
-    
+
     @weekly_chart_data = {
       labels: weekly_averages.keys.map { |date| "Week of #{date.strftime('%m/%d')}" },
       datasets: [
         {
-          label: 'Weekly Average Production (L)',
+          label: "Weekly Average Production (L)",
           data: weekly_averages.values.map { |val| (val&.round(1) || 0).to_f },
-          backgroundColor: 'rgba(255, 99, 132, 0.8)',
-          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: "rgba(255, 99, 132, 0.8)",
+          borderColor: "rgba(255, 99, 132, 1)",
           borderWidth: 2
         }
       ]
     }
-    
+
     Rails.logger.info "Weekly chart data labels count: #{@weekly_chart_data[:labels].count}"
     Rails.logger.info "=== END COW SHOW ACTION DEBUG ==="
   end
@@ -204,9 +204,9 @@ class CowsController < ApplicationController
 
   def create
     @cow = @farm.cows.new(cow_params)
-    
+
     if @cow.save
-      redirect_to [@farm, @cow], notice: 'Cow was successfully created.'
+      redirect_to [ @farm, @cow ], notice: "Cow was successfully created."
     else
       render :new
     end
@@ -217,7 +217,7 @@ class CowsController < ApplicationController
 
   def update
     if @cow.update(cow_params)
-      redirect_to [@farm, @cow], notice: 'Cow was successfully updated.'
+      redirect_to [ @farm, @cow ], notice: "Cow was successfully updated."
     else
       render :edit
     end
@@ -225,25 +225,70 @@ class CowsController < ApplicationController
 
   def destroy
     @cow.destroy
-    redirect_to farm_cows_url(@farm), notice: 'Cow was successfully deleted.'
+    redirect_to farm_cows_url(@farm), notice: "Cow was successfully deleted."
   end
-  
+
+  # Lifecycle management actions
+  def graduate_to_dairy
+    if @cow.ready_for_dairy?
+      @cow.graduate_to_dairy!
+      redirect_back(fallback_location: [ @farm, @cow ],
+                    notice: "#{@cow.name} has been graduated to dairy cow status.")
+    else
+      redirect_back(fallback_location: [ @farm, @cow ],
+                    alert: "#{@cow.name} is not ready for dairy graduation.")
+    end
+  end
+
+  def mark_as_sold
+    @cow.mark_as_sold!
+    redirect_back(fallback_location: [ @farm, @cow ],
+                  notice: "#{@cow.name} has been marked as sold.")
+  end
+
+  def mark_as_deceased
+    reason = params[:reason] || "Unknown cause"
+    @cow.mark_as_deceased!
+
+    # Create death record with reason
+    DeathRecord.create!(
+      cow: @cow,
+      death_date: Date.current,
+      cause: reason,
+      farm: @cow.farm
+    ) rescue nil # Don't fail if DeathRecord doesn't exist yet
+
+    redirect_back(fallback_location: [ @farm, @cow ],
+                  notice: "#{@cow.name} has been marked as deceased.")
+  end
+
+  def reactivate
+    if @cow.status.in?([ "sold", "deceased" ])
+      @cow.update!(status: "active")
+      redirect_back(fallback_location: [ @farm, @cow ],
+                    notice: "#{@cow.name} has been reactivated.")
+    else
+      redirect_back(fallback_location: [ @farm, @cow ],
+                    alert: "Cannot reactivate #{@cow.name} with current status.")
+    end
+  end
+
   def search
     query = params[:q].to_s.downcase.strip
-    
+
     if query.present?
-      cows = Cow.where(status: 'active')
+      cows = Cow.where(status: "active")
                 .where("LOWER(name) LIKE ? OR LOWER(tag_number) LIKE ?", "%#{query}%", "%#{query}%")
                 .joins(:production_records)
                 .where(production_records: { production_date: 1.week.ago..Date.current })
-                .group('cows.id')
-                .select('cows.*, AVG(production_records.total_production) as avg_production')
+                .group("cows.id")
+                .select("cows.*, AVG(production_records.total_production) as avg_production")
                 .limit(10)
-                .order('avg_production DESC')
+                .order("avg_production DESC")
     else
       cows = []
     end
-    
+
     render json: {
       cows: cows.map do |cow|
         {
@@ -260,14 +305,14 @@ class CowsController < ApplicationController
   def chart_data
     respond_to do |format|
       format.json do
-        if params[:chart_type] == 'calves_growth'
+        if params[:chart_type] == "calves_growth"
           render json: calves_growth_chart_data
-        elsif params[:chart_type] == 'calves_weight_distribution'
+        elsif params[:chart_type] == "calves_weight_distribution"
           render json: calves_weight_distribution_data
-        elsif params[:chart_type] == 'calves_by_mother'
+        elsif params[:chart_type] == "calves_by_mother"
           render json: calves_by_mother_data
         else
-          render json: { error: 'Unknown chart type' }, status: :bad_request
+          render json: { error: "Unknown chart type" }, status: :bad_request
         end
       end
     end
@@ -277,7 +322,7 @@ class CowsController < ApplicationController
 
   def set_farm
     @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
-    
+
     # For standalone cow routes without farm_id, try to get farm from the cow
     if @farm.nil? && params[:id].present?
       cow = Cow.find(params[:id])
@@ -287,14 +332,14 @@ class CowsController < ApplicationController
 
   def set_cow
     if @farm
-      @cow = @farm.cows.find(params[:id])
+      @cow = @farm.cows.includes(:production_records).find(params[:id])
     else
-      @cow = Cow.find(params[:id])
+      @cow = Cow.includes(:production_records).find(params[:id])
     end
   end
 
   def cow_params
-    params.require(:cow).permit(:name, :tag_number, :breed, :age, :group_name, :status, :mother_id, 
+    params.require(:cow).permit(:name, :tag_number, :breed, :age, :group_name, :status, :mother_id,
                                 :current_weight, :prev_weight, :weight_gain, :avg_daily_gain, :birth_date)
   end
 
@@ -302,52 +347,52 @@ class CowsController < ApplicationController
   def calculate_cow_stats
     # Get cow IDs from the filtered query to avoid GROUP BY issues
     cow_ids = @base_query.pluck(:id)
-    
+
     if cow_ids.any?
       stats = {}
       stats[:total_count] = cow_ids.count
-      stats[:active_count] = @base_query.where(status: 'active').count
-      
+      stats[:active_count] = @base_query.where(status: "active").count
+
       # Add calves-specific stats when viewing calves
-      if params[:animal_type] == 'calves'
+      if params[:animal_type] == "calves"
         stats.merge!(calculate_calves_stats(cow_ids))
       else
         # Existing stats for adults/all
         recent_production = ProductionRecord.joins(:cow)
           .where(cow_id: cow_ids)
-          .where('production_date >= ?', 7.days.ago)
-        
+          .where("production_date >= ?", 7.days.ago)
+
         stats[:avg_daily_production] = recent_production.average(:total_production)&.round(2) || 0
         stats[:total_recent_production] = recent_production.sum(:total_production)&.round(2) || 0
       end
-      
+
       stats
     else
       default_stats
     end
   end
-  
+
   # Calves growth chart data
   def calves_growth_chart_data
     farm = @farm || Farm.find(params[:farm_id]) if params[:farm_id]
     calves = farm ? farm.cows.calves : Cow.calves
     calves = calves.where.not(birth_date: nil, current_weight: nil)
-    
+
     {
       labels: calves.map(&:name),
       datasets: [
         {
-          label: 'Current Weight (kg)',
+          label: "Current Weight (kg)",
           data: calves.map(&:current_weight),
-          backgroundColor: 'rgba(102, 126, 234, 0.6)',
-          borderColor: 'rgba(102, 126, 234, 1)',
+          backgroundColor: "rgba(102, 126, 234, 0.6)",
+          borderColor: "rgba(102, 126, 234, 1)",
           borderWidth: 2
         },
         {
-          label: 'Previous Weight (kg)',
+          label: "Previous Weight (kg)",
           data: calves.map(&:prev_weight),
-          backgroundColor: 'rgba(72, 187, 120, 0.6)',
-          borderColor: 'rgba(72, 187, 120, 1)',
+          backgroundColor: "rgba(72, 187, 120, 0.6)",
+          borderColor: "rgba(72, 187, 120, 1)",
           borderWidth: 2
         }
       ]
@@ -359,27 +404,27 @@ class CowsController < ApplicationController
     farm = @farm || Farm.find(params[:farm_id]) if params[:farm_id]
     calves = farm ? farm.cows.calves : Cow.calves
     calves = calves.where.not(current_weight: nil)
-    
+
     weight_ranges = {
-      '0-50kg' => calves.where(current_weight: 0..50).count,
-      '51-100kg' => calves.where(current_weight: 51..100).count,
-      '101-150kg' => calves.where(current_weight: 101..150).count,
-      '151-200kg' => calves.where(current_weight: 151..200).count,
-      '200kg+' => calves.where('current_weight > ?', 200).count
+      "0-50kg" => calves.where(current_weight: 0..50).count,
+      "51-100kg" => calves.where(current_weight: 51..100).count,
+      "101-150kg" => calves.where(current_weight: 101..150).count,
+      "151-200kg" => calves.where(current_weight: 151..200).count,
+      "200kg+" => calves.where("current_weight > ?", 200).count
     }
-    
+
     {
       labels: weight_ranges.keys,
-      datasets: [{
+      datasets: [ {
         data: weight_ranges.values,
         backgroundColor: [
-          '#FF6384',
-          '#36A2EB', 
-          '#FFCE56',
-          '#4BC0C0',
-          '#9966FF'
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56",
+          "#4BC0C0",
+          "#9966FF"
         ]
-      }]
+      } ]
     }
   end
 
@@ -387,93 +432,93 @@ class CowsController < ApplicationController
   def calves_by_mother_data
     farm = @farm || Farm.find(params[:farm_id]) if params[:farm_id]
     calves = farm ? farm.cows.calves : Cow.calves
-    
+
     mothers_data = calves.joins(:mother)
-                         .group('mothers_cows.name')
+                         .group("mothers_cows.name")
                          .count
-    
+
     {
       labels: mothers_data.keys,
-      datasets: [{
+      datasets: [ {
         data: mothers_data.values,
         backgroundColor: [
-          '#FF6384',
-          '#36A2EB',
-          '#FFCE56',
-          '#4BC0C0',
-          '#9966FF',
-          '#FF9F40'
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56",
+          "#4BC0C0",
+          "#9966FF",
+          "#FF9F40"
         ]
-      }]
+      } ]
     }
   end
 
   # Calculate calves-specific statistics
   def calculate_calves_stats(cow_ids)
     calves = Cow.where(id: cow_ids)
-    
+
     {
       avg_weight: calves.where.not(current_weight: nil).average(:current_weight)&.round(1) || 0,
       total_weight_gain: calves.where.not(weight_gain: nil).sum(:weight_gain)&.round(1) || 0,
       avg_daily_gain: calves.where.not(avg_daily_gain: nil).average(:avg_daily_gain)&.round(3) || 0,
       with_mothers_count: calves.with_mother.count,
-      fast_growing_count: calves.where('avg_daily_gain >= ?', 0.7).count,
-      birth_this_year: calves.where('birth_date >= ?', Date.current.beginning_of_year).count
+      fast_growing_count: calves.where("avg_daily_gain >= ?", 0.7).count,
+      birth_this_year: calves.where("birth_date >= ?", Date.current.beginning_of_year).count
     }
   end
-  
+
   # Load production data for table display (only when needed)
   def load_production_data_for_table
     return if @cows.empty?
-    
+
     cow_ids = @cows.pluck(:id)
-    
+
     # Get last production record for each cow
     @last_productions = ProductionRecord
-      .select('DISTINCT ON (cow_id) cow_id, production_date, total_production')
+      .select("DISTINCT ON (cow_id) cow_id, production_date, total_production")
       .where(cow_id: cow_ids)
       .order(:cow_id, production_date: :desc)
       .index_by(&:cow_id)
-    
+
     # Get 30-day totals for each cow
     @monthly_productions = ProductionRecord
       .where(cow_id: cow_ids, production_date: 30.days.ago..Date.current)
       .group(:cow_id)
       .sum(:total_production)
   end
-  
+
   # CSV export functionality
   def send_csv_export
-    require 'csv'
-    
+    require "csv"
+
     csv_data = CSV.generate(headers: true) do |csv|
-      csv << ['Name', 'Tag Number', 'Breed', 'Age', 'Status', 'Farm', 'Last Production', '30-Day Total']
-      
+      csv << [ "Name", "Tag Number", "Breed", "Age", "Status", "Farm", "Last Production", "30-Day Total" ]
+
       @cows.includes(:farm).find_each do |cow|
         last_production = cow.production_records.recent.first&.total_production || 0
         monthly_total = cow.production_records
                           .where(production_date: 30.days.ago..Date.current)
                           .sum(:total_production)
-        
+
         csv << [
           cow.name,
           cow.tag_number,
-          cow.breed || 'Unknown',
+          cow.breed || "Unknown",
           cow.age || 0,
-          cow.status || 'active',
+          cow.status || "active",
           cow.farm.name,
           last_production.round(1),
           monthly_total.round(1)
         ]
       end
     end
-    
+
     send_data csv_data,
               filename: "animals_export_#{Date.current.strftime('%Y%m%d')}.csv",
-              type: 'text/csv',
-              disposition: 'attachment'
+              type: "text/csv",
+              disposition: "attachment"
   end
-  
+
   # PDF export functionality (placeholder)
   def send_pdf_export
     # Implementation for PDF export would go here

@@ -37,8 +37,8 @@ class ReportsController < ApplicationController
 
       {
         farm: farm,
-        total_cows: farm.cows.count,
-        active_cows: farm.cows.where(status: "active").count,
+        total_cows: farm.cows_count || 0,
+        active_cows: farm.active_cows_count || 0,
         recent_production: recent_records.sum(:total_production),
         avg_daily_production: recent_records.any? ? recent_records.average(:total_production) : 0,
         recent_sales_volume: recent_sales.sum(:milk_sold),
@@ -99,22 +99,52 @@ class ReportsController < ApplicationController
     @date_range = params[:date_range] || "30"
     start_date = @date_range.to_i.days.ago.to_date
 
-    @cows = Cow.includes(:farm, :production_records)
+    # Load cows without production_records to avoid eager loading issues
+    @cows = Cow.includes(:farm)
     @cows = @cows.where(farm_id: params[:farm_id]) if params[:farm_id].present?
 
     # Get all cows for charts (not paginated)
     @all_cows = @cows.limit(20) # Show top 20 for charts
     @cows = @cows.page(params[:page]).per(20)
 
+    # Pre-fetch production statistics for all cows in one efficient query
+    cow_ids = @all_cows.pluck(:id)
+    
+    # Use raw SQL for better performance
+    production_stats = ProductionRecord.connection.execute(
+      "SELECT 
+         cow_id,
+         SUM(total_production) as total_production,
+         AVG(total_production) as avg_daily_production,
+         COUNT(*) as record_count,
+         MAX(total_production) as best_day
+       FROM production_records 
+       WHERE cow_id IN (#{cow_ids.join(',')}) 
+         AND production_date BETWEEN '#{start_date}' AND '#{Date.current}'
+       GROUP BY cow_id"
+    )
+
+    # Convert results to hash
     @cow_stats = {}
-    @all_cows.each do |cow|
-      records = cow.production_records.where(production_date: start_date..Date.current)
-      @cow_stats[cow.id] = {
-        total_production: records.sum(:total_production),
-        avg_daily_production: records.any? ? records.average(:total_production) : 0,
-        record_count: records.count,
-        best_day: records.maximum(:total_production) || 0
+    production_stats.each do |row|
+      @cow_stats[row['cow_id'].to_i] = {
+        total_production: row['total_production'].to_f,
+        avg_daily_production: row['avg_daily_production'].to_f,
+        record_count: row['record_count'].to_i,
+        best_day: row['best_day'].to_f
       }
+    end
+
+    # Initialize stats for cows with no production records
+    cow_ids.each do |cow_id|
+      unless @cow_stats[cow_id]
+        @cow_stats[cow_id] = {
+          total_production: 0,
+          avg_daily_production: 0,
+          record_count: 0,
+          best_day: 0
+        }
+      end
     end
 
     # Chart data for top producing cows

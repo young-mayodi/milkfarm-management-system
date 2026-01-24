@@ -17,6 +17,8 @@ class EnhancedBulkEntry {
     this.setupKeyboardShortcuts();
     this.initializeFilters();
     this.startRealTimeSync();
+    this.restoreAutoSavedData();
+    this.setupFormSubmission();
   }
 
   // AI Prediction Features
@@ -327,6 +329,249 @@ class EnhancedBulkEntry {
     }, 300);
   }
 
+  // Auto-save functionality
+  setupAutoSave() {
+    console.log('🔄 Setting up auto-save functionality...');
+    
+    // Auto-save every 30 seconds
+    this.autoSaveInterval = setInterval(() => {
+      this.saveFormDataToLocalStorage();
+    }, 30000);
+
+    // Save on input change
+    document.addEventListener('input', (e) => {
+      if (e.target.classList.contains('production-input')) {
+        this.saveFormDataToLocalStorage();
+        this.updateRowTotal(e.target);
+      }
+    });
+
+    // Save before page unload
+    window.addEventListener('beforeunload', () => {
+      this.saveFormDataToLocalStorage();
+    });
+
+    // Setup smart save toggle
+    const smartSaveToggle = document.getElementById('smart_save_toggle');
+    if (smartSaveToggle) {
+      smartSaveToggle.addEventListener('click', () => {
+        this.toggleAutoSave();
+      });
+    }
+  }
+
+  saveFormDataToLocalStorage() {
+    const formData = {};
+    const dateInput = document.querySelector('input[name="date"]');
+    const farmInput = document.querySelector('input[name="farm_id"]');
+    
+    if (!dateInput || !farmInput) return;
+
+    const storageKey = `bulk_entry_${farmInput.value}_${dateInput.value}`;
+    
+    document.querySelectorAll('.production-input').forEach(input => {
+      if (input.value && input.value !== '0' && input.value !== '') {
+        const cowId = input.dataset.cowId;
+        const session = input.dataset.session;
+        
+        if (!formData[cowId]) {
+          formData[cowId] = {};
+        }
+        
+        formData[cowId][session] = input.value;
+      }
+    });
+
+    localStorage.setItem(storageKey, JSON.stringify(formData));
+    console.log('📝 Form data auto-saved to localStorage');
+    
+    // Update UI indicator
+    this.updateSaveStatus('saved');
+  }
+
+  restoreAutoSavedData() {
+    const dateInput = document.querySelector('input[name="date"]');
+    const farmInput = document.querySelector('input[name="farm_id"]');
+    
+    if (!dateInput || !farmInput) return;
+
+    const storageKey = `bulk_entry_${farmInput.value}_${dateInput.value}`;
+    const savedData = localStorage.getItem(storageKey);
+    
+    if (savedData) {
+      try {
+        const formData = JSON.parse(savedData);
+        let restoredCount = 0;
+        
+        Object.entries(formData).forEach(([cowId, sessions]) => {
+          Object.entries(sessions).forEach(([session, value]) => {
+            const input = document.querySelector(`input[data-cow-id="${cowId}"][data-session="${session}"]`);
+            if (input && !input.value) {
+              input.value = value;
+              input.classList.add('auto-restored');
+              restoredCount++;
+              this.updateRowTotal(input);
+            }
+          });
+        });
+        
+        if (restoredCount > 0) {
+          this.showToast(`🔄 Restored ${restoredCount} auto-saved values`, 'info');
+          console.log(`📥 Restored ${restoredCount} auto-saved values`);
+        }
+      } catch (error) {
+        console.error('Error restoring auto-saved data:', error);
+      }
+    }
+  }
+
+  toggleAutoSave() {
+    const statusSpan = document.getElementById('smart_save_status');
+    const currentStatus = statusSpan.textContent;
+    
+    if (currentStatus === 'ON') {
+      // Turn off auto-save
+      if (this.autoSaveInterval) {
+        clearInterval(this.autoSaveInterval);
+        this.autoSaveInterval = null;
+      }
+      statusSpan.textContent = 'OFF';
+      statusSpan.className = 'text-danger';
+      this.showToast('Auto-save disabled', 'warning');
+    } else {
+      // Turn on auto-save
+      this.setupAutoSave();
+      statusSpan.textContent = 'ON';
+      statusSpan.className = 'text-success';
+      this.showToast('Auto-save enabled', 'success');
+    }
+  }
+
+  updateRowTotal(input) {
+    const cowId = input.dataset.cowId;
+    const morningInput = document.querySelector(`input[data-cow-id="${cowId}"][data-session="morning"]`);
+    const noonInput = document.querySelector(`input[data-cow-id="${cowId}"][data-session="noon"]`);
+    const eveningInput = document.querySelector(`input[data-cow-id="${cowId}"][data-session="evening"]`);
+    const totalDisplay = document.getElementById(`total_${cowId}`);
+
+    if (morningInput && noonInput && eveningInput && totalDisplay) {
+      const morning = parseFloat(morningInput.value) || 0;
+      const noon = parseFloat(noonInput.value) || 0;
+      const evening = parseFloat(eveningInput.value) || 0;
+      const total = (morning + noon + evening).toFixed(1);
+      
+      totalDisplay.textContent = `${total}L`;
+      
+      // Update row visual state
+      const row = input.closest('.production-row');
+      if (total > 0) {
+        row.classList.add('table-success');
+      } else {
+        row.classList.remove('table-success');
+      }
+    }
+  }
+
+  updateSaveStatus(status) {
+    const statusIndicators = document.querySelectorAll('.save-status-indicator');
+    statusIndicators.forEach(indicator => {
+      switch(status) {
+        case 'saving':
+          indicator.innerHTML = '<i class="bi bi-cloud-arrow-up text-warning"></i> Saving...';
+          break;
+        case 'saved':
+          indicator.innerHTML = '<i class="bi bi-cloud-check text-success"></i> Saved';
+          setTimeout(() => {
+            indicator.innerHTML = '<i class="bi bi-cloud-check text-muted"></i> Auto-saved';
+          }, 2000);
+          break;
+        case 'error':
+          indicator.innerHTML = '<i class="bi bi-cloud-slash text-danger"></i> Save Error';
+          break;
+      }
+    });
+  }
+
+  setupFormSubmission() {
+    const form = document.getElementById('enhanced_bulk_entry_form');
+    const saveAllBtn = document.getElementById('save_all_btn');
+    const finalSaveBtn = document.getElementById('final_save');
+    
+    // Handle both save buttons
+    [saveAllBtn, finalSaveBtn].forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.submitForm();
+        });
+      }
+    });
+
+    // Prevent default form submission
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.submitForm();
+      });
+    }
+  }
+
+  async submitForm() {
+    const form = document.getElementById('enhanced_bulk_entry_form');
+    if (!form) return;
+
+    this.updateSaveStatus('saving');
+    
+    try {
+      const formData = new FormData(form);
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        this.handleSaveSuccess(result);
+        
+        // Clear auto-saved data since server save was successful
+        const dateInput = document.querySelector('input[name="date"]');
+        const farmInput = document.querySelector('input[name="farm_id"]');
+        if (dateInput && farmInput) {
+          const storageKey = `bulk_entry_${farmInput.value}_${dateInput.value}`;
+          localStorage.removeItem(storageKey);
+        }
+      } else {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Save failed:', error);
+      this.handleSaveError(error);
+    }
+  }
+
+  handleSaveSuccess(result) {
+    this.updateSaveStatus('saved');
+    this.showToast(`✅ Successfully saved ${result.success_count || 0} production records`, 'success');
+    
+    // Update UI to reflect saved state
+    document.querySelectorAll('.production-input').forEach(input => {
+      input.classList.remove('auto-restored');
+      if (input.value && input.value !== '0') {
+        input.classList.add('is-valid');
+      }
+    });
+  }
+
+  handleSaveError(error) {
+    this.updateSaveStatus('error');
+    this.showToast('❌ Failed to save production records. Please try again.', 'danger');
+    console.error('Save error:', error);
+  }
+
   // Enhanced Analytics Integration
   updateAnalytics() {
     const completedRows = document.querySelectorAll('.production-row').length;
@@ -567,6 +812,33 @@ const enhancedStyles = `
   text-align: center;
   font-weight: bold;
   font-size: 1.1rem;
+}
+
+.auto-restored {
+  background-color: #fff3cd !important;
+  border-color: #ffc107 !important;
+  animation: pulse-restored 2s ease-in-out;
+}
+
+@keyframes pulse-restored {
+  0% { background-color: #fff3cd; }
+  50% { background-color: #ffeaa7; }
+  100% { background-color: #fff3cd; }
+}
+
+.save-status-indicator {
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.is-valid.production-input {
+  border-color: #198754 !important;
+  background-color: #d1e7dd !important;
+}
+
+.production-input:focus {
+  border-color: #0d6efd !important;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
 }
 </style>
 `;

@@ -1,0 +1,549 @@
+<div class="alerts-container">
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="fas fa-bell"></i>
+          System Alerts
+        </h2>
+        <p class="text-muted">Monitor critical events and system notifications</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline-primary" onclick="refreshAlerts()">
+          <i class="fas fa-sync-alt"></i>
+          Refresh
+        </button>
+        <button class="btn btn-secondary" onclick="markAllAsRead()">
+          <i class="fas fa-check-double"></i>
+          Mark All Read
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="alert-summary-card critical">
+        <div class="card-content">
+          <div class="icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <div class="numbers">
+            <h3 id="critical-count"><%= @critical_alerts.length %></h3>
+            <p>Critical</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="alert-summary-card warning">
+        <div class="card-content">
+          <div class="icon">
+            <i class="fas fa-exclamation"></i>
+          </div>
+          <div class="numbers">
+            <h3 id="warning-count"><%= @warning_alerts.length %></h3>
+            <p>Warnings</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="alert-summary-card info">
+        <div class="card-content">
+          <div class="icon">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <div class="numbers">
+            <h3 id="info-count"><%= @info_alerts.length %></h3>
+            <p>Information</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="alert-summary-card total">
+        <div class="card-content">
+          <div class="icon">
+            <i class="fas fa-bell"></i>
+          </div>
+          <div class="numbers">
+            <h3><%= @critical_alerts.length + @warning_alerts.length + @info_alerts.length %></h3>
+            <p>Total Alerts</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Filters -->
+  <div class="alert-filters mb-4">
+    <div class="btn-group" role="group">
+      <button type="button" class="btn btn-outline-primary active" onclick="filterAlerts('all')">
+        All Alerts
+      </button>
+      <button type="button" class="btn btn-outline-danger" onclick="filterAlerts('critical')">
+        Critical
+      </button>
+      <button type="button" class="btn btn-outline-warning" onclick="filterAlerts('warning')">
+        Warnings
+      </button>
+      <button type="button" class="btn btn-outline-info" onclick="filterAlerts('info')">
+        Information
+      </button>
+    </div>
+    
+    <div class="float-right">
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="hide-read" onchange="toggleReadAlerts()">
+        <label class="form-check-label" for="hide-read">
+          Hide Read Alerts
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Critical Alerts -->
+  <% if @critical_alerts.any? %>
+    <div class="alert-section critical-section">
+      <h4 class="section-title">
+        <i class="fas fa-exclamation-triangle text-danger"></i>
+        Critical Alerts
+        <span class="badge badge-danger"><%= @critical_alerts.length %></span>
+      </h4>
+      
+      <% @critical_alerts.each do |alert| %>
+        <div class="alert-item critical-alert" data-alert-id="<%= alert[:id] %>" data-category="<%= alert[:category] %>">
+          <div class="alert-content">
+            <div class="alert-header">
+              <div class="alert-title">
+                <span class="urgency-indicator <%= alert[:urgency] %>"></span>
+                <strong><%= alert[:title] %></strong>
+                <span class="category-badge <%= alert[:category] %>"><%= alert[:category].titleize %></span>
+              </div>
+              <div class="alert-time">
+                <%= time_ago_in_words(alert[:created_at]) %> ago
+              </div>
+            </div>
+            
+            <div class="alert-message">
+              <%= alert[:message] %>
+            </div>
+            
+            <div class="alert-actions">
+              <% if alert[:action_url] %>
+                <a href="<%= alert[:action_url] %>" class="btn btn-sm btn-danger">
+                  <i class="fas fa-external-link-alt"></i>
+                  Take Action
+                </a>
+              <% end %>
+              <% if alert[:cow_id] %>
+                <%= link_to cow_path(alert[:cow_id]), class: "btn btn-sm btn-outline-primary" do %>
+                  <i class="fas fa-cow"></i>
+                  View Animal
+                <% end %>
+              <% end %>
+              <button class="btn btn-sm btn-outline-secondary" onclick="markAsRead('<%= alert[:id] %>')">
+                <i class="fas fa-check"></i>
+                Mark Read
+              </button>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <!-- Warning Alerts -->
+  <% if @warning_alerts.any? %>
+    <div class="alert-section warning-section">
+      <h4 class="section-title">
+        <i class="fas fa-exclamation text-warning"></i>
+        Warning Alerts
+        <span class="badge badge-warning"><%= @warning_alerts.length %></span>
+      </h4>
+      
+      <% @warning_alerts.each do |alert| %>
+        <div class="alert-item warning-alert" data-alert-id="<%= alert[:id] %>" data-category="<%= alert[:category] %>">
+          <div class="alert-content">
+            <div class="alert-header">
+              <div class="alert-title">
+                <strong><%= alert[:title] %></strong>
+                <span class="category-badge <%= alert[:category] %>"><%= alert[:category].titleize %></span>
+              </div>
+              <div class="alert-time">
+                <%= time_ago_in_words(alert[:created_at]) %> ago
+              </div>
+            </div>
+            
+            <div class="alert-message">
+              <%= alert[:message] %>
+            </div>
+            
+            <div class="alert-actions">
+              <% if alert[:action_url] %>
+                <a href="<%= alert[:action_url] %>" class="btn btn-sm btn-warning">
+                  <i class="fas fa-external-link-alt"></i>
+                  View Details
+                </a>
+              <% end %>
+              <% if alert[:cow_id] %>
+                <%= link_to cow_path(alert[:cow_id]), class: "btn btn-sm btn-outline-primary" do %>
+                  <i class="fas fa-cow"></i>
+                  View Animal
+                <% end %>
+              <% end %>
+              <button class="btn btn-sm btn-outline-secondary" onclick="markAsRead('<%= alert[:id] %>')">
+                <i class="fas fa-check"></i>
+                Mark Read
+              </button>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <!-- Info Alerts -->
+  <% if @info_alerts.any? %>
+    <div class="alert-section info-section">
+      <h4 class="section-title">
+        <i class="fas fa-info-circle text-info"></i>
+        Information Alerts
+        <span class="badge badge-info"><%= @info_alerts.length %></span>
+      </h4>
+      
+      <% @info_alerts.each do |alert| %>
+        <div class="alert-item info-alert" data-alert-id="<%= alert[:id] %>" data-category="<%= alert[:category] %>">
+          <div class="alert-content">
+            <div class="alert-header">
+              <div class="alert-title">
+                <strong><%= alert[:title] %></strong>
+                <span class="category-badge <%= alert[:category] %>"><%= alert[:category].titleize %></span>
+              </div>
+              <div class="alert-time">
+                <%= time_ago_in_words(alert[:created_at]) %> ago
+              </div>
+            </div>
+            
+            <div class="alert-message">
+              <%= alert[:message] %>
+            </div>
+            
+            <div class="alert-actions">
+              <% if alert[:action_url] %>
+                <a href="<%= alert[:action_url] %>" class="btn btn-sm btn-info">
+                  <i class="fas fa-external-link-alt"></i>
+                  View Details
+                </a>
+              <% end %>
+              <% if alert[:cow_id] %>
+                <%= link_to cow_path(alert[:cow_id]), class: "btn btn-sm btn-outline-primary" do %>
+                  <i class="fas fa-cow"></i>
+                  View Animal
+                <% end %>
+              <% end %>
+              <button class="btn btn-sm btn-outline-secondary" onclick="markAsRead('<%= alert[:id] %>')">
+                <i class="fas fa-check"></i>
+                Mark Read
+              </button>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <!-- No Alerts Message -->
+  <% if @critical_alerts.empty? && @warning_alerts.empty? && @info_alerts.empty? %>
+    <div class="no-alerts text-center py-5">
+      <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+      <h3 class="mt-3">All Clear!</h3>
+      <p class="text-muted">No active alerts at this time. Your livestock management system is running smoothly.</p>
+    </div>
+  <% end %>
+</div>
+
+<style>
+.alerts-container {
+  padding: 20px;
+}
+
+.alert-summary-card {
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: transform 0.2s;
+}
+
+.alert-summary-card:hover {
+  transform: translateY(-2px);
+}
+
+.alert-summary-card.critical {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  color: white;
+}
+
+.alert-summary-card.warning {
+  background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+  color: white;
+}
+
+.alert-summary-card.info {
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  color: white;
+}
+
+.alert-summary-card.total {
+  background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+  color: white;
+}
+
+.card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-content .icon {
+  font-size: 2rem;
+}
+
+.card-content .numbers h3 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.card-content .numbers p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.alert-filters {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert-item {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  transition: all 0.2s;
+}
+
+.alert-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+.alert-item.critical-alert {
+  border-left: 4px solid #dc3545;
+}
+
+.alert-item.warning-alert {
+  border-left: 4px solid #ffc107;
+}
+
+.alert-item.info-alert {
+  border-left: 4px solid #17a2b8;
+}
+
+.alert-content {
+  padding: 20px;
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.alert-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.urgency-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.urgency-indicator.immediate {
+  background-color: #dc3545;
+  animation: pulse 1s infinite;
+}
+
+.urgency-indicator.high {
+  background-color: #fd7e14;
+}
+
+.urgency-indicator.medium {
+  background-color: #ffc107;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.category-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.category-badge.health {
+  background-color: #e7f3ff;
+  color: #0066cc;
+}
+
+.category-badge.breeding {
+  background-color: #f0fff4;
+  color: #008040;
+}
+
+.category-badge.vaccination {
+  background-color: #fff3e0;
+  color: #cc6600;
+}
+
+.category-badge.production {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.alert-time {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.alert-message {
+  margin: 10px 0 15px;
+  color: #495057;
+}
+
+.alert-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.alert-item.read {
+  opacity: 0.6;
+}
+
+.alert-item.hidden {
+  display: none;
+}
+
+.no-alerts {
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin: 20px 0;
+}
+</style>
+
+<script>
+let readAlerts = JSON.parse(localStorage.getItem('readAlerts') || '[]');
+
+function markAsRead(alertId) {
+  if (!readAlerts.includes(alertId)) {
+    readAlerts.push(alertId);
+    localStorage.setItem('readAlerts', JSON.stringify(readAlerts));
+  }
+  
+  const alertElement = document.querySelector(`[data-alert-id="${alertId}"]`);
+  if (alertElement) {
+    alertElement.classList.add('read');
+  }
+  
+  // Send to server
+  fetch(`/alerts/mark_as_read`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+    },
+    body: JSON.stringify({ alert_id: alertId })
+  });
+}
+
+function markAllAsRead() {
+  document.querySelectorAll('.alert-item').forEach(item => {
+    const alertId = item.dataset.alertId;
+    markAsRead(alertId);
+  });
+}
+
+function filterAlerts(type) {
+  // Update active button
+  document.querySelectorAll('.alert-filters .btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+  
+  // Show/hide alert sections
+  document.querySelectorAll('.alert-section').forEach(section => {
+    if (type === 'all') {
+      section.style.display = 'block';
+    } else {
+      section.style.display = section.classList.contains(`${type}-section`) ? 'block' : 'none';
+    }
+  });
+}
+
+function toggleReadAlerts() {
+  const hideRead = document.getElementById('hide-read').checked;
+  
+  document.querySelectorAll('.alert-item').forEach(item => {
+    const isRead = readAlerts.includes(item.dataset.alertId);
+    
+    if (hideRead && isRead) {
+      item.classList.add('hidden');
+    } else {
+      item.classList.remove('hidden');
+    }
+  });
+}
+
+function refreshAlerts() {
+  location.reload();
+}
+
+// Initialize read status on page load
+document.addEventListener('DOMContentLoaded', function() {
+  readAlerts.forEach(alertId => {
+    const alertElement = document.querySelector(`[data-alert-id="${alertId}"]`);
+    if (alertElement) {
+      alertElement.classList.add('read');
+    }
+  });
+  
+  // Auto-refresh every 5 minutes
+  setInterval(refreshAlerts, 300000);
+});
+</script>

@@ -1,0 +1,490 @@
+<% content_for :title, "Edit Calf: #{@calf.name}" %>
+
+<!-- Modern Form Header -->
+<div class="form-header mb-5">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center">
+        <div class="header-icon me-3">
+          <i class="bi bi-pencil-square"></i>
+        </div>
+        <div>
+          <h1 class="header-title mb-0">🐮 Edit Calf: <%= @calf.name %></h1>
+          <p class="header-subtitle mb-0">
+            Update calf information and growth tracking
+            <% if @calf.farm %>
+              <span class="badge bg-info ms-2"><%= @calf.farm.name %></span>
+            <% end %>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 text-end">
+      <div class="form-actions-header">
+        <%= link_to calf_path(@calf), class: "btn btn-outline-info me-2" do %>
+          <i class="bi bi-eye me-2"></i>View Details
+        <% end %>
+        <%= link_to calves_path, class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-arrow-left me-2"></i>Back to Calves
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Form Container -->
+<div class="form-container">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+      <div class="modern-form-card">
+        <div class="form-card-body">
+          <%= form_with model: @calf, url: calf_path(@calf), local: true, class: "modern-form", 
+                        id: "editCalfForm", data: { turbo: false } do |form| %>
+            
+            <!-- Error Display -->
+            <% if @calf.errors.any? %>
+              <div class="error-container">
+                <div class="error-header">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <strong>Please fix the following errors:</strong>
+                </div>
+                <ul class="error-list">
+                  <% @calf.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <div class="row">
+              <!-- Left Column: Basic Information -->
+              <div class="col-lg-6">
+                <div class="form-section">
+                  <div class="section-header">
+                    <h5 class="section-title">
+                      <i class="bi bi-info-circle me-2"></i>
+                      Basic Information
+                    </h5>
+                  </div>
+                  
+                  <div class="form-group mb-3">
+                    <%= form.label :name, class: "form-label modern-label" do %>
+                      <i class="bi bi-heart-fill me-2"></i>Calf Name *
+                    <% end %>
+                    <div class="input-container">
+                      <%= form.text_field :name, 
+                          class: "form-control modern-input #{'is-invalid' if @calf.errors[:name].any?}", 
+                          placeholder: "Enter calf name",
+                          required: true %>
+                      <% if @calf.errors[:name].any? %>
+                        <div class="invalid-feedback">
+                          <i class="bi bi-exclamation-circle me-1"></i>
+                          <%= @calf.errors[:name].first %>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <%= form.label :tag_number, "Tag Number", class: "form-label modern-label" do %>
+                      <i class="bi bi-tags me-2"></i>Tag Number *
+                    <% end %>
+                    <div class="input-container">
+                      <%= form.text_field :tag_number, 
+                          class: "form-control modern-input #{'is-invalid' if @calf.errors[:tag_number].any?}", 
+                          placeholder: "Enter tag number",
+                          required: true %>
+                      <% if @calf.errors[:tag_number].any? %>
+                        <div class="invalid-feedback">
+                          <i class="bi bi-exclamation-circle me-1"></i>
+                          <%= @calf.errors[:tag_number].first %>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group mb-3">
+                        <%= form.label :age, "Age (months)", class: "form-label modern-label" do %>
+                          <i class="bi bi-calendar me-2"></i>Age *
+                        <% end %>
+                        <%= form.number_field :age, 
+                            class: "form-control modern-input #{'is-invalid' if @calf.errors[:age].any?}", 
+                            min: 0, max: 24, step: 0.5,
+                            required: true %>
+                        <% if @calf.errors[:age].any? %>
+                          <div class="invalid-feedback">
+                            <%= @calf.errors[:age].first %>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-group mb-3">
+                        <%= form.label :breed, "Breed", class: "form-label modern-label" do %>
+                          <i class="bi bi-award me-2"></i>Breed
+                        <% end %>
+                        <%= form.select :breed,
+                            options_for_select([
+                              ['Holstein', 'Holstein'],
+                              ['Jersey', 'Jersey'],
+                              ['Guernsey', 'Guernsey'],
+                              ['Ayrshire', 'Ayrshire'],
+                              ['Brown Swiss', 'Brown Swiss'],
+                              ['Friesian', 'Friesian'],
+                              ['Crossbred', 'Crossbred'],
+                              ['Other', 'Other']
+                            ], @calf.breed),
+                            { prompt: 'Select breed' },
+                            { class: "form-select modern-input" } %>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <%= form.label :farm_id, "Farm", class: "form-label modern-label" do %>
+                      <i class="bi bi-house-door me-2"></i>Farm *
+                    <% end %>
+                    <%= form.select :farm_id,
+                        options_from_collection_for_select(@farms, :id, :name, @calf.farm_id),
+                        { prompt: 'Select farm' },
+                        { class: "form-select modern-input", required: true } %>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <%= form.label :status, "Health Status", class: "form-label modern-label" do %>
+                      <i class="bi bi-heart-pulse me-2"></i>Health Status
+                    <% end %>
+                    <%= form.select :status,
+                        options_for_select([
+                          ['Active', 'active'],
+                          ['Healthy', 'healthy'],
+                          ['Sick', 'sick'],
+                          ['Inactive', 'inactive'],
+                          ['Pregnant', 'pregnant']
+                        ], @calf.status),
+                        {},
+                        { class: "form-select modern-input" } %>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: Family & Growth -->
+              <div class="col-lg-6">
+                <!-- Family Information -->
+                <div class="form-section">
+                  <div class="section-header">
+                    <h5 class="section-title">
+                      <i class="bi bi-heart-fill me-2"></i>
+                      Family Information
+                    </h5>
+                  </div>
+                  
+                  <div class="form-group mb-3">
+                    <%= form.label :mother_id, "Mother Cow", class: "form-label modern-label" do %>
+                      <i class="bi bi-heart-fill me-2"></i>Mother Cow
+                    <% end %>
+                    <%= form.select :mother_id, 
+                        options_from_collection_for_select(@potential_mothers, :id, :name, @calf.mother_id),
+                        { prompt: 'Select mother cow' },
+                        { class: "form-select modern-input" } %>
+                    <div class="form-text">
+                      <i class="bi bi-info-circle me-1"></i>
+                      Mother cow for family tracking
+                    </div>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <%= form.label :birth_date, "Birth Date", class: "form-label modern-label" do %>
+                      <i class="bi bi-calendar-heart me-2"></i>Birth Date
+                    <% end %>
+                    <%= form.date_field :birth_date, 
+                        class: "form-control modern-input",
+                        max: Date.current %>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <%= form.label :group_name, "Group Name", class: "form-label modern-label" do %>
+                      <i class="bi bi-collection me-2"></i>Group Name
+                    <% end %>
+                    <%= form.text_field :group_name, 
+                        class: "form-control modern-input",
+                        placeholder: "e.g., Spring 2024, Heifer Group A" %>
+                  </div>
+                </div>
+
+                <!-- Growth Tracking -->
+                <div class="form-section">
+                  <div class="section-header">
+                    <h5 class="section-title">
+                      <i class="bi bi-speedometer me-2"></i>
+                      Growth Tracking
+                    </h5>
+                  </div>
+                  
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group mb-3">
+                        <%= form.label :current_weight, "Current Weight (kg)", class: "form-label modern-label" do %>
+                          <i class="bi bi-speedometer me-2"></i>Current Weight
+                        <% end %>
+                        <%= form.number_field :current_weight, 
+                            step: 0.1, 
+                            min: 0,
+                            placeholder: "Weight in kg",
+                            class: "form-control modern-input" %>
+                      </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                      <div class="form-group mb-3">
+                        <%= form.label :prev_weight, "Previous Weight (kg)", class: "form-label modern-label" do %>
+                          <i class="bi bi-graph-down me-2"></i>Previous Weight
+                        <% end %>
+                        <%= form.number_field :prev_weight, 
+                            step: 0.1, 
+                            min: 0,
+                            placeholder: "Previous weight",
+                            class: "form-control modern-input" %>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-group mb-3">
+                        <%= form.label :weight_gain, "Weight Gain (kg)", class: "form-label modern-label" do %>
+                          <i class="bi bi-graph-up me-2"></i>Weight Gain
+                        <% end %>
+                        <%= form.number_field :weight_gain, 
+                            step: 0.1,
+                            placeholder: "Total gain",
+                            class: "form-control modern-input" %>
+                      </div>
+                    </div>
+
+                    <div class="col-md-6">
+                      <div class="form-group mb-3">
+                        <%= form.label :avg_daily_gain, "Avg Daily Gain (kg/day)", class: "form-label modern-label" do %>
+                          <i class="bi bi-graph-up-arrow me-2"></i>Daily Gain
+                        <% end %>
+                        <%= form.number_field :avg_daily_gain, 
+                            step: 0.01,
+                            min: 0,
+                            placeholder: "Daily gain",
+                            class: "form-control modern-input" %>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Growth Stats Display -->
+                  <% if @calf.current_weight.present? %>
+                    <div class="growth-stats mt-3">
+                      <div class="stats-grid">
+                        <div class="stat-card">
+                          <div class="stat-value"><%= number_with_precision(@calf.current_weight, precision: 1) %> kg</div>
+                          <div class="stat-label">Current Weight</div>
+                        </div>
+                        <% if @calf.avg_daily_gain.present? %>
+                          <div class="stat-card">
+                            <div class="stat-value">
+                              <span class="<%= @calf.avg_daily_gain > 0.5 ? 'text-success' : 'text-warning' %>">
+                                <%= number_with_precision(@calf.avg_daily_gain, precision: 2) %>
+                              </span> kg/day
+                            </div>
+                            <div class="stat-label">Avg Daily Gain</div>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions-footer">
+              <div class="row">
+                <div class="col-md-6">
+                  <%= link_to calf_path(@calf), class: "btn btn-outline-secondary me-2" do %>
+                    <i class="bi bi-x-circle me-2"></i>Cancel
+                  <% end %>
+                  <%= link_to calves_path, class: "btn btn-outline-info" do %>
+                    <i class="bi bi-list me-2"></i>All Calves
+                  <% end %>
+                </div>
+                <div class="col-md-6 text-end">
+                  <%= form.submit "Update Calf", class: "btn btn-success btn-lg" do %>
+                    <i class="bi bi-check-circle me-2"></i>Update Calf
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-calculation JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-calculate weight gain
+  const currentWeightInput = document.querySelector('input[name="cow[current_weight]"]');
+  const prevWeightInput = document.querySelector('input[name="cow[prev_weight]"]');
+  const weightGainInput = document.querySelector('input[name="cow[weight_gain]"]');
+
+  function calculateWeightGain() {
+    const currentWeight = parseFloat(currentWeightInput.value) || 0;
+    const prevWeight = parseFloat(prevWeightInput.value) || 0;
+    
+    if (currentWeight > 0 && prevWeight > 0 && currentWeight > prevWeight) {
+      weightGainInput.value = (currentWeight - prevWeight).toFixed(1);
+    }
+  }
+
+  if (currentWeightInput && prevWeightInput) {
+    currentWeightInput.addEventListener('input', calculateWeightGain);
+    prevWeightInput.addEventListener('input', calculateWeightGain);
+  }
+
+  // Form validation
+  const form = document.getElementById('editCalfForm');
+  const requiredInputs = form.querySelectorAll('input[required], select[required]');
+
+  requiredInputs.forEach(input => {
+    input.addEventListener('blur', function() {
+      if (!this.value.trim()) {
+        this.classList.add('is-invalid');
+      } else {
+        this.classList.remove('is-invalid');
+      }
+    });
+  });
+});
+</script>
+
+<style>
+.form-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 15px;
+  margin-bottom: 2rem;
+}
+
+.header-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.header-subtitle {
+  opacity: 0.9;
+}
+
+.modern-form-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.form-card-body {
+  padding: 2.5rem;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.section-header {
+  border-bottom: 2px solid #e9ecef;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  color: #495057;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modern-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.modern-input {
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.modern-input:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.form-actions-footer {
+  background: #f8f9fa;
+  margin: 2rem -2.5rem -2.5rem;
+  padding: 2rem 2.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.error-container {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.error-header {
+  color: #721c24;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.error-list {
+  color: #721c24;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.growth-stats {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 8px;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+</style>

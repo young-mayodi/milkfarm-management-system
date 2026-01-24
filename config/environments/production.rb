@@ -4,7 +4,7 @@ Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Secret key base for production
-  config.secret_key_base = ENV['SECRET_KEY_BASE'] || ENV['RAILS_MASTER_KEY']
+  config.secret_key_base = ENV["SECRET_KEY_BASE"] || ENV["RAILS_MASTER_KEY"]
 
   # Code is not reloaded between requests.
   config.enable_reloading = false
@@ -25,10 +25,10 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # Railway-specific SSL configuration
-  if ENV['RAILWAY_ENVIRONMENT']
+  if ENV["RAILWAY_ENVIRONMENT"]
     config.assume_ssl = false
     config.force_ssl = false
-  elsif ENV['HEROKU_APP_NAME'] || ENV['DYNO']
+  elsif ENV["HEROKU_APP_NAME"] || ENV["DYNO"]
     # Heroku-specific configuration
     config.assume_ssl = true
     config.force_ssl = true
@@ -54,9 +54,9 @@ Rails.application.configure do
 
   # Simple cache store for now - Redis has compatibility issues with Rails 8
   config.cache_store = :memory_store
-  
+
   # Use Sidekiq for background jobs when Redis is available
-  if ENV['REDIS_URL'].present?
+  if ENV["REDIS_URL"].present?
     config.active_job.queue_adapter = :sidekiq
   else
     config.active_job.queue_adapter = :async
@@ -64,9 +64,9 @@ Rails.application.configure do
 
   # Set host to be used by links generated in mailer templates.
   # Use Heroku, Railway's provided domain or localhost for development
-  config.action_mailer.default_url_options = { 
-    host: ENV.fetch('HEROKU_APP_NAME', ENV.fetch('RAILWAY_PUBLIC_DOMAIN', 'localhost:3000')) + 
-          (ENV['HEROKU_APP_NAME'] ? '.herokuapp.com' : '')
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch("HEROKU_APP_NAME", ENV.fetch("RAILWAY_PUBLIC_DOMAIN", "localhost:3000")) +
+          (ENV["HEROKU_APP_NAME"] ? ".herokuapp.com" : "")
   }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
@@ -84,13 +84,13 @@ Rails.application.configure do
   config.hosts = [
     /.*\.railway\.app/,     # Allow Railway domains
     /.*\.up\.railway\.app/, # Allow Railway preview domains
-    /.*\.herokuapp\.com/,   # Allow Heroku domains
+    /.*\.herokuapp\.com/   # Allow Heroku domains
   ]
-  
+
   # Skip DNS rebinding protection for the default health check endpoint.
   config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
-  
+
   # Heroku and Railway-specific configuration
-  config.force_ssl = false if ENV['RAILWAY_ENVIRONMENT']
-  config.assume_ssl = false if ENV['RAILWAY_ENVIRONMENT']
+  config.force_ssl = false if ENV["RAILWAY_ENVIRONMENT"]
+  config.assume_ssl = false if ENV["RAILWAY_ENVIRONMENT"]
 end

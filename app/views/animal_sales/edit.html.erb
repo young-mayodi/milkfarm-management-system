@@ -1,0 +1,186 @@
+<% content_for :title, "Edit Animal Sale" %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>
+      <i class="bi bi-pencil-square me-2"></i>Edit Animal Sale
+      <% if @farm %>
+        <span class="badge bg-primary"><%= @farm.name %></span>
+      <% end %>
+    </h1>
+    <p class="text-muted">Update sale information for <%= @animal_sale.cow.name %></p>
+  </div>
+  <div>
+    <%= link_to "Back to Sales", 
+          (@farm ? farm_animal_sales_path(@farm) : animal_sales_path), 
+          class: "btn btn-outline-secondary" %>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Sale Information</h5>
+      </div>
+      <div class="card-body">
+        <%= form_with model: [@farm, @animal_sale].compact, local: true, class: "needs-validation", novalidate: true do |form| %>
+          <% if @animal_sale.errors.any? %>
+            <div class="alert alert-danger">
+              <h6>Please correct the following errors:</h6>
+              <ul class="mb-0">
+                <% @animal_sale.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <!-- Current Animal Info -->
+          <div class="alert alert-info">
+            <h6><i class="bi bi-info-circle me-1"></i>Current Animal</h6>
+            <strong><%= @animal_sale.cow.name %></strong> (#<%= @animal_sale.cow.tag_number %>) - 
+            <%= @animal_sale.cow.breed %>, <%= @animal_sale.cow.age %> years old
+          </div>
+
+          <!-- Sale Details -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= form.label :sale_date, "Sale Date", class: "form-label required" %>
+              <%= form.date_field :sale_date, 
+                    class: "form-control #{'is-invalid' if @animal_sale.errors[:sale_date].any?}",
+                    required: true %>
+              <% if @animal_sale.errors[:sale_date].any? %>
+                <div class="invalid-feedback">
+                  <%= @animal_sale.errors[:sale_date].first %>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <% unless @farm %>
+                <%= form.label :farm_id, "Farm", class: "form-label required" %>
+                <%= form.collection_select :farm_id, 
+                      @farms, :id, :name,
+                      {},
+                      { class: "form-select #{'is-invalid' if @animal_sale.errors[:farm_id].any?}",
+                        required: true } %>
+                <% if @animal_sale.errors[:farm_id].any? %>
+                  <div class="invalid-feedback">
+                    <%= @animal_sale.errors[:farm_id].first %>
+                  </div>
+                <% end %>
+              <% else %>
+                <%= form.hidden_field :farm_id, value: @farm.id %>
+                <label class="form-label">Farm</label>
+                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
+                  <%= @farm.name %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Animal Selection (allow changing if needed) -->
+          <div class="mb-3">
+            <%= form.label :cow_id, "Animal", class: "form-label required" %>
+            <%= form.collection_select :cow_id, 
+                  @available_animals, :id, 
+                  lambda { |cow| "#{cow.name} (##{cow.tag_number}) - #{cow.breed}, #{cow.age} years old" },
+                  {},
+                  { class: "form-select #{'is-invalid' if @animal_sale.errors[:cow_id].any?}",
+                    required: true } %>
+            <% if @animal_sale.errors[:cow_id].any? %>
+              <div class="invalid-feedback">
+                <%= @animal_sale.errors[:cow_id].first %>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Sale Information -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= form.label :animal_type, "Animal Type", class: "form-label required" %>
+              <%= form.select :animal_type,
+                    options_for_select([
+                      ['Cow', 'cow'],
+                      ['Calf', 'calf'],
+                      ['Bull', 'bull'],
+                      ['Heifer', 'heifer']
+                    ], @animal_sale.animal_type),
+                    {},
+                    { class: "form-select #{'is-invalid' if @animal_sale.errors[:animal_type].any?}",
+                      required: true } %>
+              <% if @animal_sale.errors[:animal_type].any? %>
+                <div class="invalid-feedback">
+                  <%= @animal_sale.errors[:animal_type].first %>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <%= form.label :sale_price, "Sale Price ($)", class: "form-label required" %>
+              <%= form.number_field :sale_price, 
+                    step: 0.01, 
+                    min: 0,
+                    class: "form-control #{'is-invalid' if @animal_sale.errors[:sale_price].any?}",
+                    required: true %>
+              <% if @animal_sale.errors[:sale_price].any? %>
+                <div class="invalid-feedback">
+                  <%= @animal_sale.errors[:sale_price].first %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Buyer Information -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= form.label :buyer, "Buyer Name", class: "form-label required" %>
+              <%= form.text_field :buyer, 
+                    class: "form-control #{'is-invalid' if @animal_sale.errors[:buyer].any?}",
+                    required: true %>
+              <% if @animal_sale.errors[:buyer].any? %>
+                <div class="invalid-feedback">
+                  <%= @animal_sale.errors[:buyer].first %>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <%= form.label :buyer_contact, "Buyer Contact", class: "form-label" %>
+              <%= form.text_field :buyer_contact, class: "form-control" %>
+            </div>
+          </div>
+
+          <!-- Additional Details -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= form.label :weight_at_sale, "Weight at Sale (lbs)", class: "form-label" %>
+              <%= form.number_field :weight_at_sale, 
+                    step: 0.1, 
+                    min: 0,
+                    class: "form-control" %>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :notes, "Notes", class: "form-label" %>
+            <%= form.text_area :notes, rows: 3, class: "form-control" %>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end gap-2">
+            <%= link_to "Cancel", 
+                  (@farm ? farm_animal_sales_path(@farm) : animal_sales_path), 
+                  class: "btn btn-outline-secondary" %>
+            <%= form.submit "Update Sale", class: "btn btn-success" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .required::after {
+    content: " *";
+    color: #dc3545;
+  }
+</style>

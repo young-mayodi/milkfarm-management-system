@@ -1,0 +1,236 @@
+<% content_for :title, "Record Animal Sale" %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1>
+      <i class="bi bi-plus-circle me-2"></i>Record Animal Sale
+      <% if @farm %>
+        <span class="badge bg-primary"><%= @farm.name %></span>
+      <% end %>
+    </h1>
+    <p class="text-muted">Record the sale of an animal</p>
+  </div>
+  <div>
+    <%= link_to "Back to Sales", 
+          (@farm ? farm_animal_sales_path(@farm) : animal_sales_path), 
+          class: "btn btn-outline-secondary" %>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Sale Information</h5>
+      </div>
+      <div class="card-body">
+        <%= form_with model: [@farm, @animal_sale].compact, local: true, class: "needs-validation", novalidate: true do |form| %>
+          <% if @animal_sale.errors.any? %>
+            <div class="alert alert-danger">
+              <h6>Please correct the following errors:</h6>
+              <ul class="mb-0">
+                <% @animal_sale.errors.full_messages.each do |message| %>
+                  <li><%= message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <!-- Step 1: Sale Details -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= form.label :sale_date, "Sale Date", class: "form-label required" %>
+              <%= form.date_field :sale_date, 
+                    class: "form-control #{'is-invalid' if @animal_sale.errors[:sale_date].any?}",
+                    required: true %>
+              <% if @animal_sale.errors[:sale_date].any? %>
+                <div class="invalid-feedback">
+                  <%= @animal_sale.errors[:sale_date].first %>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <% unless @farm %>
+                <%= form.label :farm_id, "Farm", class: "form-label required" %>
+                <%= form.collection_select :farm_id, 
+                      @farms, :id, :name,
+                      { prompt: "Select a farm..." },
+                      { class: "form-select #{'is-invalid' if @animal_sale.errors[:farm_id].any?}",
+                        required: true } %>
+                <% if @animal_sale.errors[:farm_id].any? %>
+                  <div class="invalid-feedback">
+                    <%= @animal_sale.errors[:farm_id].first %>
+                  </div>
+                <% end %>
+              <% else %>
+                <%= form.hidden_field :farm_id, value: @farm.id %>
+                <label class="form-label">Farm</label>
+                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
+                  <%= @farm.name %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Step 2: Animal Selection -->
+          <div class="mb-3">
+            <%= form.label :cow_id, "Animal", class: "form-label required" %>
+            <%= form.collection_select :cow_id, 
+                  @available_animals, :id, 
+                  lambda { |cow| "#{cow.name} (##{cow.tag_number}) - #{cow.breed}, #{cow.age} years old" },
+                  { prompt: "Select an animal..." },
+                  { class: "form-select #{'is-invalid' if @animal_sale.errors[:cow_id].any?}",
+                    required: true,
+                    id: "animal_select" } %>
+            <% if @animal_sale.errors[:cow_id].any? %>
+              <div class="invalid-feedback">
+                <%= @animal_sale.errors[:cow_id].first %>
+              </div>
+            <% end %>
+            <div class="form-text">Only animals that are not currently sold or deceased are shown</div>
+          </div>
+
+          <!-- Step 3: Sale Information -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= form.label :animal_type, "Animal Type", class: "form-label required" %>
+              <%= form.select :animal_type,
+                    options_for_select([
+                      ['Cow', 'cow'],
+                      ['Calf', 'calf'],
+                      ['Bull', 'bull'],
+                      ['Heifer', 'heifer']
+                    ], @animal_sale.animal_type),
+                    { prompt: "Select type..." },
+                    { class: "form-select #{'is-invalid' if @animal_sale.errors[:animal_type].any?}",
+                      required: true } %>
+              <% if @animal_sale.errors[:animal_type].any? %>
+                <div class="invalid-feedback">
+                  <%= @animal_sale.errors[:animal_type].first %>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <%= form.label :sale_price, "Sale Price ($)", class: "form-label required" %>
+              <%= form.number_field :sale_price, 
+                    step: 0.01, 
+                    min: 0,
+                    class: "form-control #{'is-invalid' if @animal_sale.errors[:sale_price].any?}",
+                    placeholder: "0.00",
+                    required: true %>
+              <% if @animal_sale.errors[:sale_price].any? %>
+                <div class="invalid-feedback">
+                  <%= @animal_sale.errors[:sale_price].first %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Step 4: Buyer Information -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= form.label :buyer, "Buyer Name", class: "form-label required" %>
+              <%= form.text_field :buyer, 
+                    class: "form-control #{'is-invalid' if @animal_sale.errors[:buyer].any?}",
+                    placeholder: "Enter buyer name...",
+                    required: true %>
+              <% if @animal_sale.errors[:buyer].any? %>
+                <div class="invalid-feedback">
+                  <%= @animal_sale.errors[:buyer].first %>
+                </div>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <%= form.label :buyer_contact, "Buyer Contact", class: "form-label" %>
+              <%= form.text_field :buyer_contact, 
+                    class: "form-control",
+                    placeholder: "Phone, email, or address..." %>
+              <div class="form-text">Optional contact information for the buyer</div>
+            </div>
+          </div>
+
+          <!-- Step 5: Additional Details -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <%= form.label :weight_at_sale, "Weight at Sale (lbs)", class: "form-label" %>
+              <%= form.number_field :weight_at_sale, 
+                    step: 0.1, 
+                    min: 0,
+                    class: "form-control",
+                    placeholder: "Enter weight..." %>
+              <div class="form-text">Optional weight at time of sale</div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= form.label :notes, "Notes", class: "form-label" %>
+            <%= form.text_area :notes, 
+                  rows: 3,
+                  class: "form-control",
+                  placeholder: "Any additional notes about the sale..." %>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end gap-2">
+            <%= link_to "Cancel", 
+                  (@farm ? farm_animal_sales_path(@farm) : animal_sales_path), 
+                  class: "btn btn-outline-secondary" %>
+            <%= form.submit "Record Sale", 
+                  class: "btn btn-success",
+                  data: { 
+                    confirm: "This will mark the animal as sold. Are you sure?" 
+                  } %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript for form enhancements -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Auto-detect animal type based on selected animal
+    const animalSelect = document.getElementById('animal_select');
+    const animalTypeSelect = document.getElementById('animal_sale_animal_type');
+    
+    if (animalSelect && animalTypeSelect) {
+      animalSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.text) {
+          const text = selectedOption.text.toLowerCase();
+          
+          // Simple heuristics to guess animal type
+          if (text.includes('calf') || text.includes('young')) {
+            animalTypeSelect.value = 'calf';
+          } else if (text.includes('bull')) {
+            animalTypeSelect.value = 'bull';
+          } else if (text.includes('heifer')) {
+            animalTypeSelect.value = 'heifer';
+          } else {
+            animalTypeSelect.value = 'cow';
+          }
+        }
+      });
+    }
+
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  });
+</script>
+
+<style>
+  .required::after {
+    content: " *";
+    color: #dc3545;
+  }
+</style>

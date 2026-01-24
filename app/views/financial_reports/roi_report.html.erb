@@ -1,0 +1,595 @@
+<div class="roi-report">
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="bi bi-graph-up-arrow text-primary"></i>
+          ROI Analytics Report
+        </h2>
+        <p class="text-muted">Return on Investment analysis per animal and farm operations</p>
+      </div>
+      <div class="header-actions">
+        <%= link_to financial_reports_path, class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-arrow-left"></i> Back to Dashboard
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROI Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="stat-card bg-primary text-white">
+        <div class="stat-icon">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <div class="stat-content">
+          <h3><%= @roi_analytics[:roi_percentage] %>%</h3>
+          <p>Annual ROI</p>
+          <small class="opacity-75">Return on investment</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card bg-success text-white">
+        <div class="stat-icon">
+          <i class="bi bi-currency-exchange"></i>
+        </div>
+        <div class="stat-content">
+          <h3>KES <%= number_with_delimiter(@roi_analytics[:annual_profit]) %></h3>
+          <p>Annual Profit</p>
+          <small class="opacity-75">Total yearly profit</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card bg-warning text-white">
+        <div class="stat-icon">
+          <i class="bi bi-cash-stack"></i>
+        </div>
+        <div class="stat-content">
+          <h3>KES <%= number_with_delimiter(@roi_analytics[:total_investment]) %></h3>
+          <p>Total Investment</p>
+          <small class="opacity-75">Equipment & breeding</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="stat-card bg-info text-white">
+        <div class="stat-icon">
+          <i class="bi bi-clock"></i>
+        </div>
+        <div class="stat-content">
+          <h3><%= @roi_analytics[:payback_period] %></h3>
+          <p>Payback Period</p>
+          <small class="opacity-75">Months to break even</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Investment Summary -->
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-pie-chart-fill"></i>
+            Investment Breakdown
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="investment-chart-container">
+            <canvas id="investmentBreakdownChart" height="250"></canvas>
+          </div>
+          
+          <div class="investment-details mt-3">
+            <div class="investment-item">
+              <div class="d-flex justify-content-between">
+                <span>
+                  <i class="bi bi-gear text-warning"></i>
+                  Equipment Investment
+                </span>
+                <strong>KES <%= number_with_delimiter(@investment_summary[:equipment_investment]) %></strong>
+              </div>
+              <div class="progress mt-1">
+                <div class="progress-bar bg-warning" 
+                     style="width: <%= (@investment_summary[:equipment_investment] / @investment_summary[:total_investment] * 100).round(1) rescue 0 %>%"></div>
+              </div>
+            </div>
+            
+            <div class="investment-item">
+              <div class="d-flex justify-content-between">
+                <span>
+                  <i class="bi bi-heart text-danger"></i>
+                  Breeding Investment
+                </span>
+                <strong>KES <%= number_with_delimiter(@investment_summary[:breeding_investment]) %></strong>
+              </div>
+              <div class="progress mt-1">
+                <div class="progress-bar bg-danger" 
+                     style="width: <%= (@investment_summary[:breeding_investment] / @investment_summary[:total_investment] * 100).round(1) rescue 0 %>%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROI Performance Indicator -->
+      <div class="card">
+        <div class="card-header">
+          <h6 class="card-title mb-0">
+            <i class="bi bi-speedometer2"></i>
+            ROI Performance Rating
+          </h6>
+        </div>
+        <div class="card-body text-center">
+          <div class="roi-gauge">
+            <% roi_score = [@roi_analytics[:roi_percentage], 50].min.abs %>
+            <div class="gauge-circle">
+              <div class="gauge-meter" data-percentage="<%= roi_score %>">
+                <div class="gauge-inner">
+                  <span class="gauge-value"><%= @roi_analytics[:roi_percentage] %>%</span>
+                  <span class="gauge-label">ROI</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="performance-rating mt-3">
+            <% if @roi_analytics[:roi_percentage] >= 25 %>
+              <div class="alert alert-success">
+                <i class="bi bi-check-circle"></i>
+                <strong>Excellent ROI</strong><br>
+                Outstanding investment performance
+              </div>
+            <% elsif @roi_analytics[:roi_percentage] >= 15 %>
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Good ROI</strong><br>
+                Healthy investment returns
+              </div>
+            <% elsif @roi_analytics[:roi_percentage] >= 5 %>
+              <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Moderate ROI</strong><br>
+                Room for improvement
+              </div>
+            <% else %>
+              <div class="alert alert-danger">
+                <i class="bi bi-x-circle"></i>
+                <strong>Poor ROI</strong><br>
+                Consider optimization strategies
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Individual Animal ROI Analysis -->
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-table"></i>
+            Individual Animal ROI Analysis
+            <small class="text-muted">(Last 6 Months)</small>
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @animal_roi.present? %>
+            <div class="table-responsive">
+              <table class="table table-hover animal-roi-table">
+                <thead>
+                  <tr>
+                    <th>Animal</th>
+                    <th>Tag</th>
+                    <th>Revenue</th>
+                    <th>Est. Expenses</th>
+                    <th>Profit</th>
+                    <th>ROI %</th>
+                    <th>Performance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @animal_roi.sort_by { |animal| -animal[:roi_percentage] }.each_with_index do |animal, index| %>
+                    <tr class="<%= 'table-success' if index < 3 && animal[:roi_percentage] > 0 %>">
+                      <td>
+                        <strong><%= animal[:name] %></strong>
+                        <% if index < 3 && animal[:roi_percentage] > 0 %>
+                          <span class="badge bg-warning ms-1">Top Performer</span>
+                        <% end %>
+                      </td>
+                      <td><span class="badge bg-secondary"><%= animal[:tag_number] %></span></td>
+                      <td class="text-success">
+                        <strong>KES <%= number_with_delimiter(animal[:revenue]) %></strong>
+                      </td>
+                      <td class="text-warning">
+                        KES <%= number_with_delimiter(animal[:estimated_expenses]) %>
+                      </td>
+                      <td class="text-<%= animal[:profit] >= 0 ? 'success' : 'danger' %>">
+                        <strong>KES <%= number_with_delimiter(animal[:profit]) %></strong>
+                      </td>
+                      <td>
+                        <span class="badge bg-<%= animal[:roi_percentage] >= 20 ? 'success' : animal[:roi_percentage] >= 10 ? 'primary' : animal[:roi_percentage] >= 0 ? 'warning' : 'danger' %>">
+                          <%= animal[:roi_percentage] %>%
+                        </span>
+                      </td>
+                      <td>
+                        <div class="performance-bar">
+                          <div class="performance-fill bg-<%= animal[:roi_percentage] >= 15 ? 'success' : animal[:roi_percentage] >= 5 ? 'warning' : 'danger' %>" 
+                               style="width: <%= [animal[:roi_percentage].abs, 100].min %>%"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-4">
+              <i class="bi bi-info-circle text-muted" style="font-size: 3rem;"></i>
+              <p class="text-muted mt-2">No animal ROI data available. Ensure production and sales records are up to date.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROI Improvement Recommendations -->
+  <div class="row mt-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-lightbulb"></i>
+            ROI Improvement Strategies
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="strategy-card">
+                <div class="strategy-icon">
+                  <i class="bi bi-graph-up text-success"></i>
+                </div>
+                <div class="strategy-content">
+                  <h6>Increase Production Efficiency</h6>
+                  <ul class="strategy-list">
+                    <% if @animal_roi.present? && @animal_roi.select { |a| a[:roi_percentage] < 10 }.count > 0 %>
+                      <li>Focus on low-performing animals</li>
+                      <li>Improve feed quality and nutrition</li>
+                    <% end %>
+                    <li>Optimize milking schedules</li>
+                    <li>Monitor animal health regularly</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="strategy-card">
+                <div class="strategy-icon">
+                  <i class="bi bi-cash-coin text-warning"></i>
+                </div>
+                <div class="strategy-content">
+                  <h6>Cost Optimization</h6>
+                  <ul class="strategy-list">
+                    <li>Bulk purchase feed supplies</li>
+                    <li>Implement preventive healthcare</li>
+                    <li>Optimize labor allocation</li>
+                    <li>Regular equipment maintenance</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="strategy-card">
+                <div class="strategy-icon">
+                  <i class="bi bi-arrow-up-circle text-primary"></i>
+                </div>
+                <div class="strategy-content">
+                  <h6>Revenue Enhancement</h6>
+                  <ul class="strategy-list">
+                    <li>Explore premium milk markets</li>
+                    <li>Consider value-added products</li>
+                    <li>Improve milk quality standards</li>
+                    <li>Expand customer base</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Investment Breakdown Pie Chart
+const investmentData = {
+  equipment: <%= @investment_summary[:equipment_investment] %>,
+  breeding: <%= @investment_summary[:breeding_investment] %>
+};
+
+const ctx = document.getElementById('investmentBreakdownChart').getContext('2d');
+new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Equipment Investment', 'Breeding Investment'],
+    datasets: [{
+      data: [investmentData.equipment, investmentData.breeding],
+      backgroundColor: ['#ffc107', '#dc3545'],
+      borderWidth: 0,
+      cutout: '60%'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 20,
+          font: {
+            size: 12
+          }
+        }
+      }
+    }
+  }
+});
+
+// ROI Gauge Animation
+document.addEventListener('DOMContentLoaded', function() {
+  const gaugeMeter = document.querySelector('.gauge-meter');
+  if (gaugeMeter) {
+    const percentage = gaugeMeter.dataset.percentage;
+    const circumference = 2 * Math.PI * 45; // radius = 45
+    const strokeDasharray = circumference;
+    const strokeDashoffset = circumference - (percentage / 100) * circumference;
+    
+    // Create SVG gauge
+    gaugeMeter.innerHTML = `
+      <svg width="120" height="120" class="gauge-svg">
+        <circle cx="60" cy="60" r="45" fill="none" stroke="#e9ecef" stroke-width="8"></circle>
+        <circle cx="60" cy="60" r="45" fill="none" stroke="#007bff" stroke-width="8" 
+                stroke-dasharray="${strokeDasharray}" 
+                stroke-dashoffset="${strokeDashoffset}"
+                stroke-linecap="round" 
+                style="transition: stroke-dashoffset 1.5s ease-in-out; transform: rotate(-90deg); transform-origin: center;"></circle>
+      </svg>
+    `;
+  }
+});
+
+// Mobile optimization
+if (window.innerWidth < 768) {
+  Chart.defaults.font.size = 10;
+  Chart.defaults.plugins.legend.labels.padding = 10;
+}
+</script>
+
+<style>
+.roi-report .stat-card {
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.roi-report .stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.investment-item {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.investment-item:last-child {
+  border-bottom: none;
+}
+
+.investment-item .progress {
+  height: 6px;
+  margin-top: 5px;
+}
+
+.roi-gauge {
+  position: relative;
+  display: inline-block;
+}
+
+.gauge-meter {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-inner {
+  position: absolute;
+  text-align: center;
+}
+
+.gauge-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #495057;
+}
+
+.gauge-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.animal-roi-table th {
+  border-top: none;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.875rem;
+}
+
+.animal-roi-table td {
+  vertical-align: middle;
+  font-size: 0.875rem;
+}
+
+.performance-bar {
+  width: 60px;
+  height: 8px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.performance-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.strategy-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  height: 100%;
+  border-left: 4px solid #007bff;
+}
+
+.strategy-icon {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.strategy-icon i {
+  font-size: 2.5rem;
+}
+
+.strategy-content h6 {
+  color: #495057;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.strategy-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.strategy-list li {
+  padding: 4px 0;
+  font-size: 0.875rem;
+  color: #6c757d;
+  position: relative;
+  padding-left: 20px;
+}
+
+.strategy-list li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #28a745;
+  font-weight: bold;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .roi-report .stat-card {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .stat-content h3 {
+    font-size: 1.4rem;
+  }
+  
+  .animal-roi-table {
+    font-size: 0.75rem;
+  }
+  
+  .animal-roi-table th,
+  .animal-roi-table td {
+    padding: 8px 4px;
+  }
+  
+  .strategy-card {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .strategy-icon i {
+    font-size: 2rem;
+  }
+  
+  .gauge-meter {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .gauge-value {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-header .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    margin-top: 15px;
+    width: 100%;
+  }
+  
+  .animal-roi-table th:nth-child(n+4),
+  .animal-roi-table td:nth-child(n+4) {
+    display: none;
+  }
+  
+  .strategy-list li {
+    font-size: 0.8rem;
+  }
+}
+
+/* Touch-friendly improvements for mobile */
+@media (hover: none) and (pointer: coarse) {
+  .roi-report .stat-card:hover {
+    transform: none;
+  }
+  
+  .roi-report .stat-card:active {
+    transform: scale(0.98);
+  }
+  
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .animal-roi-table td,
+  .animal-roi-table th {
+    padding: 12px 8px;
+    font-size: 14px;
+  }
+}
+</style>

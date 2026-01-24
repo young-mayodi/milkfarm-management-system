@@ -1,36 +1,36 @@
 class ProductionRecordsController < ApplicationController
   before_action :set_farm_and_cow
-  before_action :set_production_record, only: [:show, :edit, :update, :destroy]
+  before_action :set_production_record, only: [ :show, :edit, :update, :destroy ]
 
   def index
     # Optimized base query with proper includes
     @production_records = ProductionRecord
       .joins(:cow, :farm)
       .select(
-        'production_records.*',
-        'cows.name as cow_name',
-        'cows.tag_number',
-        'farms.name as farm_name'
+        "production_records.*",
+        "cows.name as cow_name",
+        "cows.tag_number",
+        "farms.name as farm_name"
       )
       .includes(:cow, :farm)
-    
+
     @production_records = @production_records.where(farm: @farm) if @farm
     @production_records = @production_records.where(cow: @cow) if @cow
-    
+
     # Date filtering with index optimization
     if params[:start_date].present? && params[:end_date].present?
       @production_records = @production_records.where(production_date: params[:start_date]..params[:end_date])
     end
-    
+
     @production_records = @production_records.recent.page(params[:page]).per(20)
-    
+
     # Use optimized analytics service with fallback
     begin
       analytics_service = ProductionAnalyticsService.new(
         farm_id: @farm&.id,
         date_range: 1.week.ago..Date.current
       )
-      
+
       @analytics_data = analytics_service.dashboard_data
       @top_performers = @analytics_data[:top_performers] || []
       @recent_high_producers = @analytics_data[:recent_high_producers] || []
@@ -47,13 +47,13 @@ class ProductionRecordsController < ApplicationController
       @recent_high_producers = []
       @production_summary = {}
     end
-    
+
     respond_to do |format|
       format.html
-      format.csv { send_csv_data(@production_records, 'production_records') }
-      format.json { render json: { 
-        records: @production_records, 
-        analytics: @analytics_data 
+      format.csv { send_csv_data(@production_records, "production_records") }
+      format.json { render json: {
+        records: @production_records,
+        analytics: @analytics_data
       }}
     end
   end
@@ -66,23 +66,23 @@ class ProductionRecordsController < ApplicationController
     @production_record.farm = @farm if @farm
     @production_record.cow = @cow if @cow
     @production_record.production_date = Date.current
-    
+
     @cows = @farm ? @farm.cows.active : Cow.active
     @farms = Farm.all unless @farm
   end
 
   def create
     @production_record = ProductionRecord.new(production_record_params)
-    
+
     if @production_record.save
       redirect_path = if @farm && @cow
                         farm_cow_production_records_path(@farm, @cow)
-                      elsif @farm
+      elsif @farm
                         farm_production_records_path(@farm)
-                      else
+      else
                         production_records_path
-                      end
-      redirect_to redirect_path, notice: 'Production record was successfully created.'
+      end
+      redirect_to redirect_path, notice: "Production record was successfully created."
     else
       @cows = @farm ? @farm.cows.active : Cow.active
       @farms = Farm.all unless @farm
@@ -99,12 +99,12 @@ class ProductionRecordsController < ApplicationController
     if @production_record.update(production_record_params)
       redirect_path = if @farm && @cow
                         farm_cow_production_records_path(@farm, @cow)
-                      elsif @farm
+      elsif @farm
                         farm_production_records_path(@farm)
-                      else
+      else
                         production_records_path
-                      end
-      redirect_to redirect_path, notice: 'Production record was successfully updated.'
+      end
+      redirect_to redirect_path, notice: "Production record was successfully updated."
     else
       @cows = @farm ? @farm.cows.active : Cow.active
       @farms = Farm.all unless @farm
@@ -116,78 +116,43 @@ class ProductionRecordsController < ApplicationController
     @production_record.destroy
     redirect_path = if @farm && @cow
                       farm_cow_production_records_path(@farm, @cow)
-                    elsif @farm
+    elsif @farm
                       farm_production_records_path(@farm)
-                    else
+    else
                       production_records_path
-                    end
-    redirect_to redirect_path, notice: 'Production record was successfully deleted.'
+    end
+    redirect_to redirect_path, notice: "Production record was successfully deleted."
   end
 
-  # Bulk/Excel-like entry
+  # Bulk/Excel-like entry - Redirect to enhanced version
   def bulk_entry
-    @date = params[:date]&.to_date || Date.current
-    @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
-    @farm ||= current_farm
-    
-    # Check if date is more than 3 days old and user doesn't have admin privileges
-    @days_back = (Date.current - @date).to_i
-    @can_edit_old_records = can_edit_historical_records?(@date)
-    
-    if @days_back > 3 && !@can_edit_old_records
-      flash.now[:warning] = "Records older than 3 days can only be edited by farm managers or owners. Please contact your administrator."
-      @readonly_mode = true
-    else
-      @readonly_mode = false
-    end
-    
-    # Get all active cows for the farm (removed unnecessary eager loading)
-    @cows = @farm ? @farm.cows.active.order(:name) : []
-    
-    # Get existing records for the date with optimized single query
-    @existing_records = {}
-    if @cows.any?
-      ProductionRecord.where(cow: @cows, production_date: @date).includes(:cow).each do |record|
-        @existing_records[record.cow_id] = record
-      end
-    end
-    
-    # Create empty records for cows that don't have records for this date
-    @records = @cows.map do |cow|
-      @existing_records[cow.id] || ProductionRecord.new(
-        cow: cow,
-        farm: @farm,
-        production_date: @date,
-        morning_production: 0,
-        noon_production: 0,
-        evening_production: 0
-      )
-    end
-    
-    # Calculate summary statistics for better UX
-    @summary_stats = calculate_bulk_entry_stats(@records, @existing_records)
+    redirect_to enhanced_bulk_entry_production_records_path(params.permit(:date, :farm_id, :cow_id))
   end
-  
+
   # Enhanced bulk entry with improved UX and smart features
   def enhanced_bulk_entry
     @date = params[:date]&.to_date || Date.current
     @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
     @farm ||= current_farm
-    
+
     # Check if date is more than 3 days old and user doesn't have admin privileges
     @days_back = (Date.current - @date).to_i
     @can_edit_old_records = can_edit_historical_records?(@date)
-    
+
     if @days_back > 3 && !@can_edit_old_records
       flash.now[:warning] = "Records older than 3 days can only be edited by farm managers or owners. Please contact your administrator."
       @readonly_mode = true
     else
       @readonly_mode = false
     end
-    
-    # Get all active cows for the farm (removed unnecessary eager loading)
-    @cows = @farm ? @farm.cows.active.order(:name) : []
-    
+
+    # Get all animals that can be milked (active cows + graduated calves)
+    @cows = if @farm
+              @farm.cows.milkable_animals.order(:name)
+    else
+              Cow.milkable_animals.order(:name)
+    end
+
     # Get existing records for the date with optimized query
     @existing_records = {}
     if @cows.any?
@@ -195,7 +160,7 @@ class ProductionRecordsController < ApplicationController
         @existing_records[record.cow_id] = record
       end
     end
-    
+
     # Create records for all cows (existing or new)
     @records = @cows.map do |cow|
       @existing_records[cow.id] || ProductionRecord.new(
@@ -207,14 +172,14 @@ class ProductionRecordsController < ApplicationController
         evening_production: 0
       )
     end
-    
+
     # Calculate enhanced summary statistics
     @summary_stats = calculate_bulk_entry_stats(@records, @existing_records)
-    
+
     # Additional data for enhanced UI
     @previous_day_data = get_previous_day_averages(@farm, @date - 1.day) if @farm
     @farm_average = calculate_farm_daily_average(@farm) if @farm
-    
+
     render :enhanced_bulk_entry
   end
 
@@ -222,40 +187,40 @@ class ProductionRecordsController < ApplicationController
     @date = params[:date]&.to_date || Date.current
     @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
     @farm ||= current_farm
-    
+
     # Check edit permissions for historical records
     unless can_edit_historical_records?(@date)
       render json: { error: "You don't have permission to edit records older than 3 days." }, status: :forbidden
       return
     end
-    
+
     success_count = 0
     error_count = 0
     errors = []
     updated_cows = []
     real_time_updates = []
-    
+
     params[:records]&.each do |cow_id, record_params|
       # Skip if all production values are blank or zero
       next if all_production_empty?(record_params)
-      
+
       cow = Cow.find(cow_id)
       record = ProductionRecord.find_or_initialize_by(
         cow: cow,
         production_date: @date
       )
-      
+
       # Track original values for change detection
       was_new_record = record.new_record?
       original_total = record.total_production || 0
-      
+
       record.assign_attributes(
         farm: @farm,
         morning_production: sanitize_production_value(record_params[:morning_production]),
         noon_production: sanitize_production_value(record_params[:noon_production]),
         evening_production: sanitize_production_value(record_params[:evening_production])
       )
-      
+
       if record.save
         success_count += 1
         updated_cows << {
@@ -264,7 +229,7 @@ class ProductionRecordsController < ApplicationController
           old_total: original_total,
           new_total: record.total_production
         }
-        
+
         # Prepare real-time update data
         real_time_updates << {
           cow_id: cow.id,
@@ -280,51 +245,111 @@ class ProductionRecordsController < ApplicationController
         errors << "#{cow.name}: #{record.errors.full_messages.join(', ')}"
       end
     end
-    
+
     # Broadcast real-time updates to other browser windows
     if real_time_updates.any?
       broadcast_bulk_entry_updates(@farm&.id, @date, real_time_updates)
     end
-    
+
     # Handle different response formats
     respond_to do |format|
       format.json do
         if error_count == 0
-          render json: { 
-            success: true, 
+          render json: {
+            success: true,
             message: generate_bulk_update_success_message(success_count, updated_cows),
             updates: real_time_updates,
             stats: { success_count: success_count, error_count: error_count }
           }
         else
-          render json: { 
-            success: false, 
-            message: "#{success_count} records saved, #{error_count} failed.", 
+          render json: {
+            success: false,
+            message: "#{success_count} records saved, #{error_count} failed.",
             errors: errors,
             stats: { success_count: success_count, error_count: error_count }
           }
         end
       end
-      
+
       format.html do
         if error_count == 0
           success_message = generate_bulk_update_success_message(success_count, updated_cows)
-          redirect_to bulk_entry_production_records_path(date: @date, farm_id: @farm&.id), 
+          redirect_to bulk_entry_production_records_path(date: @date, farm_id: @farm&.id),
                       notice: success_message
         else
-          redirect_to bulk_entry_production_records_path(date: @date, farm_id: @farm&.id), 
+          redirect_to bulk_entry_production_records_path(date: @date, farm_id: @farm&.id),
                       alert: "#{success_count} records saved, #{error_count} failed. Errors: #{errors.join('; ')}"
         end
       end
     end
   end
 
+  # Auto-save draft functionality
+  def save_draft
+    @date = params[:date]&.to_date || Date.current
+    @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
+
+    begin
+      saved_count = 0
+      errors = []
+
+      if params[:records].present?
+        params[:records].each do |cow_id, record_params|
+          cow = Cow.find(cow_id)
+          next unless cow
+
+          # Find or create the production record
+          production_record = ProductionRecord.find_or_initialize_by(
+            cow: cow,
+            production_date: @date
+          )
+
+          # Update with new values only if they're provided
+          production_record.assign_attributes(
+            farm: @farm || cow.farm,
+            morning_production: record_params[:morning_production].present? ?
+              record_params[:morning_production].to_f : production_record.morning_production,
+            noon_production: record_params[:noon_production].present? ?
+              record_params[:noon_production].to_f : production_record.noon_production,
+            evening_production: record_params[:evening_production].present? ?
+              record_params[:evening_production].to_f : production_record.evening_production
+          )
+
+          # Calculate total
+          production_record.calculate_total_production
+
+          if production_record.save
+            saved_count += 1
+          else
+            errors << "Cow #{cow.tag_number}: #{production_record.errors.full_messages.join(', ')}"
+          end
+        end
+      end
+
+      render json: {
+        success: true,
+        message: "Draft auto-saved: #{saved_count} records",
+        saved_count: saved_count,
+        errors: errors,
+        timestamp: Time.current.strftime("%H:%M:%S")
+      }
+
+    rescue StandardError => e
+      Rails.logger.error "Auto-save error: #{e.message}"
+      render json: {
+        success: false,
+        message: "Auto-save failed: #{e.message}",
+        timestamp: Time.current.strftime("%H:%M:%S")
+      }, status: :unprocessable_entity
+    end
+  end
+
   # Server-Sent Events endpoint for real-time bulk entry updates
   def bulk_entry_stream
-    response.headers['Content-Type'] = 'text/event-stream'
-    response.headers['Cache-Control'] = 'no-cache'
-    response.headers['Connection'] = 'keep-alive'
-    
+    response.headers["Content-Type"] = "text/event-stream"
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Connection"] = "keep-alive"
+
     begin
       # Send connection confirmation and close immediately
       response.stream.write("data: {\"type\":\"connected\",\"timestamp\":#{Time.current.to_i}}\n\n")
@@ -349,22 +374,22 @@ class ProductionRecordsController < ApplicationController
   end
 
   def production_record_params
-    params.require(:production_record).permit(:cow_id, :farm_id, :production_date, 
+    params.require(:production_record).permit(:cow_id, :farm_id, :production_date,
                                               :morning_production, :noon_production, :evening_production)
   end
 
   # Broadcast real-time updates to other browser windows
   def broadcast_bulk_entry_updates(farm_id, date, updates)
     channel = "bulk_entry_#{farm_id}_#{date.strftime('%Y%m%d')}"
-    
+
     message = {
-      type: 'production_update',
+      type: "production_update",
       farm_id: farm_id,
-      date: date.strftime('%Y-%m-%d'),
+      date: date.strftime("%Y-%m-%d"),
       updates: updates,
       timestamp: Time.current.to_i
     }.to_json
-    
+
     begin
       # Try to use Redis for broadcasting if available
       redis = Redis.new
@@ -377,11 +402,11 @@ class ProductionRecordsController < ApplicationController
   end
 
   def send_csv_data(records, filename)
-    require 'csv'
-    
+    require "csv"
+
     csv_data = CSV.generate(headers: true) do |csv|
-      csv << ['Date', 'Farm', 'Cow Name', 'Tag Number', 'Morning (L)', 'Noon (L)', 'Evening (L)', 'Total (L)']
-      
+      csv << [ "Date", "Farm", "Cow Name", "Tag Number", "Morning (L)", "Noon (L)", "Evening (L)", "Total (L)" ]
+
       records.includes(:cow, :farm).each do |record|
         csv << [
           record.production_date.strftime("%Y-%m-%d"),
@@ -395,11 +420,11 @@ class ProductionRecordsController < ApplicationController
         ]
       end
     end
-    
-    send_data csv_data, 
-              filename: "#{filename}_#{Date.current.strftime('%Y%m%d')}.csv", 
-              type: 'text/csv',
-              disposition: 'attachment'
+
+    send_data csv_data,
+              filename: "#{filename}_#{Date.current.strftime('%Y%m%d')}.csv",
+              type: "text/csv",
+              disposition: "attachment"
   end
 
   # Access control for historical records
@@ -415,7 +440,7 @@ class ProductionRecordsController < ApplicationController
     morning = sanitize_production_value(record_params[:morning_production])
     noon = sanitize_production_value(record_params[:noon_production])
     evening = sanitize_production_value(record_params[:evening_production])
-    
+
     morning.zero? && noon.zero? && evening.zero?
   end
 
@@ -430,10 +455,10 @@ class ProductionRecordsController < ApplicationController
     total_cows = records.count
     completed_records = existing_records.count { |_, record| record.total_production > 0 }
     completion_percentage = total_cows > 0 ? (completed_records.to_f / total_cows * 100).round(1) : 0
-    
+
     total_production = existing_records.values.sum(&:total_production)
     average_production = completed_records > 0 ? (total_production / completed_records).round(1) : 0
-    
+
     {
       total_cows: total_cows,
       completed_records: completed_records,
@@ -448,37 +473,37 @@ class ProductionRecordsController < ApplicationController
   def generate_bulk_update_success_message(success_count, updated_cows)
     new_records = updated_cows.count { |cow| cow[:was_new] }
     updated_records = success_count - new_records
-    
+
     message_parts = []
     message_parts << "✅ Successfully saved #{success_count} production record#{'s' if success_count != 1}"
-    
+
     if new_records > 0
       message_parts << "#{new_records} new record#{'s' if new_records != 1} created"
     end
-    
+
     if updated_records > 0
       message_parts << "#{updated_records} existing record#{'s' if updated_records != 1} updated"
     end
-    
+
     # Add total production info
     total_production = updated_cows.sum { |cow| cow[:new_total] }
     if total_production > 0
       message_parts << "Total production: #{total_production.round(1)}L"
     end
-    
-    message_parts.join(' | ')
+
+    message_parts.join(" | ")
   end
 
   # Helper method to get previous day averages for smart suggestions
   def get_previous_day_averages(farm, date)
     return {} unless farm
-    
+
     previous_records = ProductionRecord.joins(:cow)
                                      .where(cow: farm.cows, production_date: date)
-                                     .where('morning_production > 0 OR noon_production > 0 OR evening_production > 0')
-    
+                                     .where("morning_production > 0 OR noon_production > 0 OR evening_production > 0")
+
     return {} if previous_records.empty?
-    
+
     {
       morning_avg: previous_records.average(:morning_production)&.round(1) || 0,
       noon_avg: previous_records.average(:noon_production)&.round(1) || 0,
@@ -491,14 +516,14 @@ class ProductionRecordsController < ApplicationController
   # Calculate farm's daily average for benchmarking
   def calculate_farm_daily_average(farm)
     return {} unless farm
-    
+
     recent_records = ProductionRecord.joins(:cow)
                                    .where(cow: farm.cows)
                                    .where(production_date: 7.days.ago..Date.current)
-                                   .where('total_production > 0')
-    
+                                   .where("total_production > 0")
+
     return {} if recent_records.empty?
-    
+
     {
       daily_avg: recent_records.average(:total_production)&.round(1) || 0,
       cow_avg: (recent_records.sum(:total_production) / farm.cows.active.count).round(1),

@@ -1,0 +1,214 @@
+<div class="vaccination-records-index">
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="bi bi-shield-plus"></i>
+          Vaccination Records
+        </h2>
+        <p class="text-muted">Track and manage animal vaccinations</p>
+      </div>
+      <div class="header-actions">
+        <%= link_to new_vaccination_record_path, class: "btn btn-success" do %>
+          <i class="bi bi-plus-circle"></i>
+          New Vaccination
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <% if @vaccination_stats %>
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="stat-card bg-primary text-white">
+          <div class="stat-icon">
+            <i class="bi bi-clipboard-check"></i>
+          </div>
+          <div class="stat-content">
+            <h3><%= @vaccination_stats[:total_records] %></h3>
+            <p>Total Records</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card bg-danger text-white">
+          <div class="stat-icon">
+            <i class="bi bi-exclamation-triangle"></i>
+          </div>
+          <div class="stat-content">
+            <h3><%= @vaccination_stats[:overdue_vaccinations] %></h3>
+            <p>Overdue</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card bg-warning text-white">
+          <div class="stat-icon">
+            <i class="bi bi-clock"></i>
+          </div>
+          <div class="stat-content">
+            <h3><%= @vaccination_stats[:due_soon] %></h3>
+            <p>Due Soon</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card bg-success text-white">
+          <div class="stat-icon">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <div class="stat-content">
+            <h3><%= @vaccination_stats[:up_to_date_animals] %></h3>
+            <p>Up to Date</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Vaccination Records Table -->
+  <div class="card">
+    <div class="card-body">
+      <% if @vaccination_records.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Animal</th>
+                <th>Vaccine</th>
+                <th>Date Given</th>
+                <th>Next Due</th>
+                <th>Administered By</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @vaccination_records.each do |record| %>
+                <tr>
+                  <td>
+                    <strong><%= record.cow.tag_number %></strong>
+                    <br>
+                    <small class="text-muted"><%= record.cow.name %></small>
+                  </td>
+                  <td>
+                    <span class="badge bg-info"><%= record.vaccine_name %></span>
+                  </td>
+                  <td>
+                    <%= record.vaccination_date.strftime("%b %d, %Y") %>
+                  </td>
+                  <td>
+                    <% if record.next_due_date %>
+                      <%= record.next_due_date.strftime("%b %d, %Y") %>
+                      <% if record.next_due_date < Date.current %>
+                        <span class="badge bg-danger ms-1">Overdue</span>
+                      <% elsif record.next_due_date <= 7.days.from_now %>
+                        <span class="badge bg-warning ms-1">Due Soon</span>
+                      <% end %>
+                    <% else %>
+                      <span class="text-muted">-</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%= record.administered_by %>
+                  </td>
+                  <td>
+                    <% if record.next_due_date && record.next_due_date < Date.current %>
+                      <span class="badge bg-danger">Overdue</span>
+                    <% elsif record.next_due_date && record.next_due_date <= 7.days.from_now %>
+                      <span class="badge bg-warning">Due Soon</span>
+                    <% else %>
+                      <span class="badge bg-success">Up to Date</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <div class="btn-group" role="group">
+                      <%= link_to vaccination_record_path(record), class: "btn btn-sm btn-outline-primary" do %>
+                        <i class="bi bi-eye"></i>
+                      <% end %>
+                      <%= link_to edit_vaccination_record_path(record), class: "btn btn-sm btn-outline-secondary" do %>
+                        <i class="bi bi-pencil"></i>
+                      <% end %>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <% if respond_to?(:paginate) %>
+          <div class="d-flex justify-content-center">
+            <%= paginate @vaccination_records %>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="bi bi-shield-plus" style="font-size: 4rem; color: #ccc;"></i>
+          <h4 class="mt-3">No Vaccination Records Yet</h4>
+          <p class="text-muted">Start by recording your first vaccination.</p>
+          <%= link_to new_vaccination_record_path, class: "btn btn-success" do %>
+            <i class="bi bi-plus-circle"></i>
+            Add First Vaccination
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<style>
+.vaccination-records-index {
+  padding: 20px;
+}
+
+.page-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  margin-right: 15px;
+  opacity: 0.8;
+}
+
+.stat-content h3 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.stat-content p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 12px;
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  color: #495057;
+}
+</style>

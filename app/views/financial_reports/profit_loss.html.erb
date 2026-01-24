@@ -1,0 +1,389 @@
+<div class="profit-loss-report">
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="bi bi-file-earmark-bar-graph text-success"></i>
+          Profit & Loss Statement
+        </h2>
+        <p class="text-muted">Detailed financial performance analysis</p>
+      </div>
+      <div class="header-actions">
+        <%= link_to financial_reports_path, class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-arrow-left"></i> Back to Dashboard
+        <% end %>
+        <div class="btn-group ms-2">
+          <%= link_to profit_loss_financial_reports_path(period: 'month'), 
+              class: "btn btn-outline-primary #{'active' if params[:period] == 'month' || params[:period].blank?}" do %>
+            Month
+          <% end %>
+          <%= link_to profit_loss_financial_reports_path(period: 'quarter'), 
+              class: "btn btn-outline-primary #{'active' if params[:period] == 'quarter'}" do %>
+            Quarter
+          <% end %>
+          <%= link_to profit_loss_financial_reports_path(period: 'year'), 
+              class: "btn btn-outline-primary #{'active' if params[:period] == 'year'}" do %>
+            Year
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main P&L Statement -->
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-graph-up"></i>
+            Profit & Loss Statement
+            <small class="text-muted">
+              <%= @profit_loss_data[:period].begin.strftime('%b %d, %Y') %> - 
+              <%= @profit_loss_data[:period].end.strftime('%b %d, %Y') %>
+            </small>
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="financial-statement">
+            <!-- Revenue Section -->
+            <div class="statement-section">
+              <h6 class="section-title text-success">REVENUE</h6>
+              <div class="statement-line">
+                <span>Milk Sales</span>
+                <span class="amount">KES <%= number_with_delimiter(@profit_loss_data[:total_revenue]) %></span>
+              </div>
+              <div class="statement-line total-line">
+                <span><strong>Total Revenue</strong></span>
+                <span class="amount"><strong>KES <%= number_with_delimiter(@profit_loss_data[:total_revenue]) %></strong></span>
+              </div>
+            </div>
+
+            <!-- Cost of Goods Sold -->
+            <div class="statement-section">
+              <h6 class="section-title text-warning">COST OF GOODS SOLD</h6>
+              <% @expense_breakdown.each do |category, amount| %>
+                <div class="statement-line">
+                  <span><%= category.humanize %></span>
+                  <span class="amount">KES <%= number_with_delimiter(amount) %></span>
+                </div>
+              <% end %>
+              <div class="statement-line total-line">
+                <span><strong>Total Costs</strong></span>
+                <span class="amount"><strong>KES <%= number_with_delimiter(@profit_loss_data[:total_costs]) %></strong></span>
+              </div>
+            </div>
+
+            <!-- Gross Profit -->
+            <div class="statement-section">
+              <div class="statement-line gross-profit-line">
+                <span><strong>Gross Profit</strong></span>
+                <span class="amount text-<%= @profit_loss_data[:gross_profit] >= 0 ? 'success' : 'danger' %>">
+                  <strong>KES <%= number_with_delimiter(@profit_loss_data[:gross_profit]) %></strong>
+                </span>
+              </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="statement-section">
+              <h6 class="section-title text-info">KEY METRICS</h6>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="metric-card">
+                    <div class="metric-value"><%= @profit_loss_data[:profit_margin] %>%</div>
+                    <div class="metric-label">Profit Margin</div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="metric-card">
+                    <div class="metric-value">KES <%= @profit_loss_data[:average_price_per_liter] %></div>
+                    <div class="metric-label">Avg Price/Liter</div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="metric-card">
+                    <div class="metric-value"><%= @profit_loss_data[:total_milk_sold] %>L</div>
+                    <div class="metric-label">Milk Sold</div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="metric-card">
+                    <div class="metric-value"><%= @profit_loss_data[:milk_sold_percentage] %>%</div>
+                    <div class="metric-label">Sales Efficiency</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Analysis -->
+    <div class="col-md-4">
+      <!-- Monthly Comparison -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="card-title mb-0">
+            <i class="bi bi-bar-chart"></i>
+            Month-over-Month Comparison
+          </h6>
+        </div>
+        <div class="card-body">
+          <% if @monthly_comparison %>
+            <div class="comparison-item">
+              <div class="comparison-label">Revenue Change</div>
+              <div class="comparison-value text-<%= @monthly_comparison[:revenue_change] >= 0 ? 'success' : 'danger' %>">
+                <%= @monthly_comparison[:revenue_change] >= 0 ? '+' : '' %><%= @monthly_comparison[:revenue_change] %>%
+                <i class="bi bi-<%= @monthly_comparison[:revenue_change] >= 0 ? 'arrow-up' : 'arrow-down' %>"></i>
+              </div>
+            </div>
+            <div class="comparison-item">
+              <div class="comparison-label">Profit Change</div>
+              <div class="comparison-value text-<%= @monthly_comparison[:profit_change] >= 0 ? 'success' : 'danger' %>">
+                <%= @monthly_comparison[:profit_change] >= 0 ? '+' : '' %><%= @monthly_comparison[:profit_change] %>%
+                <i class="bi bi-<%= @monthly_comparison[:profit_change] >= 0 ? 'arrow-up' : 'arrow-down' %>"></i>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Performance Status -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="card-title mb-0">
+            <i class="bi bi-speedometer2"></i>
+            Performance Status
+          </h6>
+        </div>
+        <div class="card-body">
+          <% if @profit_loss_data[:performance_status] == "profitable" %>
+            <div class="alert alert-success">
+              <i class="bi bi-check-circle"></i>
+              <strong>Profitable Operations</strong><br>
+              Your farm is generating positive returns.
+            </div>
+          <% else %>
+            <div class="alert alert-danger">
+              <i class="bi bi-exclamation-triangle"></i>
+              <strong>Operating at Loss</strong><br>
+              Consider cost reduction strategies.
+            </div>
+          <% end %>
+
+          <div class="performance-metrics">
+            <div class="metric-row">
+              <span>Break-even Production:</span>
+              <strong><%= @profit_loss_data[:break_even_production].round(1) %>L</strong>
+            </div>
+            <div class="metric-row">
+              <span>Current Production:</span>
+              <strong><%= @profit_loss_data[:total_production] %>L</strong>
+            </div>
+            <div class="metric-row">
+              <span>Production vs Target:</span>
+              <strong class="text-<%= @profit_loss_data[:total_production] >= @profit_loss_data[:break_even_production] ? 'success' : 'danger' %>">
+                <%= ((@profit_loss_data[:total_production] / @profit_loss_data[:break_even_production]) * 100).round(1) rescue 0 %>%
+              </strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expense Breakdown Chart -->
+      <div class="card">
+        <div class="card-header">
+          <h6 class="card-title mb-0">
+            <i class="bi bi-pie-chart"></i>
+            Expense Breakdown
+          </h6>
+        </div>
+        <div class="card-body">
+          <canvas id="expenseBreakdownChart" height="200"></canvas>
+          <div class="expense-legend mt-3">
+            <% @expense_breakdown.each do |category, amount| %>
+              <div class="legend-item">
+                <span class="legend-color" style="background-color: <%= ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'][@expense_breakdown.keys.index(category) % 6] %>"></span>
+                <span><%= category.humanize %>: KES <%= number_with_delimiter(amount) %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Expense Breakdown Chart
+const expenseData = <%= @expense_breakdown.to_json.html_safe %>;
+const expenseLabels = Object.keys(expenseData).map(key => key.charAt(0).toUpperCase() + key.slice(1));
+const expenseValues = Object.values(expenseData);
+
+const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+
+const ctx = document.getElementById('expenseBreakdownChart').getContext('2d');
+new Chart(ctx, {
+  type: 'pie',
+  data: {
+    labels: expenseLabels,
+    datasets: [{
+      data: expenseValues,
+      backgroundColor: colors.slice(0, expenseLabels.length),
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false // We're using custom legend
+      }
+    }
+  }
+});
+</script>
+
+<style>
+.profit-loss-report .financial-statement {
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.statement-section {
+  margin-bottom: 25px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.section-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.statement-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px dotted #ddd;
+}
+
+.total-line {
+  border-bottom: 2px solid #333;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.gross-profit-line {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border: 2px solid #dee2e6;
+  border-radius: 5px;
+  margin: 20px 0;
+}
+
+.metric-card {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #495057;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 5px;
+}
+
+.comparison-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.comparison-label {
+  font-weight: 500;
+}
+
+.comparison-value {
+  font-weight: bold;
+}
+
+.performance-metrics .metric-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px dotted #ddd;
+}
+
+.expense-legend .legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  margin-right: 8px;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .header-actions {
+    margin-top: 15px;
+  }
+  
+  .header-actions .btn-group {
+    flex-wrap: wrap;
+  }
+  
+  .statement-line {
+    font-size: 0.875rem;
+  }
+  
+  .metric-card {
+    margin-bottom: 10px;
+  }
+  
+  .metric-value {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-header .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    margin-top: 15px;
+  }
+  
+  .btn-group {
+    width: 100%;
+  }
+  
+  .btn-group .btn {
+    flex: 1;
+  }
+}
+</style>

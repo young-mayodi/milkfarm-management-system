@@ -282,8 +282,8 @@
           <tbody>
             <% @cows.each do |cow| %>
               <% 
-                last_production = cow.production_records.recent.first
-                monthly_production = cow.production_records.where('production_date > ?', 30.days.ago).sum(:total_production)
+                last_production = @last_productions&.[](cow.id)
+                monthly_production = @monthly_productions&.[](cow.id) || 0
               %>
               <tr class="cow-row" data-cow-id="<%= cow.id %>">
                 <td>
@@ -445,7 +445,7 @@
     
     <!-- Cards Pagination -->
     <div class="d-flex justify-content-center mt-4">
-      <%= paginate @cows, theme: 'twitter-bootstrap-4' %>
+      <%= paginate @cows %>
     </div>
   </div>
 <% end %>

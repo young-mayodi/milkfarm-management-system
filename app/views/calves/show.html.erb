@@ -1,0 +1,506 @@
+<% content_for :title, "#{@calf.name} - Calf Details" %>
+
+<div class="calf-header mb-4">
+  <div class="d-flex justify-content-between align-items-start">
+    <div>
+      <div class="d-flex align-items-center mb-2">
+        <%= link_to calves_path, class: "btn btn-outline-secondary me-3" do %>
+          <i class="bi bi-arrow-left me-1"></i> Back to Calves
+        <% end %>
+        <div>
+          <h1 class="display-6 mb-1 gradient-text">
+            🐮 <%= @calf.name %>
+          </h1>
+          <p class="lead text-muted mb-0">
+            Tag: <%= @calf.tag_number %> • <%= @calf.breed %> • <%= @calf.age %> months old
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions d-flex gap-2">
+      <%= link_to edit_calf_path(@calf), class: "btn btn-warning" do %>
+        <i class="bi bi-pencil me-2"></i>Edit Calf
+      <% end %>
+      <%= link_to calf_path(@calf), method: :delete, 
+                 class: "btn btn-outline-danger", 
+                 confirm: "Are you sure you want to delete #{@calf.name}?" do %>
+        <i class="bi bi-trash me-2"></i>Delete
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Calf Information Cards -->
+<div class="row g-4 mb-5">
+  <!-- Basic Information -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header border-0 pb-0">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-info-circle text-primary me-2"></i>
+          Basic Information
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Name</label>
+              <div class="fw-bold"><%= @calf.name %></div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Tag Number</label>
+              <div class="fw-bold"><%= @calf.tag_number %></div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Breed</label>
+              <div class="fw-bold"><%= @calf.breed %></div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Age</label>
+              <div class="fw-bold"><%= @calf.age %> months</div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Status</label>
+              <span class="badge bg-<%= @calf.status_badge_class %> fs-6">
+                <%= @calf.status.capitalize %>
+              </span>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Farm</label>
+              <div class="fw-bold">
+                <%= link_to @calf.farm.name, farm_path(@calf.farm), class: "text-decoration-none" %>
+              </div>
+            </div>
+          </div>
+          <% if @calf.birth_date %>
+            <div class="col-sm-6">
+              <div class="info-item">
+                <label class="text-muted small">Birth Date</label>
+                <div class="fw-bold"><%= @calf.birth_date.strftime("%B %d, %Y") %></div>
+              </div>
+            </div>
+          <% end %>
+          <% if @calf.group_name %>
+            <div class="col-sm-6">
+              <div class="info-item">
+                <label class="text-muted small">Group</label>
+                <div class="fw-bold"><%= @calf.group_name %></div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Growth & Weight Information -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header border-0 pb-0">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-speedometer2 text-success me-2"></i>
+          Growth Information
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Current Weight</label>
+              <div class="fw-bold">
+                <% if @calf.current_weight %>
+                  <%= @calf.current_weight %>kg
+                <% else %>
+                  <span class="text-muted">Not recorded</span>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Previous Weight</label>
+              <div class="fw-bold">
+                <% if @calf.prev_weight %>
+                  <%= @calf.prev_weight %>kg
+                <% else %>
+                  <span class="text-muted">Not recorded</span>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Weight Gain</label>
+              <div class="fw-bold">
+                <% if @calf.weight_gain %>
+                  <span class="text-<%= @calf.weight_gain > 0 ? 'success' : 'warning' %>">
+                    <%= @calf.weight_gain > 0 ? '+' : '' %><%= @calf.weight_gain %>kg
+                  </span>
+                <% else %>
+                  <span class="text-muted">Not calculated</span>
+                <% end %>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="info-item">
+              <label class="text-muted small">Daily Gain</label>
+              <div class="fw-bold">
+                <% if @calf.avg_daily_gain %>
+                  <span class="badge bg-<%= @calf.avg_daily_gain > 0.5 ? 'success' : @calf.avg_daily_gain > 0.3 ? 'warning' : 'danger' %>">
+                    <%= number_with_precision(@calf.avg_daily_gain, precision: 2) %>kg/day
+                  </span>
+                <% else %>
+                  <span class="text-muted">Not calculated</span>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mother Information (if applicable) -->
+<% if @calf.mother %>
+  <div class="row g-4 mb-5">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header border-0 pb-0">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-heart text-danger me-2"></i>
+            Mother Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center p-3 rounded" style="background: rgba(220, 53, 69, 0.1);">
+            <div class="mother-avatar me-3">
+              <i class="bi bi-heart-fill text-danger"></i>
+            </div>
+            <div class="flex-grow-1">
+              <h6 class="mb-1">
+                <%= link_to @calf.mother.name, cow_path(@calf.mother), class: "text-decoration-none text-dark fw-bold" %>
+              </h6>
+              <div class="row g-2">
+                <div class="col-sm-3">
+                  <small class="text-muted">Tag:</small>
+                  <div class="fw-semibold"><%= @calf.mother.tag_number %></div>
+                </div>
+                <div class="col-sm-3">
+                  <small class="text-muted">Breed:</small>
+                  <div class="fw-semibold"><%= @calf.mother.breed %></div>
+                </div>
+                <div class="col-sm-3">
+                  <small class="text-muted">Age:</small>
+                  <div class="fw-semibold"><%= @calf.mother.age %> months</div>
+                </div>
+                <div class="col-sm-3">
+                  <small class="text-muted">Status:</small>
+                  <span class="badge bg-<%= @calf.mother.status_badge_class %>">
+                    <%= @calf.mother.status.capitalize %>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <%= link_to cow_path(@calf.mother), class: "btn btn-outline-danger btn-sm" do %>
+                <i class="bi bi-eye me-1"></i>View Mother
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Growth Timeline Chart -->
+<% if @growth_timeline.any? %>
+  <div class="row g-4 mb-5">
+    <div class="col-12">
+      <div class="card chart-card">
+        <div class="card-header border-0 pb-0">
+          <h5 class="card-title mb-1">
+            <i class="bi bi-graph-up text-success me-2"></i>
+            Growth Timeline
+          </h5>
+          <p class="text-muted small mb-0">Weight progression over time</p>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;" data-turbo-permanent>
+            <canvas id="growth-timeline-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Production Records for Calves (if any) -->
+<% if @production_records.any? %>
+  <div class="row g-4 mb-5">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header border-0 pb-0">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+              <i class="bi bi-clipboard-data text-info me-2"></i>
+              Early Production Records
+            </h5>
+            <%= link_to new_production_record_path(cow_id: @calf.id), class: "btn btn-outline-primary btn-sm" do %>
+              <i class="bi bi-plus-circle me-1"></i>Add Record
+            <% end %>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Morning</th>
+                  <th>Noon</th>
+                  <th>Evening</th>
+                  <th>Total</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @production_records.each do |record| %>
+                  <tr>
+                    <td>
+                      <span class="badge bg-light text-dark">
+                        <%= record.production_date.strftime("%m/%d/%Y") %>
+                      </span>
+                    </td>
+                    <td><%= number_with_precision(record.morning_production || 0, precision: 1) %>L</td>
+                    <td><%= number_with_precision(record.noon_production || 0, precision: 1) %>L</td>
+                    <td><%= number_with_precision(record.evening_production || 0, precision: 1) %>L</td>
+                    <td>
+                      <strong><%= number_with_precision(record.total_production, precision: 1) %>L</strong>
+                    </td>
+                    <td>
+                      <%= link_to edit_production_record_path(record), class: "btn btn-outline-primary btn-sm" do %>
+                        <i class="bi bi-pencil"></i>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          
+          <% if @production_records.count >= 10 %>
+            <div class="text-center mt-3">
+              <%= link_to production_records_path(cow_id: @calf.id), class: "btn btn-outline-primary btn-sm" do %>
+                View All Records
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Individual Production Chart -->
+<% if @production_chart.present? %>
+  <div class="row g-4 mb-5">
+    <div class="col-12">
+      <div class="card chart-card">
+        <div class="card-header border-0 pb-0">
+          <h5 class="card-title mb-1">
+            <i class="bi bi-bar-chart text-primary me-2"></i>
+            Production History
+          </h5>
+          <p class="text-muted small mb-0">Last 30 days of milk production</p>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;" data-turbo-permanent>
+            <canvas id="production-history-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Siblings (other calves from same mother) -->
+<% if @calf.mother && @calf.mother.calves.where.not(id: @calf.id).any? %>
+  <div class="row g-4 mb-5">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header border-0 pb-0">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-people text-warning me-2"></i>
+            Siblings
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <% @calf.mother.calves.where.not(id: @calf.id).each do |sibling| %>
+              <div class="col-lg-4 mb-3">
+                <div class="sibling-card p-3 rounded">
+                  <div class="d-flex align-items-center">
+                    <div class="sibling-avatar me-3">
+                      <i class="bi bi-heart-fill text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <h6 class="mb-1">
+                        <%= link_to sibling.name, calf_path(sibling), class: "text-decoration-none text-dark" %>
+                      </h6>
+                      <small class="text-muted">Tag: <%= sibling.tag_number %></small>
+                    </div>
+                    <div class="text-end">
+                      <span class="badge bg-<%= sibling.status_badge_class %>">
+                        <%= sibling.status.capitalize %>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Chart Scripts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  <% if @growth_timeline.any? %>
+    // Growth Timeline Chart
+    const growthTimelineCtx = document.getElementById('growth-timeline-chart');
+    if (growthTimelineCtx) {
+      new Chart(growthTimelineCtx, {
+        type: 'line',
+        data: {
+          labels: <%= @growth_timeline.map { |g| g[:date].strftime("%m/%d") }.to_json.html_safe %>,
+          datasets: [{
+            label: 'Weight (kg)',
+            data: <%= @growth_timeline.map { |g| g[:weight] }.to_json.html_safe %>,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { 
+              beginAtZero: true,
+              title: { display: true, text: 'Weight (kg)' }
+            },
+            x: {
+              title: { display: true, text: 'Date' }
+            }
+          }
+        }
+      });
+    }
+  <% end %>
+
+  <% if @production_chart.present? %>
+    // Production History Chart
+    const productionHistoryCtx = document.getElementById('production-history-chart');
+    if (productionHistoryCtx) {
+      new Chart(productionHistoryCtx, {
+        type: 'bar',
+        data: {
+          labels: <%= @production_chart.map { |p| p[0].strftime("%m/%d") }.to_json.html_safe %>,
+          datasets: [{
+            label: 'Daily Production (L)',
+            data: <%= @production_chart.map { |p| p[1] }.to_json.html_safe %>,
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { 
+              beginAtZero: true,
+              title: { display: true, text: 'Production (L)' }
+            },
+            x: {
+              title: { display: true, text: 'Date' }
+            }
+          }
+        }
+      });
+    }
+  <% end %>
+});
+</script>
+
+<!-- Enhanced Styles -->
+<style>
+  .info-item {
+    margin-bottom: 1rem;
+  }
+  
+  .info-item label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    display: block;
+  }
+  
+  .mother-avatar, .sibling-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.3);
+  }
+  
+  .sibling-card {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .sibling-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  .chart-card {
+    transition: all 0.3s ease;
+  }
+  
+  .chart-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+</style>

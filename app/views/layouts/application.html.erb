@@ -167,6 +167,96 @@
         text-align: center;
       }
       
+      /* Enhanced Navigation Submenu Styles */
+      .nav-link-sub {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.125rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-left: 3px solid transparent;
+        color: rgba(255, 255, 255, 0.7) !important;
+      }
+      
+      .nav-link-sub:hover {
+        border-left-color: rgba(102, 126, 234, 0.8);
+        background: rgba(102, 126, 234, 0.1);
+        color: rgba(255, 255, 255, 0.9) !important;
+        transform: translateX(2px);
+      }
+      
+      .nav-link-sub.active {
+        background: rgba(102, 126, 234, 0.2);
+        border-left-color: #667eea;
+        color: white !important;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+      
+      .animals-menu-toggle {
+        position: relative;
+        user-select: none;
+        cursor: pointer;
+      }
+      
+      .animals-menu-toggle:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white !important;
+      }
+      
+      .submenu-arrow {
+        transition: transform var(--animation-fast);
+        font-size: 0.8rem;
+        opacity: 0.7;
+      }
+      
+      .submenu-arrow.rotated {
+        transform: rotate(180deg);
+      }
+      
+      /* Badge styles for navigation counters */
+      .nav-link .badge {
+        font-size: 0.7rem;
+        border-radius: 10px;
+        padding: 0.25rem 0.5rem;
+      }
+      
+      /* Pulse animation for alert badges */
+      .pulse-badge {
+        animation: pulse-danger 2s infinite;
+      }
+      
+      /* Notification pulse animation for alerts */
+      .notification-pulse {
+        animation: notification-pulse 2s infinite;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+      }
+      
+      @keyframes notification-pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+          transform: scale(1);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(220, 53, 69, 0.3);
+          transform: scale(1.1);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+          transform: scale(1);
+        }
+      }
+      
+      @keyframes pulse-danger {
+        0% {
+          box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 8px rgba(220, 53, 69, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+        }
+      }
+      
       /* Main Content Area */
       .main-content {
         margin-left: var(--sidebar-width);
@@ -669,6 +759,382 @@
           gap: 1rem;
         }
       }
+
+      /* ============================================= */
+      /* COMPREHENSIVE MOBILE OPTIMIZATION STYLES     */
+      /* ============================================= */
+      
+      /* Touch-friendly interactions */
+      @media (hover: none) and (pointer: coarse) {
+        .btn, .nav-link, .card, .table td {
+          min-height: 44px; /* Apple's recommended minimum touch target */
+        }
+        
+        .btn {
+          padding: 12px 20px;
+          font-size: 16px; /* Prevent zoom on iOS */
+        }
+        
+        /* Larger touch targets for navigation */
+        .nav-link {
+          padding: 12px 15px;
+          font-size: 15px;
+        }
+        
+        /* Better form controls for mobile */
+        .form-control, .form-select {
+          padding: 12px 15px;
+          font-size: 16px; /* Prevent zoom on iOS */
+          border-radius: 8px;
+        }
+        
+        /* Remove hover effects that don't work on touch */
+        .card:hover, .btn:hover, .nav-link:hover {
+          transform: none;
+          box-shadow: none;
+        }
+        
+        /* Add active/pressed states for touch feedback */
+        .btn:active, .nav-link:active, .card:active {
+          transform: scale(0.98);
+          transition: transform 0.1s ease;
+        }
+        
+        /* Make dropdowns easier to use */
+        .dropdown-menu {
+          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+          border: none;
+          border-radius: 12px;
+          padding: 10px 0;
+        }
+        
+        .dropdown-item {
+          padding: 12px 20px;
+          font-size: 15px;
+        }
+      }
+      
+      /* Enhanced mobile responsiveness */
+      @media (max-width: 767.98px) {
+        /* Optimize charts for mobile viewing */
+        canvas {
+          max-height: 250px !important;
+        }
+        
+        /* Stack financial cards vertically on mobile */
+        .financial-dashboard .row > .col-md-3,
+        .cost-analysis-report .row > .col-md-3,
+        .roi-report .row > .col-md-3 {
+          margin-bottom: 15px;
+        }
+        
+        /* Improve table readability on mobile */
+        .table-responsive {
+          border: none;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+        }
+        
+        .table-responsive::-webkit-scrollbar {
+          height: 4px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 10px;
+        }
+        
+        /* Hide less important table columns on mobile */
+        .table .d-none-mobile {
+          display: none !important;
+        }
+        
+        /* Better spacing for mobile forms */
+        .form-group, .mb-3 {
+          margin-bottom: 20px;
+        }
+        
+        /* Improve modal experience on mobile */
+        .modal-dialog {
+          margin: 10px;
+          max-width: calc(100vw - 20px);
+        }
+        
+        .modal-header, .modal-footer {
+          padding: 15px;
+        }
+        
+        .modal-body {
+          padding: 20px 15px;
+        }
+        
+        /* Better breadcrumb navigation */
+        .breadcrumb {
+          font-size: 14px;
+          padding: 8px 0;
+          margin-bottom: 15px;
+        }
+        
+        .breadcrumb-item {
+          max-width: 120px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        
+        /* Optimize alerts and notifications */
+        .alert {
+          border-radius: 8px;
+          padding: 12px 15px;
+          margin-bottom: 15px;
+          font-size: 14px;
+        }
+        
+        /* Improve pagination on mobile */
+        .pagination {
+          justify-content: center;
+        }
+        
+        .page-link {
+          padding: 8px 12px;
+          font-size: 14px;
+        }
+        
+        /* Better search experience */
+        .search-container .form-control {
+          border-radius: 25px;
+          padding-left: 20px;
+          padding-right: 45px;
+        }
+        
+        /* Optimize dashboard widgets */
+        .stat-card {
+          text-align: center;
+          padding: 20px 15px;
+        }
+        
+        .stat-icon {
+          float: none;
+          display: block;
+          margin: 0 auto 10px;
+          font-size: 2.5rem;
+        }
+        
+        /* Better loading states */
+        .loading-spinner {
+          margin: 40px auto;
+          text-align: center;
+        }
+        
+        /* Improve action buttons */
+        .header-actions .btn-group {
+          width: 100%;
+        }
+        
+        .header-actions .btn-group .btn {
+          flex: 1;
+          font-size: 13px;
+          padding: 8px 12px;
+        }
+      }
+      
+      /* Extra small devices optimizations */
+      @media (max-width: 575.98px) {
+        /* Further optimize for very small screens */
+        body {
+          font-size: 14px;
+        }
+        
+        .page-title {
+          font-size: 1.5rem;
+          margin-bottom: 8px;
+        }
+        
+        .page-header p {
+          font-size: 13px;
+          margin-bottom: 15px;
+        }
+        
+        /* Single column layout for extra small screens */
+        .row > [class*="col-"] {
+          margin-bottom: 20px;
+        }
+        
+        /* Optimize financial dashboard for phones */
+        .financial-dashboard .stat-content h3 {
+          font-size: 1.3rem;
+        }
+        
+        .financial-dashboard .stat-content p {
+          font-size: 12px;
+        }
+        
+        /* Compact table layout */
+        .table td, .table th {
+          padding: 8px 4px;
+          font-size: 13px;
+        }
+        
+        /* Hide table headers and use a more mobile-friendly layout */
+        .mobile-table-view .table thead {
+          display: none;
+        }
+        
+        .mobile-table-view .table tbody tr {
+          display: block;
+          border: 1px solid #dee2e6;
+          border-radius: 8px;
+          margin-bottom: 15px;
+          padding: 15px;
+          background: white;
+        }
+        
+        .mobile-table-view .table tbody td {
+          display: block;
+          text-align: left;
+          border: none;
+          padding: 5px 0;
+        }
+        
+        .mobile-table-view .table tbody td:before {
+          content: attr(data-label) ": ";
+          font-weight: bold;
+          color: #666;
+        }
+        
+        /* Optimize charts further */
+        canvas {
+          max-height: 200px !important;
+        }
+        
+        /* Better mobile navigation */
+        .sidebar {
+          font-size: 14px;
+        }
+        
+        .nav-link {
+          padding: 10px 12px;
+        }
+        
+        .nav-link span {
+          font-size: 14px;
+        }
+        
+        /* Optimize badges and indicators */
+        .badge {
+          font-size: 10px;
+          padding: 4px 8px;
+        }
+        
+        /* Better form layout */
+        .form-label {
+          font-size: 14px;
+          font-weight: 600;
+          margin-bottom: 8px;
+        }
+        
+        /* Optimize progress bars */
+        .progress {
+          height: 8px;
+          border-radius: 4px;
+        }
+        
+        /* Improve card layouts */
+        .card-header {
+          padding: 12px 15px;
+        }
+        
+        .card-body {
+          padding: 15px;
+        }
+        
+        .card-title {
+          font-size: 1.1rem;
+          margin-bottom: 10px;
+        }
+      }
+      
+      /* Landscape phone orientation */
+      @media (max-width: 767.98px) and (orientation: landscape) {
+        .sidebar {
+          transform: translateX(-100%);
+        }
+        
+        .main-content {
+          margin-left: 0;
+          padding-left: 15px;
+        }
+        
+        /* Optimize dashboard for landscape */
+        .stat-card {
+          padding: 15px;
+          margin-bottom: 10px;
+        }
+        
+        .stat-content h3 {
+          font-size: 1.2rem;
+        }
+      }
+      
+      /* PWA and fullscreen optimizations */
+      @media (display-mode: standalone) {
+        body {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .mobile-nav {
+          top: env(safe-area-inset-top);
+        }
+      }
+      
+      /* High DPI displays (Retina) optimizations */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .stat-icon, .nav-link i, .btn i {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Crisper borders and shadows on high DPI */
+        .card, .btn, .form-control {
+          box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+      }
+      
+      /* Print styles for financial reports */
+      @media print {
+        .sidebar, .mobile-nav, .header-actions, .btn {
+          display: none !important;
+        }
+        
+        .main-content {
+          margin-left: 0;
+          width: 100%;
+        }
+        
+        .card {
+          border: 1px solid #000;
+          break-inside: avoid;
+        }
+        
+        .page-title {
+          font-size: 18pt;
+          font-weight: bold;
+        }
+        
+        .table {
+          font-size: 10pt;
+        }
+        
+        .financial-statement, .cost-breakdown-table {
+          page-break-inside: avoid;
+        }
+      }
     </style>
   </head>
 
@@ -756,6 +1222,22 @@
         </div>
         
         <div class="sidebar-menu p-3">
+          <!-- Quick Search -->
+          <div class="mb-4">
+            <div class="position-relative">
+              <input type="text" 
+                     class="form-control form-control-sm bg-white bg-opacity-20 border-0 text-white" 
+                     placeholder="🔍 Quick Search..." 
+                     id="quickSearch"
+                     style="padding-left: 2.5rem;">
+              <i class="bi bi-search position-absolute" 
+                 style="left: 0.75rem; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7);"></i>
+            </div>
+            <div id="searchResults" class="mt-2 d-none">
+              <!-- Search results will appear here -->
+            </div>
+          </div>
+          
           <div class="mb-4">
             <h6 class="sidebar-heading">🏠 MAIN</h6>
             <ul class="nav nav-pills flex-column">
@@ -777,10 +1259,105 @@
                   <span>Farms</span>
                 <% end %>
               </li>
+              
+              <!-- Animals Section with Collapsible Submenu -->
               <li class="nav-item">
-                <%= link_to cows_path, class: "nav-link #{'active' if controller_name == 'cows'}" do %>
+                <div class="nav-link animals-menu-toggle #{'active' if %w[cows calves animal_sales].include?(controller_name)}" 
+                     data-bs-toggle="collapse" 
+                     data-bs-target="#animalsSubmenu" 
+                     aria-expanded="<%= %w[cows calves animal_sales].include?(controller_name) ? 'true' : 'false' %>"
+                     style="cursor: pointer;">
                   <i class="bi bi-heart-fill me-2"></i>
                   <span>Animals</span>
+                  <i class="bi bi-chevron-down ms-auto submenu-arrow <%= 'rotated' if %w[cows calves animal_sales].include?(controller_name) %>"></i>
+                </div>
+                
+                <div class="collapse <%= 'show' if %w[cows calves animal_sales].include?(controller_name) %>" id="animalsSubmenu">
+                  <ul class="nav nav-pills flex-column ms-3 mt-2">
+                    <li class="nav-item">
+                      <%= link_to cows_path, class: "nav-link nav-link-sub #{'active' if controller_name == 'cows'}" do %>
+                        <i class="bi bi-circle-fill me-2" style="font-size: 0.5rem;"></i>
+                        <span>🐄 Adult Cows</span>
+                        <% if current_user %>
+                          <span class="badge bg-primary bg-opacity-75 ms-auto">
+                            <%= Cow.adult_cows.where(farm: current_user.accessible_farms).count %>
+                          </span>
+                        <% end %>
+                      <% end %>
+                    </li>
+                    <li class="nav-item">
+                      <%= link_to calves_path, class: "nav-link nav-link-sub #{'active' if controller_name == 'calves'}" do %>
+                        <i class="bi bi-circle-fill me-2" style="font-size: 0.5rem;"></i>
+                        <span>🐮 Calves</span>
+                        <% if current_user %>
+                          <span class="badge bg-success bg-opacity-75 ms-auto">
+                            <%= Cow.calves.where(farm: current_user.accessible_farms).count %>
+                          </span>
+                        <% end %>
+                      <% end %>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+              
+              <!-- Animal Management Dashboard -->
+              <li class="nav-item">
+                <%= link_to animal_management_dashboard_path, class: "nav-link #{'active' if controller_name == 'animal_management' || %w[health_records breeding_records vaccination_records].include?(controller_name)}" do %>
+                  <i class="bi bi-heart-pulse-fill me-2"></i>
+                  <span>Animal Management</span>
+                  <% 
+                    health_alerts = begin
+                      Cow.active.select { |c| c.requires_health_attention? }.count rescue 0
+                    end
+                    vaccination_alerts = begin
+                      VaccinationRecord.overdue.count rescue 0
+                    end
+                    breeding_alerts = begin
+                      BreedingRecord.overdue.count rescue 0
+                    end
+                    total_alerts = health_alerts + vaccination_alerts + breeding_alerts
+                  %>
+                  <% if total_alerts > 0 %>
+                    <span class="badge bg-danger ms-auto pulse-badge"><%= total_alerts %></span>
+                  <% else %>
+                    <span class="badge bg-success ms-auto">✓</span>
+                  <% end %>
+                <% end %>
+              </li>
+              
+              <!-- Real-time Alerts System -->
+              <li class="nav-item">
+                <%= link_to alerts_path, class: "nav-link #{'active' if controller_name == 'alerts'}" do %>
+                  <i class="bi bi-bell-fill me-2"></i>
+                  <span>System Alerts</span>
+                  <% 
+                    begin
+                      # Quick count for navigation badge
+                      critical_count = Cow.joins(:health_records)
+                                         .where(health_records: { health_status: 'sick', recorded_at: 7.days.ago..Time.current })
+                                         .distinct.count +
+                                      HealthRecord.where('temperature > ? AND recorded_at > ?', 39.5, 24.hours.ago).count +
+                                      VaccinationRecord.where('next_due_date < ?', Date.current).count
+                      
+                      warning_count = BreedingRecord.where(expected_due_date: Date.current..7.days.from_now).count +
+                                     HealthRecord.joins(:cow)
+                                               .where('weight < ? AND recorded_at > ?', 350, 7.days.ago)
+                                               .where(cows: { status: 'active' }).count
+                      
+                      total_alert_count = critical_count + warning_count
+                    rescue => e
+                      total_alert_count = 0
+                    end
+                  %>
+                  <% if total_alert_count > 0 %>
+                    <span class="badge bg-danger ms-auto notification-pulse">
+                      <%= total_alert_count > 99 ? '99+' : total_alert_count %>
+                    </span>
+                  <% else %>
+                    <span class="badge bg-light text-success ms-auto">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </span>
+                  <% end %>
                 <% end %>
               </li>
             </ul>
@@ -797,22 +1374,84 @@
                 <% end %>
               </li>
               <li class="nav-item">
-                <%= link_to bulk_entry_production_records_path, class: "nav-link #{'active' if controller_name == 'production_records' && action_name == 'bulk_entry'}" do %>
-                  <i class="bi bi-table me-2"></i>
-                  <span>Bulk Entry</span>
-                  <span class="badge bg-success ms-auto">New</span>
+                <%= link_to enhanced_bulk_entry_production_records_path, class: "nav-link #{'active' if controller_name == 'production_records' && action_name == 'enhanced_bulk_entry'}" do %>
+                  <i class="bi bi-grid-3x3 me-2"></i>
+                  <span>Production Entry</span>
+                  <span class="badge bg-primary ms-auto">Enhanced</span>
                 <% end %>
               </li>
             </ul>
+          </div>
+          
+          <!-- Quick Actions Section -->
+          <div class="mb-4">
+            <h6 class="sidebar-heading">⚡ QUICK ACTIONS</h6>
+            <div class="row g-2">
+              <div class="col-6">
+                <%= link_to new_health_record_path, class: "btn btn-outline-light btn-sm w-100", title: "Add Health Record" do %>
+                  <i class="bi bi-plus-circle"></i>
+                  <small class="d-block">Health</small>
+                <% end %>
+              </div>
+              <div class="col-6">
+                <%= link_to new_breeding_record_path, class: "btn btn-outline-light btn-sm w-100", title: "Add Breeding Record" do %>
+                  <i class="bi bi-heart-fill"></i>
+                  <small class="d-block">Breeding</small>
+                <% end %>
+              </div>
+              <div class="col-6">
+                <%= link_to new_vaccination_record_path, class: "btn btn-outline-light btn-sm w-100", title: "Add Vaccination" do %>
+                  <i class="bi bi-shield-check"></i>
+                  <small class="d-block">Vaccine</small>
+                <% end %>
+              </div>
+              <div class="col-6">
+                <%= link_to enhanced_bulk_entry_production_records_path, class: "btn btn-outline-light btn-sm w-100", title: "Production Entry" do %>
+                  <i class="bi bi-speedometer"></i>
+                  <small class="d-block">Milk</small>
+                <% end %>
+              </div>
+            </div>
           </div>
           
           <div class="mb-4">
             <h6 class="sidebar-heading">📈 REPORTS</h6>
             <ul class="nav nav-pills flex-column">
               <li class="nav-item">
+                <%= link_to financial_reports_path, class: "nav-link #{'active' if controller_name == 'financial_reports'}" do %>
+                  <i class="bi bi-graph-up-arrow me-2"></i>
+                  <span>Financial Dashboard</span>
+                  <span class="badge bg-success ms-auto">New</span>
+                <% end %>
+              </li>
+              <li class="nav-item">
+                <%= link_to profit_loss_financial_reports_path, class: "nav-link #{'active' if controller_name == 'financial_reports' && action_name == 'profit_loss'}" do %>
+                  <i class="bi bi-file-earmark-bar-graph me-2"></i>
+                  <span>Profit & Loss</span>
+                <% end %>
+              </li>
+              <li class="nav-item">
+                <%= link_to cost_analysis_financial_reports_path, class: "nav-link #{'active' if controller_name == 'financial_reports' && action_name == 'cost_analysis'}" do %>
+                  <i class="bi bi-pie-chart-fill me-2"></i>
+                  <span>Cost Analysis</span>
+                <% end %>
+              </li>
+              <li class="nav-item">
+                <%= link_to roi_report_financial_reports_path, class: "nav-link #{'active' if controller_name == 'financial_reports' && action_name == 'roi_report'}" do %>
+                  <i class="bi bi-graph-up-arrow me-2"></i>
+                  <span>ROI Analytics</span>
+                <% end %>
+              </li>
+              <li class="nav-item">
                 <%= link_to sales_records_path, class: "nav-link #{'active' if controller_name == 'sales_records'}" do %>
                   <i class="bi bi-currency-dollar me-2"></i>
                   <span>Sales Records</span>
+                <% end %>
+              </li>
+              <li class="nav-item">
+                <%= link_to animal_sales_path, class: "nav-link #{'active' if controller_name == 'animal_sales'}" do %>
+                  <i class="bi bi-bank2 me-2"></i>
+                  <span>Animal Sales</span>
                 <% end %>
               </li>
               <% if current_user&.can_view_reports? %>
@@ -851,9 +1490,59 @@
                 <small>Active Cows:</small>
                 <small class="fw-bold"><%= Cow.active.count %></small>
               </div>
-              <div class="d-flex justify-content-between text-light">
+              <div class="d-flex justify-content-between text-light mb-2">
                 <small>Today's Production:</small>
                 <small class="fw-bold"><%= number_with_precision(ProductionRecord.where(production_date: Date.current).sum(:total_production), precision: 1) %>L</small>
+              </div>
+              
+              <!-- Health Alerts Summary -->
+              <% 
+                health_alerts_count = begin
+                  Cow.active.select { |c| c.requires_health_attention? }.count rescue 0
+                end
+                vaccination_due_count = begin
+                  VaccinationRecord.due_soon.count rescue 0
+                end
+                breeding_due_count = begin
+                  BreedingRecord.due_soon.count rescue 0
+                end
+              %>
+              
+              <div class="border-top border-light border-opacity-25 pt-2 mt-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small><i class="bi bi-exclamation-triangle me-1"></i>Health Alerts:</small>
+                  <% if health_alerts_count > 0 %>
+                    <small class="badge bg-danger"><%= health_alerts_count %></small>
+                  <% else %>
+                    <small class="text-success"><i class="bi bi-check-circle"></i></small>
+                  <% end %>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small><i class="bi bi-calendar-check me-1"></i>Due Vaccines:</small>
+                  <% if vaccination_due_count > 0 %>
+                    <small class="badge bg-warning"><%= vaccination_due_count %></small>
+                  <% else %>
+                    <small class="text-success"><i class="bi bi-check-circle"></i></small>
+                  <% end %>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                  <small><i class="bi bi-heart me-1"></i>Expected Births:</small>
+                  <% if breeding_due_count > 0 %>
+                    <small class="badge bg-info"><%= breeding_due_count %></small>
+                  <% else %>
+                    <small class="text-light opacity-75">None</small>
+                  <% end %>
+                </div>
+              </div>
+              
+              <!-- Keyboard Shortcuts Info -->
+              <div class="border-top border-light border-opacity-25 pt-2 mt-2">
+                <small class="text-light opacity-75">
+                  <i class="bi bi-keyboard me-1"></i>
+                  Press <kbd class="bg-white text-dark">Alt + M</kbd> for Animal Management
+                </small>
               </div>
             </div>
           </div>
@@ -870,14 +1559,161 @@
                 <button class="btn btn-outline-secondary me-3 d-lg-none" id="sidebarToggle">
                   <i class="bi bi-list"></i>
                 </button>
-                <h4 class="mb-0 page-title">
-                  <%= content_for?(:title) ? yield(:title) : controller_name.humanize %>
-                </h4>
-                <% if controller_name == 'production_records' && action_name == 'bulk_entry' %>
-                  <span class="badge bg-success ms-2">Enhanced</span>
+                <div>
+                  <h4 class="mb-0 page-title">
+                    <%= content_for?(:title) ? yield(:title) : controller_name.humanize %>
+                  </h4>
+                  <!-- Smart Breadcrumb Navigation -->
+                  <nav aria-label="breadcrumb" class="mt-1">
+                    <ol class="breadcrumb breadcrumb-sm mb-0" style="font-size: 0.8rem;">
+                      <li class="breadcrumb-item">
+                        <%= link_to root_path, class: "text-decoration-none text-muted" do %>
+                          <i class="bi bi-house-door me-1"></i>Home
+                        <% end %>
+                      </li>
+                      <% case controller_name %>
+                      <% when 'animal_management' %>
+                        <li class="breadcrumb-item">
+                          <span class="text-muted">Livestock</span>
+                        </li>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">
+                          <i class="bi bi-heart-pulse-fill me-1"></i>Animal Management
+                        </li>
+                      <% when 'health_records' %>
+                        <li class="breadcrumb-item">
+                          <%= link_to animal_management_dashboard_path, class: "text-decoration-none text-muted" do %>
+                            Animal Management
+                          <% end %>
+                        </li>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">
+                          <i class="bi bi-heart-pulse me-1"></i>Health Records
+                        </li>
+                      <% when 'breeding_records' %>
+                        <li class="breadcrumb-item">
+                          <%= link_to animal_management_dashboard_path, class: "text-decoration-none text-muted" do %>
+                            Animal Management
+                          <% end %>
+                        </li>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">
+                          <i class="bi bi-heart-fill me-1"></i>Breeding Records
+                        </li>
+                      <% when 'vaccination_records' %>
+                        <li class="breadcrumb-item">
+                          <%= link_to animal_management_dashboard_path, class: "text-decoration-none text-muted" do %>
+                            Animal Management
+                          <% end %>
+                        </li>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">
+                          <i class="bi bi-shield-check me-1"></i>Vaccination Records
+                        </li>
+                      <% when 'cows' %>
+                        <li class="breadcrumb-item">
+                          <span class="text-muted">Livestock</span>
+                        </li>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">
+                          <i class="bi bi-heart-fill me-1"></i>Cows
+                        </li>
+                      <% when 'production_records' %>
+                        <li class="breadcrumb-item">
+                          <span class="text-muted">Production</span>
+                        </li>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">
+                          <i class="bi bi-clipboard-data me-1"></i>
+                          <%= action_name == 'enhanced_bulk_entry' ? 'Production Entry' : 'Production Records' %>
+                        </li>
+                      <% else %>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">
+                          <%= controller_name.humanize %>
+                        </li>
+                      <% end %>
+                    </ol>
+                  </nav>
+                </div>
+                <% if controller_name == 'production_records' && (action_name == 'bulk_entry' || action_name == 'enhanced_bulk_entry') %>
+                  <span class="badge bg-primary ms-3">Smart Entry</span>
                 <% end %>
               </div>
               <div class="d-flex align-items-center">
+                <!-- Notification Center -->
+                <div class="dropdown me-3">
+                  <button class="btn btn-outline-primary btn-sm position-relative" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-bell-fill"></i>
+                    <%
+                      # Calculate total notifications
+                      health_alerts_count = begin
+                        Cow.active.select { |c| c.requires_health_attention? }.count rescue 0
+                      end
+                      vaccination_due_count = begin
+                        VaccinationRecord.due_soon.count rescue 0
+                      end
+                      breeding_due_count = begin
+                        BreedingRecord.due_soon.count rescue 0
+                      end
+                      total_notifications = health_alerts_count + vaccination_due_count + breeding_due_count
+                    %>
+                    <% if total_notifications > 0 %>
+                      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        <%= total_notifications > 9 ? '9+' : total_notifications %>
+                      </span>
+                    <% end %>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px;">
+                    <li><h6 class="dropdown-header">
+                      <i class="bi bi-bell me-2"></i>Notifications
+                      <% if total_notifications > 0 %>
+                        <span class="badge bg-danger ms-2"><%= total_notifications %></span>
+                      <% end %>
+                    </h6></li>
+                    <% if total_notifications > 0 %>
+                      <% if health_alerts_count > 0 %>
+                        <li>
+                          <%= link_to health_records_path, class: "dropdown-item d-flex align-items-center" do %>
+                            <i class="bi bi-heart-pulse text-danger me-2"></i>
+                            <div>
+                              <div class="fw-medium">Health Alerts</div>
+                              <small class="text-muted"><%= health_alerts_count %> animals need attention</small>
+                            </div>
+                          <% end %>
+                        </li>
+                      <% end %>
+                      <% if vaccination_due_count > 0 %>
+                        <li>
+                          <%= link_to vaccination_records_path, class: "dropdown-item d-flex align-items-center" do %>
+                            <i class="bi bi-shield-exclamation text-warning me-2"></i>
+                            <div>
+                              <div class="fw-medium">Vaccinations Due</div>
+                              <small class="text-muted"><%= vaccination_due_count %> vaccinations needed</small>
+                            </div>
+                          <% end %>
+                        </li>
+                      <% end %>
+                      <% if breeding_due_count > 0 %>
+                        <li>
+                          <%= link_to breeding_records_path, class: "dropdown-item d-flex align-items-center" do %>
+                            <i class="bi bi-calendar-heart text-info me-2"></i>
+                            <div>
+                              <div class="fw-medium">Expected Births</div>
+                              <small class="text-muted"><%= breeding_due_count %> cows due soon</small>
+                            </div>
+                          <% end %>
+                        </li>
+                      <% end %>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                        <%= link_to animal_management_dashboard_path, class: "dropdown-item text-center text-primary" do %>
+                          <i class="bi bi-arrow-right-circle me-1"></i>View All in Animal Management
+                        <% end %>
+                      </li>
+                    <% else %>
+                      <li class="dropdown-item-text text-center py-3">
+                        <i class="bi bi-check-circle text-success fs-2"></i>
+                        <div class="mt-2">All systems normal</div>
+                        <small class="text-muted">No alerts at this time</small>
+                      </li>
+                    <% end %>
+                  </ul>
+                </div>
+                
                 <% if current_user %>
                   <div class="me-3 text-end">
                     <small class="text-muted d-block">Welcome back,</small>
@@ -937,8 +1773,8 @@
               <li><%= link_to new_production_record_path, class: "dropdown-item" do %>
                 <i class="bi bi-clipboard-plus me-2"></i>Add Production Record
               <% end %></li>
-              <li><%= link_to bulk_entry_production_records_path, class: "dropdown-item" do %>
-                <i class="bi bi-table me-2"></i>Bulk Entry
+              <li><%= link_to enhanced_bulk_entry_production_records_path, class: "dropdown-item" do %>
+                <i class="bi bi-grid-3x3 me-2"></i>Production Entry
               <% end %></li>
               <% if current_user&.can_manage_farm? %>
                 <li><hr class="dropdown-divider"></li>
@@ -954,6 +1790,196 @@
 
     <!-- Enhanced Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Keyboard Shortcuts Script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Quick Search Functionality
+        const quickSearch = document.getElementById('quickSearch');
+        const searchResults = document.getElementById('searchResults');
+        
+        // Search data for navigation items
+        const searchData = [
+          { name: 'Dashboard', url: '<%= root_path %>', icon: 'speedometer2', category: 'Main' },
+          { name: 'Animal Management', url: '<%= animal_management_dashboard_path %>', icon: 'heart-pulse-fill', category: 'Livestock' },
+          { name: 'Farms', url: '<%= farms_path %>', icon: 'house-door', category: 'Livestock' },
+          { name: 'Cows', url: '<%= cows_path %>', icon: 'heart-fill', category: 'Animals' },
+          { name: 'Calves', url: '<%= calves_path %>', icon: 'heart-fill', category: 'Animals' },
+          { name: 'Health Records', url: '<%= health_records_path %>', icon: 'heart-pulse', category: 'Health' },
+          { name: 'Breeding Records', url: '<%= breeding_records_path %>', icon: 'heart-fill', category: 'Breeding' },
+          { name: 'Vaccination Records', url: '<%= vaccination_records_path %>', icon: 'shield-check', category: 'Health' },
+          { name: 'Production Records', url: '<%= production_records_path %>', icon: 'clipboard-data', category: 'Production' },
+          { name: 'Production Entry', url: '<%= enhanced_bulk_entry_production_records_path %>', icon: 'grid-3x3', category: 'Production' },
+          { name: 'Sales Records', url: '<%= sales_records_path %>', icon: 'currency-dollar', category: 'Reports' },
+          { name: 'Animal Sales', url: '<%= animal_sales_path %>', icon: 'bank2', category: 'Reports' }
+        ];
+        
+        if (quickSearch) {
+          quickSearch.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            
+            if (query.length < 2) {
+              searchResults.classList.add('d-none');
+              return;
+            }
+            
+            const matches = searchData.filter(item => 
+              item.name.toLowerCase().includes(query) || 
+              item.category.toLowerCase().includes(query)
+            ).slice(0, 5);
+            
+            if (matches.length > 0) {
+              searchResults.innerHTML = matches.map(item => `
+                <div class="search-result-item" onclick="window.location.href='${item.url}'" style="cursor: pointer; padding: 0.5rem; border-radius: 0.375rem; margin-bottom: 0.25rem; background: rgba(255,255,255,0.1); transition: all 0.2s;">
+                  <i class="bi bi-${item.icon} me-2"></i>
+                  <span class="text-white">${item.name}</span>
+                  <small class="text-light opacity-75 ms-auto d-block">${item.category}</small>
+                </div>
+              `).join('');
+              
+              searchResults.classList.remove('d-none');
+              
+              // Add hover effects
+              searchResults.querySelectorAll('.search-result-item').forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                  this.style.background = 'rgba(102, 126, 234, 0.3)';
+                });
+                item.addEventListener('mouseleave', function() {
+                  this.style.background = 'rgba(255,255,255,0.1)';
+                });
+              });
+            } else {
+              searchResults.innerHTML = `
+                <div class="text-center py-2">
+                  <small class="text-light opacity-75">No results found</small>
+                </div>
+              `;
+              searchResults.classList.remove('d-none');
+            }
+          });
+          
+          // Hide results when clicking outside
+          document.addEventListener('click', function(e) {
+            if (!quickSearch.contains(e.target) && !searchResults.contains(e.target)) {
+              searchResults.classList.add('d-none');
+            }
+          });
+          
+          // Clear search on Escape
+          quickSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+              this.value = '';
+              searchResults.classList.add('d-none');
+            }
+          });
+        }
+        
+        // Keyboard shortcuts for efficient navigation
+        document.addEventListener('keydown', function(e) {
+          // Alt + M for Animal Management
+          if (e.altKey && e.key === 'm') {
+            e.preventDefault();
+            window.location.href = '<%= animal_management_dashboard_path %>';
+            return;
+          }
+          
+          // Alt + D for Dashboard
+          if (e.altKey && e.key === 'd') {
+            e.preventDefault();
+            window.location.href = '<%= root_path %>';
+            return;
+          }
+          
+          // Alt + P for Production Entry
+          if (e.altKey && e.key === 'p') {
+            e.preventDefault();
+            window.location.href = '<%= enhanced_bulk_entry_production_records_path %>';
+            return;
+          }
+          
+          // Alt + C for Cows
+          if (e.altKey && e.key === 'c') {
+            e.preventDefault();
+            window.location.href = '<%= cows_path %>';
+            return;
+          }
+          
+          // Alt + H for Health Records (when on animal management)
+          if (e.altKey && e.key === 'h') {
+            e.preventDefault();
+            window.location.href = '<%= health_records_path %>';
+            return;
+          }
+        });
+        
+        // Show keyboard shortcuts help on Alt + ?
+        document.addEventListener('keydown', function(e) {
+          if (e.altKey && e.key === '?') {
+            e.preventDefault();
+            showKeyboardShortcuts();
+          }
+        });
+        
+        function showKeyboardShortcuts() {
+          const shortcutsModal = `
+            <div class="modal fade" id="shortcutsModal" tabindex="-1">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-keyboard me-2"></i>Keyboard Shortcuts</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="row g-3">
+                      <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                          <span><kbd class="bg-primary text-white">Alt + D</kbd></span>
+                          <span>Dashboard</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                          <span><kbd class="bg-primary text-white">Alt + M</kbd></span>
+                          <span>Animal Management</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                          <span><kbd class="bg-primary text-white">Alt + C</kbd></span>
+                          <span>Cows</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                          <span><kbd class="bg-primary text-white">Alt + P</kbd></span>
+                          <span>Production Entry</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                          <span><kbd class="bg-primary text-white">Alt + H</kbd></span>
+                          <span>Health Records</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          // Remove existing modal if any
+          const existingModal = document.getElementById('shortcutsModal');
+          if (existingModal) {
+            existingModal.remove();
+          }
+          
+          // Add modal to DOM
+          document.body.insertAdjacentHTML('beforeend', shortcutsModal);
+          
+          // Show modal
+          const modal = new bootstrap.Modal(document.getElementById('shortcutsModal'));
+          modal.show();
+          
+          // Remove modal from DOM when hidden
+          document.getElementById('shortcutsModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+          });
+        }
+      });
+    </script>
     
     
     <!-- Enhanced Sidebar Toggle Script -->
@@ -1090,13 +2116,361 @@
       console.log('Chart.js loaded:', typeof Chart !== 'undefined');
       console.log('Chart.js version:', typeof Chart !== 'undefined' ? Chart.version : 'Not available');
       console.log('Stimulus loaded:', typeof window.Stimulus !== 'undefined');
-      console.log('DOM ready state:', document.readyState);
-      
-      // Log when DOM is fully loaded
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM Content Loaded');
-        console.log('Canvas elements found:', document.querySelectorAll('canvas[data-controller="chart"]').length);
-      });
+      console.log('DOM ready state:', document.readyState);        // Log when DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+          console.log('DOM Content Loaded');
+          console.log('Canvas elements found:', document.querySelectorAll('canvas[data-controller="chart"]').length);
+          
+          // Initialize mobile optimizations
+          initializeMobileOptimizations();
+        });
+        
+        // ============================================
+        // MOBILE OPTIMIZATION JAVASCRIPT
+        // ============================================
+        
+        function initializeMobileOptimizations() {
+          // Detect if user is on mobile device
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+          
+          if (isMobile || isTouch) {
+            document.body.classList.add('mobile-device');
+            
+            // Initialize touch-friendly interactions
+            initTouchOptimizations();
+            
+            // Initialize mobile table view
+            initMobileTableView();
+            
+            // Initialize pull-to-refresh (if supported)
+            initPullToRefresh();
+            
+            // Initialize mobile chart optimizations
+            initMobileChartOptimizations();
+            
+            // Initialize mobile form enhancements
+            initMobileFormEnhancements();
+            
+            // Initialize mobile navigation enhancements
+            initMobileNavigationEnhancements();
+          }
+          
+          // Initialize responsive optimizations for all devices
+          initResponsiveOptimizations();
+          
+          // Initialize viewport meta tag management
+          initViewportManagement();
+        }
+        
+        function initTouchOptimizations() {
+          // Add touch feedback to buttons and cards
+          const touchElements = document.querySelectorAll('.btn, .card, .nav-link, .table-row-clickable');
+          
+          touchElements.forEach(element => {
+            element.addEventListener('touchstart', function() {
+              this.style.transform = 'scale(0.98)';
+              this.style.transition = 'transform 0.1s ease';
+            });
+            
+            element.addEventListener('touchend', function() {
+              setTimeout(() => {
+                this.style.transform = '';
+                this.style.transition = '';
+              }, 100);
+            });
+          });
+          
+          // Prevent double-tap zoom on specific elements
+          const preventZoom = document.querySelectorAll('input, select, textarea, button');
+          preventZoom.forEach(element => {
+            element.addEventListener('touchend', function(e) {
+              const now = Date.now();
+              if (this.lastTouchEnd && (now - this.lastTouchEnd) <= 300) {
+                e.preventDefault();
+              }
+              this.lastTouchEnd = now;
+            });
+          });
+        }
+        
+        function initMobileTableView() {
+          // Convert complex tables to mobile-friendly card layout
+          const tables = document.querySelectorAll('.table-responsive .table');
+          
+          if (window.innerWidth <= 767) {
+            tables.forEach(table => {
+              const container = table.closest('.table-responsive');
+              if (container) {
+                container.classList.add('mobile-table-view');
+                
+                // Add data-label attributes for mobile view
+                const headers = table.querySelectorAll('th');
+                const rows = table.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                  const cells = row.querySelectorAll('td');
+                  cells.forEach((cell, index) => {
+                    if (headers[index]) {
+                      cell.setAttribute('data-label', headers[index].textContent.trim());
+                    }
+                  });
+                });
+              }
+            });
+          }
+        }
+        
+        function initPullToRefresh() {
+          // Simple pull-to-refresh implementation
+          let startY = 0;
+          let currentY = 0;
+          let isDragging = false;
+          const pullThreshold = 100;
+          
+          document.addEventListener('touchstart', function(e) {
+            if (window.scrollY === 0) {
+              startY = e.touches[0].clientY;
+              isDragging = true;
+            }
+          });
+          
+          document.addEventListener('touchmove', function(e) {
+            if (!isDragging) return;
+            
+            currentY = e.touches[0].clientY;
+            const pullDistance = currentY - startY;
+            
+            if (pullDistance > 0 && pullDistance < pullThreshold) {
+              document.body.style.transform = `translateY(${pullDistance * 0.5}px)`;
+              document.body.style.transition = 'none';
+            }
+          });
+          
+          document.addEventListener('touchend', function(e) {
+            if (!isDragging) return;
+            
+            const pullDistance = currentY - startY;
+            document.body.style.transform = '';
+            document.body.style.transition = 'transform 0.3s ease';
+            
+            if (pullDistance > pullThreshold) {
+              // Trigger refresh
+              showToast('Refreshing data...', 'info');
+              setTimeout(() => {
+                window.location.reload();
+              }, 500);
+            }
+            
+            isDragging = false;
+          });
+        }
+        
+        function initMobileChartOptimizations() {
+          // Optimize Chart.js for mobile
+          if (typeof Chart !== 'undefined') {
+            Chart.defaults.font.size = window.innerWidth < 768 ? 10 : 12;
+            Chart.defaults.plugins.legend.labels.padding = window.innerWidth < 768 ? 10 : 15;
+            Chart.defaults.plugins.legend.labels.boxWidth = window.innerWidth < 768 ? 12 : 16;
+            
+            // Add touch gesture support for chart interactions
+            Chart.defaults.interaction.intersect = false;
+            Chart.defaults.interaction.mode = 'index';
+            
+            // Optimize chart responsiveness
+            Chart.defaults.responsive = true;
+            Chart.defaults.maintainAspectRatio = false;
+          }
+        }
+        
+        function initMobileFormEnhancements() {
+          // Auto-scroll to focused input to avoid keyboard overlay
+          const inputs = document.querySelectorAll('input, select, textarea');
+          
+          inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+              setTimeout(() => {
+                this.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center',
+                  inline: 'center'
+                });
+              }, 300); // Delay to account for keyboard animation
+            });
+          });
+          
+          // Add input validation feedback for mobile
+          inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+              if (this.value && this.checkValidity && !this.checkValidity()) {
+                this.classList.add('is-invalid');
+                // Show gentle vibration feedback if available
+                if (navigator.vibrate) {
+                  navigator.vibrate(50);
+                }
+              } else {
+                this.classList.remove('is-invalid');
+              }
+            });
+          });
+        }
+        
+        function initMobileNavigationEnhancements() {
+          // Improve mobile navigation experience
+          const navLinks = document.querySelectorAll('.nav-link');
+          
+          navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+              // Add visual feedback
+              this.style.backgroundColor = 'rgba(0,0,0,0.1)';
+              setTimeout(() => {
+                this.style.backgroundColor = '';
+              }, 200);
+              
+              // Close mobile menu if open
+              const mobileMenu = document.getElementById('mobileSidebar');
+              if (mobileMenu && mobileMenu.classList.contains('show')) {
+                const closeButton = mobileMenu.querySelector('.btn-close');
+                if (closeButton) {
+                  closeButton.click();
+                }
+              }
+            });
+          });
+        }
+        
+        function initResponsiveOptimizations() {
+          // Handle orientation changes
+          window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+              // Refresh chart dimensions
+              if (window.Chart && window.Chart.instances) {
+                Object.values(window.Chart.instances).forEach(chart => {
+                  chart.resize();
+                });
+              }
+              
+              // Recalculate table layouts
+              initMobileTableView();
+            }, 100);
+          });
+          
+          // Handle window resize
+          let resizeTimeout;
+          window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+              // Optimize layout for new screen size
+              if (window.innerWidth <= 767) {
+                document.body.classList.add('mobile-view');
+                initMobileTableView();
+              } else {
+                document.body.classList.remove('mobile-view');
+                // Remove mobile table view classes
+                document.querySelectorAll('.mobile-table-view').forEach(table => {
+                  table.classList.remove('mobile-table-view');
+                });
+              }
+            }, 250);
+          });
+        }
+        
+        function initViewportManagement() {
+          // Manage viewport meta tag for optimal mobile experience
+          let viewportMeta = document.querySelector('meta[name="viewport"]');
+          
+          if (!viewportMeta) {
+            viewportMeta = document.createElement('meta');
+            viewportMeta.name = 'viewport';
+            document.head.appendChild(viewportMeta);
+          }
+          
+          // Set optimal viewport configuration
+          viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';
+          
+          // Handle iOS Safari viewport issues
+          if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+            document.addEventListener('DOMContentLoaded', function() {
+              setTimeout(() => {
+                window.scrollTo(0, 1);
+              }, 500);
+            });
+          }
+        }
+        
+        // Mobile-specific utility functions
+        function showToast(message, type = 'info') {
+          // Create mobile-optimized toast notification
+          const toast = document.createElement('div');
+          toast.className = `alert alert-${type} mobile-toast`;
+          toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            min-width: 280px;
+            max-width: 90vw;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideInDown 0.3s ease;
+          `;
+          toast.textContent = message;
+          
+          document.body.appendChild(toast);
+          
+          setTimeout(() => {
+            toast.style.animation = 'slideOutUp 0.3s ease';
+            setTimeout(() => {
+              if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+              }
+            }, 300);
+          }, 3000);
+        }
+        
+        // Add CSS animations for mobile toasts
+        if (!document.getElementById('mobile-animations')) {
+          const style = document.createElement('style');
+          style.id = 'mobile-animations';
+          style.textContent = `
+            @keyframes slideInDown {
+              from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+              to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            }
+            @keyframes slideOutUp {
+              from { transform: translateX(-50%) translateY(0); opacity: 1; }
+              to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            }
+            .mobile-toast {
+              animation: slideInDown 0.3s ease;
+            }
+          `;
+          document.head.appendChild(style);
+        }
+        
+        // Enhanced mobile-specific error handling
+        window.addEventListener('error', function(e) {
+          if (/Mobile|Android|iPhone|iPad/.test(navigator.userAgent)) {
+            console.log('Mobile error detected:', e.message);
+            // Show user-friendly error message for mobile users
+            if (e.message.includes('Network') || e.message.includes('fetch')) {
+              showToast('Connection issue detected. Please check your internet connection.', 'warning');
+            }
+          }
+        });
+        
+        // Mobile performance optimizations
+        if ('serviceWorker' in navigator && /Mobile|Android|iPhone|iPad/.test(navigator.userAgent)) {
+          // Register service worker for mobile PWA capabilities
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').then(function(registration) {
+              console.log('SW registered: ', registration);
+            }).catch(function(registrationError) {
+              console.log('SW registration failed: ', registrationError);
+            });
+          });
+        }
     </script>
   </body>
 </html>

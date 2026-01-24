@@ -1,0 +1,309 @@
+<% content_for :title, "Animal Management Dashboard" %>
+
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col">
+      <h1><i class="bi bi-heart-pulse me-2 text-primary"></i>🐄 Advanced Animal Management</h1>
+      <p class="text-muted">Comprehensive health, breeding, and vaccination management for <%= @total_animals %> active animals</p>
+    </div>
+  </div>
+
+  <!-- Quick Stats Row -->
+  <div class="row mb-4">
+    <!-- Health Stats -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="bi bi-heart-fill me-2"></i>Health Overview</h5>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-6">
+              <h3 class="text-success"><%= @health_overview[:total_health_records] %></h3>
+              <small class="text-muted">Total Records</small>
+            </div>
+            <div class="col-6">
+              <h3 class="text-warning"><%= @health_overview[:animals_needing_attention] %></h3>
+              <small class="text-muted">Need Attention</small>
+            </div>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>Sick Animals</span>
+            <span class="badge bg-danger"><%= @health_overview[:sick_animals] %></span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>Recent Checkups</span>
+            <span class="badge bg-info"><%= @health_overview[:recent_checkups] %></span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <%= link_to health_records_path, class: "btn btn-success btn-sm" do %>
+            <i class="bi bi-arrow-right me-1"></i>Manage Health
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breeding Stats -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="bi bi-heart me-2"></i>Breeding Overview</h5>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-6">
+              <h3 class="text-primary"><%= @breeding_overview[:pregnant_cows] %></h3>
+              <small class="text-muted">Pregnant</small>
+            </div>
+            <div class="col-6">
+              <h3 class="text-info"><%= @breeding_overview[:due_this_month] %></h3>
+              <small class="text-muted">Due Soon</small>
+            </div>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>Overdue Births</span>
+            <span class="badge bg-danger"><%= @breeding_overview[:overdue_births] %></span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>Success Rate</span>
+            <span class="badge bg-success"><%= @breeding_overview[:breeding_success_rate] %>%</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <%= link_to breeding_records_path, class: "btn btn-primary btn-sm" do %>
+            <i class="bi bi-arrow-right me-1"></i>Manage Breeding
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vaccination Stats -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-warning text-white">
+          <h5 class="mb-0"><i class="bi bi-shield-check me-2"></i>Vaccination Overview</h5>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-6">
+              <h3 class="text-success"><%= @vaccination_overview[:up_to_date_animals] %></h3>
+              <small class="text-muted">Up to Date</small>
+            </div>
+            <div class="col-6">
+              <h3 class="text-danger"><%= @vaccination_overview[:overdue_vaccinations] %></h3>
+              <small class="text-muted">Overdue</small>
+            </div>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>Due This Month</span>
+            <span class="badge bg-warning"><%= @vaccination_overview[:due_this_month] %></span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>Compliance</span>
+            <span class="badge bg-info"><%= @vaccination_overview[:vaccination_compliance] %>%</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <%= link_to vaccination_records_path, class: "btn btn-warning btn-sm" do %>
+            <i class="bi bi-arrow-right me-1"></i>Manage Vaccinations
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts Section -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Active Alerts</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Health Alerts -->
+            <div class="col-md-4">
+              <h6 class="text-success"><i class="bi bi-heart me-1"></i>Health Alerts</h6>
+              <% if @health_alerts.any? %>
+                <% @health_alerts.first(3).each do |alert| %>
+                  <div class="alert alert-<%= alert[:type] %> alert-dismissible fade show py-2" role="alert">
+                    <small><%= alert[:message] %></small>
+                    <%= link_to alert[:link], class: "btn btn-sm btn-outline-#{alert[:type]} ms-2" do %>
+                      <i class="bi bi-eye"></i>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% else %>
+                <p class="text-muted"><i class="bi bi-check-circle me-1"></i>No health alerts</p>
+              <% end %>
+            </div>
+
+            <!-- Breeding Alerts -->
+            <div class="col-md-4">
+              <h6 class="text-primary"><i class="bi bi-heart me-1"></i>Breeding Alerts</h6>
+              <% if @breeding_alerts.any? %>
+                <% @breeding_alerts.first(3).each do |alert| %>
+                  <div class="alert alert-<%= alert[:type] %> alert-dismissible fade show py-2" role="alert">
+                    <small><%= alert[:message] %></small>
+                    <%= link_to alert[:link], class: "btn btn-sm btn-outline-#{alert[:type]} ms-2" do %>
+                      <i class="bi bi-eye"></i>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% else %>
+                <p class="text-muted"><i class="bi bi-check-circle me-1"></i>No breeding alerts</p>
+              <% end %>
+            </div>
+
+            <!-- Vaccination Alerts -->
+            <div class="col-md-4">
+              <h6 class="text-warning"><i class="bi bi-shield me-1"></i>Vaccination Alerts</h6>
+              <% if @vaccination_alerts.any? %>
+                <% @vaccination_alerts.first(3).each do |alert| %>
+                  <div class="alert alert-<%= alert[:type] %> alert-dismissible fade show py-2" role="alert">
+                    <small><%= alert[:message] %></small>
+                    <%= link_to alert[:link], class: "btn btn-sm btn-outline-#{alert[:type]} ms-2" do %>
+                      <i class="bi bi-eye"></i>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% else %>
+                <p class="text-muted"><i class="bi bi-check-circle me-1"></i>No vaccination alerts</p>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activities -->
+  <div class="row">
+    <!-- Recent Health Records -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="bi bi-activity me-2"></i>Recent Health Records</h6>
+        </div>
+        <div class="card-body">
+          <% if @recent_health_records.any? %>
+            <% @recent_health_records.each do |record| %>
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <strong><%= record.cow.name %></strong>
+                  <span class="badge bg-<%= record.requires_attention? ? 'danger' : 'success' %> ms-1">
+                    <%= record.health_status.titleize %>
+                  </span>
+                  <small class="text-muted d-block">
+                    <%= time_ago_in_words(record.recorded_at) %> ago
+                  </small>
+                </div>
+              </div>
+              <hr class="my-2">
+            <% end %>
+          <% else %>
+            <p class="text-muted">No recent health records</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Breeding Records -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="bi bi-heart me-2"></i>Recent Breeding Records</h6>
+        </div>
+        <div class="card-body">
+          <% if @recent_breeding_records.any? %>
+            <% @recent_breeding_records.each do |record| %>
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <strong><%= record.cow.name %></strong>
+                  <span class="badge bg-primary ms-1">
+                    <%= record.breeding_status.titleize %>
+                  </span>
+                  <small class="text-muted d-block">
+                    <%= record.breeding_date.strftime("%b %d, %Y") %>
+                  </small>
+                </div>
+              </div>
+              <hr class="my-2">
+            <% end %>
+          <% else %>
+            <p class="text-muted">No recent breeding records</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Vaccination Records -->
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="bi bi-shield-check me-2"></i>Recent Vaccinations</h6>
+        </div>
+        <div class="card-body">
+          <% if @recent_vaccination_records.any? %>
+            <% @recent_vaccination_records.each do |record| %>
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <strong><%= record.cow.name %></strong>
+                  <small class="text-muted d-block">
+                    <%= truncate(record.vaccine_name, length: 25) %>
+                  </small>
+                  <small class="text-muted d-block">
+                    <%= record.vaccination_date.strftime("%b %d, %Y") %>
+                  </small>
+                </div>
+              </div>
+              <hr class="my-2">
+            <% end %>
+          <% else %>
+            <p class="text-muted">No recent vaccination records</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="row mt-4">
+    <div class="col">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <%= link_to new_health_record_path, class: "btn btn-success w-100" do %>
+                <i class="bi bi-plus-circle me-1"></i>New Health Record
+              <% end %>
+            </div>
+            <div class="col-md-3">
+              <%= link_to new_breeding_record_path, class: "btn btn-primary w-100" do %>
+                <i class="bi bi-plus-circle me-1"></i>New Breeding Record
+              <% end %>
+            </div>
+            <div class="col-md-3">
+              <%= link_to new_vaccination_record_path, class: "btn btn-warning w-100" do %>
+                <i class="bi bi-plus-circle me-1"></i>New Vaccination
+              <% end %>
+            </div>
+            <div class="col-md-3">
+              <%= link_to cows_path, class: "btn btn-info w-100" do %>
+                <i class="bi bi-list me-1"></i>View All Animals
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
