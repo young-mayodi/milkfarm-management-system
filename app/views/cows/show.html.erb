@@ -299,7 +299,7 @@
             
             <div class="col-md-6 col-lg-3">
               <%= link_to "Mark as Deceased", 
-                    farm_cow_mark_as_deceased_path(@cow.farm, @cow), 
+                    mark_as_deceased_farm_cow_path(@cow.farm, @cow), 
                     method: :patch,
                     data: { 
                       confirm: "Mark #{@cow.name} as deceased? This action can be reversed if needed." 
