@@ -1,0 +1,26 @@
+{
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini"
+    }
+  ],
+  "env": {
+    "RAILS_ENV": "production",
+    "RAILS_SERVE_STATIC_FILES": "true",
+    "RAILS_LOG_TO_STDOUT": "enabled"
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/ruby"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "bundle exec rails db:migrate && bundle exec rails db:seed"
+  }
+}

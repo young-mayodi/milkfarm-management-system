@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  cow: one
+  farm: one
+  sale_date: 2026-01-24
+  sale_price: 9.99
+  buyer: MyString
+  animal_type: MyString
+  notes: MyText
+
+two:
+  cow: two
+  farm: two
+  sale_date: 2026-01-24
+  sale_price: 9.99
+  buyer: MyString
+  animal_type: MyString
+  notes: MyText
