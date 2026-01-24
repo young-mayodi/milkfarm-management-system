@@ -156,7 +156,11 @@ class Cow < ApplicationRecord
 
   # Lifecycle tracking methods
   def can_be_milked?
-    active? && age >= 2 && !calf?
+    status == "active" && age >= 2 && !calf?
+  end
+
+  def active?
+    status == "active"
   end
 
   def calf?
