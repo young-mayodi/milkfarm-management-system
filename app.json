@@ -1,4 +1,18 @@
 {
+  "name": "Livestock Management System",
+  "description": "A comprehensive farm management system for livestock tracking, health records, breeding, and production monitoring",
+  "repository": "https://github.com/youngmayodi/livestock-management-system",
+  "success_url": "/",
+  "keywords": [
+    "livestock",
+    "farm-management", 
+    "agriculture",
+    "cattle-tracking",
+    "rails",
+    "postgresql"
+  ],
+  "image": "heroku/ruby",
+  "stack": "heroku-22",
   "formation": {
     "web": {
       "quantity": 1,
@@ -8,19 +22,32 @@
   "addons": [
     {
       "plan": "heroku-postgresql:mini"
+    },
+    {
+      "plan": "heroku-redis:mini"
     }
   ],
   "env": {
+    "SECRET_KEY_BASE": {
+      "description": "Rails secret key base for production",
+      "generator": "secret"
+    },
     "RAILS_ENV": "production",
     "RAILS_SERVE_STATIC_FILES": "true",
-    "RAILS_LOG_TO_STDOUT": "enabled"
+    "RAILS_LOG_TO_STDOUT": "enabled",
+    "RAILS_MAX_THREADS": "5",
+    "WEB_CONCURRENCY": "2",
+    "TZ": "UTC"
   },
   "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    },
     {
       "url": "heroku/ruby"
     }
   ],
   "scripts": {
-    "postdeploy": "bundle exec rails db:migrate && bundle exec rails db:seed"
+    "postdeploy": "bundle exec rails db:migrate"
   }
 }

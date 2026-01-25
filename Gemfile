@@ -39,8 +39,11 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 # gem "solid_cable"
 
 # Redis for caching and background jobs
-gem "redis", "~> 5.0"
-gem "sidekiq", "~> 7.0"
+gem 'redis', '~> 5.0'
+gem 'sidekiq', '~> 7.0'
+
+# Heroku deployment and performance gems
+gem 'rails_12factor', group: :production
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
