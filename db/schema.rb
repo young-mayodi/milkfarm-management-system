@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_25_095716) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_25_132208) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -120,6 +120,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_25_095716) do
     t.decimal "total_production"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "night_production", precision: 8, scale: 2, default: "0.0"
     t.index ["cow_id", "production_date"], name: "index_production_records_on_cow_id_and_production_date"
     t.index ["cow_id"], name: "index_production_records_on_cow_id"
     t.index ["farm_id", "production_date"], name: "index_production_records_on_farm_id_and_production_date"

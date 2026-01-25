@@ -1,0 +1,293 @@
+<% content_for :title, "Production Time Reports" %>
+
+<div class="container-fluid">
+  <!-- Header Section -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h2 class="display-4">
+        <i class="fas fa-chart-bar text-primary"></i>
+        Production Time Analysis
+      </h2>
+      <p class="lead text-muted">Comprehensive breakdown by milking time: Morning, Noon, Evening & Night</p>
+    </div>
+    <div class="col-md-4 text-end">
+      <%= link_to "Export to CSV", production_time_reports_production_records_path(format: 'csv', farm_id: params[:farm_id], start_date: @start_date, end_date: @end_date), 
+          class: "btn btn-success" %>
+    </div>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <%= form_with url: production_time_reports_production_records_path, method: :get, local: true, class: "row g-3" do |form| %>
+        <div class="col-md-3">
+          <%= form.label :farm_id, "Farm", class: "form-label" %>
+          <%= form.select :farm_id, options_from_collection_for_select(@farms, :id, :name, params[:farm_id]), 
+              { prompt: "All Farms" }, { class: "form-select" } %>
+        </div>
+        <div class="col-md-3">
+          <%= form.label :start_date, "Start Date", class: "form-label" %>
+          <%= form.date_field :start_date, value: @start_date, class: "form-control" %>
+        </div>
+        <div class="col-md-3">
+          <%= form.label :end_date, "End Date", class: "form-label" %>
+          <%= form.date_field :end_date, value: @end_date, class: "form-control" %>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <%= form.submit "Generate Report", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @reports_data %>
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+      <% @reports_data[:time_summary].slice(:morning, :noon, :evening, :night).each do |time, data| %>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="card border-left-<%= time == @reports_data[:time_summary][:peak_time].downcase.to_sym ? 'success' : 'info' %>">
+            <div class="card-body">
+              <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+                  <div class="text-xs font-weight-bold text-<%= time == @reports_data[:time_summary][:peak_time].downcase.to_sym ? 'success' : 'info' %> text-uppercase mb-1">
+                    <%= time.to_s.titleize %> Production
+                    <% if time == @reports_data[:time_summary][:peak_time].downcase.to_sym %>
+                      <span class="badge badge-success">Peak</span>
+                    <% end %>
+                  </div>
+                  <div class="h5 mb-0 font-weight-bold text-gray-800">
+                    <%= data[:total] %> L
+                  </div>
+                  <div class="text-muted small">
+                    Avg: <%= data[:average] %>L | <%= data[:percentage] %>% of total
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <i class="fas fa-<%= case time
+                    when :morning then 'sun'
+                    when :noon then 'sun fa-2x'
+                    when :evening then 'moon'
+                    when :night then 'moon'
+                    end %> fa-2x text-gray-300"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+      <!-- Production Distribution Chart -->
+      <div class="col-xl-6 col-lg-12">
+        <div class="card shadow mb-4">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Production Distribution</h6>
+          </div>
+          <div class="card-body">
+            <canvas id="productionDistributionChart"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Weekly Trends Chart -->
+      <div class="col-xl-6 col-lg-12">
+        <div class="card shadow mb-4">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Weekly Trends by Time</h6>
+          </div>
+          <div class="card-body">
+            <canvas id="weeklyTrendsChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Peak Performance Section -->
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Peak Performance Analysis</h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <% @reports_data[:peak_performance][:peak_performers].each do |time, performer| %>
+            <% if performer %>
+              <div class="col-md-3">
+                <div class="text-center p-3">
+                  <h5 class="text-<%= case time
+                    when :morning then 'warning'
+                    when :noon then 'danger'
+                    when :evening then 'info'
+                    when :night then 'dark'
+                    end %>"><%= time.to_s.titleize %></h5>
+                  <p class="mb-1"><strong><%= performer[:cow] %></strong></p>
+                  <p class="mb-1"><%= performer[:value] %>L</p>
+                  <small class="text-muted"><%= performer[:date] %></small>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Breakdown Table -->
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Daily Production Breakdown</h6>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-bordered" id="dataTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Morning</th>
+                <th>Noon</th>
+                <th>Evening</th>
+                <th>Night</th>
+                <th>Total</th>
+                <th>Peak Time</th>
+                <th>Cow Count</th>
+                <th>Best Performer</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @reports_data[:daily_breakdown].each do |day_data| %>
+                <tr>
+                  <td><%= day_data[:date] %></td>
+                  <td class="text-end"><%= day_data[:morning] %>L</td>
+                  <td class="text-end"><%= day_data[:noon] %>L</td>
+                  <td class="text-end"><%= day_data[:evening] %>L</td>
+                  <td class="text-end"><%= day_data[:night] %>L</td>
+                  <td class="text-end font-weight-bold"><%= day_data[:total] %>L</td>
+                  <td>
+                    <% peak_time = determine_peak_time_for_day(day_data) %>
+                    <span class="badge badge-<%= case peak_time
+                      when 'Morning' then 'warning'
+                      when 'Noon' then 'danger' 
+                      when 'Evening' then 'info'
+                      when 'Night' then 'dark'
+                      end %>"><%= peak_time %></span>
+                  </td>
+                  <td class="text-center"><%= day_data[:cow_count] %></td>
+                  <td><%= day_data[:best_performer] || '-' %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<!-- Charts JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  <% if @reports_data %>
+    // Production Distribution Pie Chart
+    const distributionCtx = document.getElementById('productionDistributionChart').getContext('2d');
+    const distributionChart = new Chart(distributionCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Morning', 'Noon', 'Evening', 'Night'],
+        datasets: [{
+          data: [
+            <%= @reports_data[:time_summary][:morning][:total] %>,
+            <%= @reports_data[:time_summary][:noon][:total] %>,
+            <%= @reports_data[:time_summary][:evening][:total] %>,
+            <%= @reports_data[:time_summary][:night][:total] %>
+          ],
+          backgroundColor: [
+            '#FFC107', // Morning - Yellow/Gold
+            '#DC3545', // Noon - Red
+            '#17A2B8', // Evening - Blue
+            '#6C757D'  // Night - Gray
+          ],
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          }
+        }
+      }
+    });
+
+    // Weekly Trends Line Chart
+    const trendsCtx = document.getElementById('weeklyTrendsChart').getContext('2d');
+    const trendsChart = new Chart(trendsCtx, {
+      type: 'line',
+      data: {
+        labels: [<%= @reports_data[:weekly_trends].map { |w| "\"Week #{w[:week_start].strftime('%m/%d')}\"" }.join(', ').html_safe %>],
+        datasets: [
+          {
+            label: 'Morning',
+            data: [<%= @reports_data[:weekly_trends].map { |w| w[:morning] }.join(', ') %>],
+            borderColor: '#FFC107',
+            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'Noon', 
+            data: [<%= @reports_data[:weekly_trends].map { |w| w[:noon] }.join(', ') %>],
+            borderColor: '#DC3545',
+            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'Evening',
+            data: [<%= @reports_data[:weekly_trends].map { |w| w[:evening] }.join(', ') %>],
+            borderColor: '#17A2B8',
+            backgroundColor: 'rgba(23, 162, 184, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'Night',
+            data: [<%= @reports_data[:weekly_trends].map { |w| w[:night] }.join(', ') %>],
+            borderColor: '#6C757D',
+            backgroundColor: 'rgba(108, 117, 125, 0.1)',
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Production (Liters)'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  <% end %>
+});
+
+// Helper function for peak time determination (matching controller logic)
+function determinePeakTimeForDay(dayData) {
+  const times = {
+    'Morning': dayData.morning,
+    'Noon': dayData.noon,
+    'Evening': dayData.evening,
+    'Night': dayData.night
+  };
+  
+  return Object.keys(times).reduce((a, b) => times[a] > times[b] ? a : b);
+}
+</script>

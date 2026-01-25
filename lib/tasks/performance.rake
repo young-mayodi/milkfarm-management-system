@@ -15,16 +15,16 @@ namespace :performance do
   task analyze: :environment do
     puts "🔍 Analyzing query performance..."
     results = PerformanceOptimizationService.analyze_query_performance
-    
+
     puts "\n📊 Query Performance Results:"
     results.each do |record_type, stats|
       status_emoji = case stats[:status]
-                    when 'optimal' then '🟢'
-                    when 'acceptable' then '🟡'
-                    when 'slow' then '🔴'
-                    else '⚪'
-                    end
-      
+      when "optimal" then "🟢"
+      when "acceptable" then "🟡"
+      when "slow" then "🔴"
+      else "⚪"
+      end
+
       puts "#{status_emoji} #{record_type.to_s.humanize}: #{stats[:record_count]} records, #{stats[:execution_time_ms]}ms"
     end
   end
@@ -39,7 +39,7 @@ namespace :performance do
   desc "Test edit forms performance"
   task test_forms: :environment do
     puts "🔬 Testing Edit Forms Performance..."
-    
+
     # Test health records edit form
     puts "\n📋 Testing Health Records..."
     health_record = HealthRecord.includes(:cow).first

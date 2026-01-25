@@ -8,6 +8,7 @@ class ProductionRecord < ApplicationRecord
   validates :morning_production, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :noon_production, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :evening_production, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :night_production, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :cow_id, uniqueness: { scope: :production_date, message: "already has a production record for this date" }
 
   # Callbacks
@@ -71,6 +72,102 @@ class ProductionRecord < ApplicationRecord
         best_day_production: records.maximum(:total_production)&.to_f&.round(1) || 0.0,
         active_cows: records.joins(:cow).distinct.count("cows.id")
       }
+    end
+  end
+
+  # Enhanced production time analysis
+  def self.production_time_summary(farm_id: nil, date_range: 30.days.ago..Date.current)
+    cache_key = "production_time_summary_#{farm_id}_#{date_range.begin.to_date}_#{date_range.end.to_date}"
+    Rails.cache.fetch(cache_key, expires_in: 30.minutes) do
+      records = farm_id ? where(farm_id: farm_id) : all
+      records = records.where(production_date: date_range)
+
+      morning_total = records.sum(:morning_production).to_f.round(1)
+      noon_total = records.sum(:noon_production).to_f.round(1)
+      evening_total = records.sum(:evening_production).to_f.round(1)
+      night_total = records.sum(:night_production).to_f.round(1)
+      total_production = morning_total + noon_total + evening_total + night_total
+
+      {
+        morning: {
+          total: morning_total,
+          average: (records.average(:morning_production) || 0).to_f.round(1),
+          percentage: total_production > 0 ? (morning_total / total_production * 100).round(1) : 0
+        },
+        noon: {
+          total: noon_total,
+          average: (records.average(:noon_production) || 0).to_f.round(1),
+          percentage: total_production > 0 ? (noon_total / total_production * 100).round(1) : 0
+        },
+        evening: {
+          total: evening_total,
+          average: (records.average(:evening_production) || 0).to_f.round(1),
+          percentage: total_production > 0 ? (evening_total / total_production * 100).round(1) : 0
+        },
+        night: {
+          total: night_total,
+          average: (records.average(:night_production) || 0).to_f.round(1),
+          percentage: total_production > 0 ? (night_total / total_production * 100).round(1) : 0
+        },
+        total: total_production,
+        total_records: records.count,
+        peak_time: determine_peak_time(morning_total, noon_total, evening_total, night_total)
+      }
+    end
+  end
+
+  def self.daily_production_breakdown(date = Date.current, farm_id: nil)
+    cache_key = "daily_production_breakdown_#{farm_id}_#{date}"
+    Rails.cache.fetch(cache_key, expires_in: 2.hours) do
+      records = where(production_date: date)
+      records = records.where(farm_id: farm_id) if farm_id
+
+      morning_total = records.sum(:morning_production).to_f.round(1)
+      noon_total = records.sum(:noon_production).to_f.round(1)
+      evening_total = records.sum(:evening_production).to_f.round(1)
+      night_total = records.sum(:night_production).to_f.round(1)
+
+      {
+        date: date,
+        morning: morning_total,
+        noon: noon_total,
+        evening: evening_total,
+        night: night_total,
+        total: morning_total + noon_total + evening_total + night_total,
+        cow_count: records.count,
+        best_performer: records.order(total_production: :desc).first&.cow&.name
+      }
+    end
+  end
+
+  def self.production_trends_by_time(weeks_back: 4, farm_id: nil)
+    cache_key = "production_trends_by_time_#{farm_id}_#{weeks_back}weeks"
+    Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+      end_date = Date.current
+      start_date = weeks_back.weeks.ago
+
+      records = where(production_date: start_date..end_date)
+      records = records.where(farm_id: farm_id) if farm_id
+
+      weekly_data = []
+      
+      (0...weeks_back).each do |week_offset|
+        week_start = end_date.beginning_of_week - week_offset.weeks
+        week_end = week_start.end_of_week
+        week_records = records.where(production_date: week_start..week_end)
+
+        weekly_data << {
+          week_start: week_start,
+          week_end: week_end,
+          morning: week_records.sum(:morning_production).to_f.round(1),
+          noon: week_records.sum(:noon_production).to_f.round(1),
+          evening: week_records.sum(:evening_production).to_f.round(1),
+          night: week_records.sum(:night_production).to_f.round(1),
+          total: week_records.sum(:total_production).to_f.round(1)
+        }
+      end
+
+      weekly_data.reverse # Most recent week first
     end
   end
 
@@ -218,7 +315,7 @@ class ProductionRecord < ApplicationRecord
   private
 
   def calculate_total_production
-    self.total_production = (morning_production || 0) + (noon_production || 0) + (evening_production || 0)
+    self.total_production = (morning_production || 0) + (noon_production || 0) + (evening_production || 0) + (night_production || 0)
   end
 
   # Immediate cache invalidation for critical operations
@@ -235,5 +332,10 @@ class ProductionRecord < ApplicationRecord
     # For now, clear a few more important caches immediately
     Rails.cache.delete_matched("top_performers_*")
     Rails.cache.delete_matched("production_summary_#{farm_id}_*")
+  end
+
+  def self.determine_peak_time(morning, noon, evening, night)
+    times = { "Morning" => morning, "Noon" => noon, "Evening" => evening, "Night" => night }
+    times.max_by { |_time, production| production }.first
   end
 end

@@ -243,7 +243,8 @@ class ProductionRecordsController < ApplicationController
         record.assign_attributes(
           morning_production: sanitize_production_value(record_params[:morning_production]),
           noon_production: sanitize_production_value(record_params[:noon_production]),
-          evening_production: sanitize_production_value(record_params[:evening_production])
+          evening_production: sanitize_production_value(record_params[:evening_production]),
+          night_production: sanitize_production_value(record_params[:night_production])
         )
 
         if record.save
@@ -398,6 +399,37 @@ class ProductionRecordsController < ApplicationController
     end
   end
 
+  # Production time reports - Morning, Noon, Evening, Night breakdown
+  def production_time_reports
+    @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
+    
+    # Date range parameters
+    @start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : 30.days.ago
+    @end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.current
+    date_range = @start_date..@end_date
+
+    # Cache key for performance
+    cache_key = "production_time_reports_#{@farm&.id}_#{@start_date}_#{@end_date}"
+    
+    @reports_data = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
+      {
+        time_summary: ProductionRecord.production_time_summary(@farm&.id, date_range),
+        daily_breakdown: generate_daily_breakdown(date_range, @farm&.id),
+        weekly_trends: ProductionRecord.production_trends_by_time(4, @farm&.id),
+        peak_performance: calculate_peak_performance(date_range, @farm&.id)
+      }
+    end
+
+    # Get farms for dropdown
+    @farms = Farm.includes(:cows).order(:name)
+
+    respond_to do |format|
+      format.html
+      format.json { render json: @reports_data }
+      format.csv { send_csv_report }
+    end
+  end
+
   private
 
   def set_farm_and_cow
@@ -411,7 +443,7 @@ class ProductionRecordsController < ApplicationController
 
   def production_record_params
     params.require(:production_record).permit(:cow_id, :farm_id, :production_date,
-                                              :morning_production, :noon_production, :evening_production)
+                                              :morning_production, :noon_production, :evening_production, :night_production)
   end
 
   # Broadcast real-time updates to other browser windows
@@ -463,6 +495,75 @@ class ProductionRecordsController < ApplicationController
               disposition: "attachment"
   end
 
+  # Helper methods for production time reports
+  def generate_daily_breakdown(date_range, farm_id)
+    daily_data = []
+    date_range.each do |date|
+      daily_data << ProductionRecord.daily_production_breakdown(date, farm_id)
+    end
+    daily_data
+  end
+
+  def calculate_peak_performance(date_range, farm_id)
+    records = ProductionRecord.where(production_date: date_range)
+    records = records.where(farm_id: farm_id) if farm_id
+
+    peak_times = {
+      morning: records.maximum(:morning_production) || 0,
+      noon: records.maximum(:noon_production) || 0,
+      evening: records.maximum(:evening_production) || 0,
+      night: records.maximum(:night_production) || 0
+    }
+
+    peak_cow_morning = records.order(morning_production: :desc).first
+    peak_cow_noon = records.order(noon_production: :desc).first
+    peak_cow_evening = records.order(evening_production: :desc).first
+    peak_cow_night = records.order(night_production: :desc).first
+
+    {
+      peak_values: peak_times,
+      peak_performers: {
+        morning: peak_cow_morning ? { cow: peak_cow_morning.cow.name, value: peak_cow_morning.morning_production, date: peak_cow_morning.production_date } : nil,
+        noon: peak_cow_noon ? { cow: peak_cow_noon.cow.name, value: peak_cow_noon.noon_production, date: peak_cow_noon.production_date } : nil,
+        evening: peak_cow_evening ? { cow: peak_cow_evening.cow.name, value: peak_cow_evening.evening_production, date: peak_cow_evening.production_date } : nil,
+        night: peak_cow_night ? { cow: peak_cow_night.cow.name, value: peak_cow_night.night_production, date: peak_cow_night.production_date } : nil
+      }
+    }
+  end
+
+  def send_csv_report
+    require 'csv'
+    
+    csv_data = CSV.generate(headers: true) do |csv|
+      csv << ['Date', 'Morning Total', 'Noon Total', 'Evening Total', 'Night Total', 'Daily Total', 'Peak Time', 'Cow Count']
+      
+      @reports_data[:daily_breakdown].each do |day_data|
+        csv << [
+          day_data[:date],
+          day_data[:morning],
+          day_data[:noon], 
+          day_data[:evening],
+          day_data[:night],
+          day_data[:total],
+          determine_peak_time_for_day(day_data),
+          day_data[:cow_count]
+        ]
+      end
+    end
+
+    send_data csv_data, filename: "production_time_report_#{@start_date}_to_#{@end_date}.csv", type: 'text/csv'
+  end
+
+  def determine_peak_time_for_day(day_data)
+    times = {
+      'Morning' => day_data[:morning],
+      'Noon' => day_data[:noon],
+      'Evening' => day_data[:evening],
+      'Night' => day_data[:night]
+    }
+    times.max_by { |_time, production| production }.first
+  end
+
   # Access control for historical records
   def can_edit_historical_records?(date)
     days_back = (Date.current - date).to_i
@@ -476,8 +577,9 @@ class ProductionRecordsController < ApplicationController
     morning = sanitize_production_value(record_params[:morning_production])
     noon = sanitize_production_value(record_params[:noon_production])
     evening = sanitize_production_value(record_params[:evening_production])
+    night = sanitize_production_value(record_params[:night_production])
 
-    morning.zero? && noon.zero? && evening.zero?
+    morning.zero? && noon.zero? && evening.zero? && night.zero?
   end
 
   # Sanitize production values to handle empty strings and invalid data
