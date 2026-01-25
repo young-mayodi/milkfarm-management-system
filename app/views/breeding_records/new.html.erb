@@ -111,11 +111,12 @@
                 <%= form.label :breeding_status, "Breeding Status", class: "form-label" %>
                 <%= form.select :breeding_status,
                     options_for_select([
-                      ['Bred', 'bred'],
-                      ['Confirmed Pregnant', 'pregnant'],
-                      ['Not Pregnant', 'not_pregnant'],
-                      ['Calved', 'calved'],
-                      ['Aborted', 'aborted']
+                      ['Attempted', 'attempted'],
+                      ['Confirmed Pregnant', 'confirmed'],
+                      ['Failed', 'failed'],
+                      ['Aborted', 'aborted'],
+                      ['Completed', 'completed'],
+                      ['Pending Confirmation', 'pending_confirmation']
                     ], @breeding_record.breeding_status),
                     { prompt: "Select status..." },
                     { class: "form-select" } %>
@@ -131,14 +132,12 @@
                     placeholder: "Veterinarian name (if applicable)" %>
               </div>
 
-              <!-- Service Cost -->
+              <!-- Bull Name -->
               <div class="col-md-6 mb-3">
-                <%= form.label :service_cost, "Service Cost (KES)", class: "form-label" %>
-                <%= form.number_field :service_cost, 
+                <%= form.label :bull_name, "Bull Name/ID", class: "form-label" %>
+                <%= form.text_field :bull_name, 
                     class: "form-control",
-                    step: 0.01,
-                    min: 0,
-                    placeholder: "0.00" %>
+                    placeholder: "Bull identification" %>
               </div>
             </div>
 
