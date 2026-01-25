@@ -153,7 +153,7 @@
                 <i class="bi bi-heart-fill me-2"></i>Mother (Optional)
               <% end %>
               <%= form.select :mother_id,
-                  options_from_collection_for_select(Cow.adult_cows, :id, :display_name, @calf.mother_id),
+                  options_from_collection_for_select(@potential_mothers || [], :id, :display_name, @calf.mother_id),
                   { prompt: 'Select mother cow' },
                   { class: "form-select" } %>
               <div class="form-text">
