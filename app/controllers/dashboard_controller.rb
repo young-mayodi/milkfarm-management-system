@@ -443,27 +443,28 @@ class DashboardController < ApplicationController
     end
 
     # Low Milk Production Alerts (Warning)
-    low_producers = ProductionRecord.joins(:cow)
-                                   .where(production_date: 7.days.ago..Date.current)
-                                   .where(cows: { status: 'active' })
-                                   .group(:cow_id)
-                                   .having('AVG(total_production) < ?', 15) # Less than 15L average
-                                   .includes(:cow)
-                                   .limit(3)
+    low_producer_cow_ids = ProductionRecord.joins(:cow)
+                                          .where(production_date: 7.days.ago..Date.current)
+                                          .where(cows: { status: 'active' })
+                                          .group(:cow_id)
+                                          .having('AVG(total_production) < ?', 15) # Less than 15L average
+                                          .limit(3)
+                                          .pluck(:cow_id)
 
-    low_producers.each do |record|
-      avg_production = ProductionRecord.where(cow: record.cow, production_date: 7.days.ago..Date.current)
+    low_producer_cow_ids.each do |cow_id|
+      cow = Cow.find(cow_id)
+      avg_production = ProductionRecord.where(cow: cow, production_date: 7.days.ago..Date.current)
                                       .average(:total_production)&.round(1) || 0
       alerts << {
         type: 'warning',
         category: 'Production',
-        title: "#{record.cow.name} - Low production",
+        title: "#{cow.name} - Low production",
         message: "Average: #{avg_production}L/day (below 15L threshold)",
         date: Date.current,
         priority: 'medium',
         icon: 'droplet-half',
-        link: cow_path(record.cow),
-        cow: record.cow
+        link: cow_path(cow),
+        cow: cow
       }
     end
 
