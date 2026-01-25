@@ -1,2 +1,218 @@
-<h1>VaccinationRecords#edit</h1>
-<p>Find me in app/views/vaccination_records/edit.html.erb</p>
+<div class="vaccination-records-container">
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="bi bi-pencil-square"></i>
+          Edit Vaccination for <%= @vaccination_record.cow.tag_number %>
+        </h2>
+        <p class="text-muted">Update vaccination record</p>
+      </div>
+      <div class="header-actions">
+        <%= link_to @vaccination_record, class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-arrow-left"></i>
+          Back to Record
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <%= form_with model: @vaccination_record, local: true, class: "vaccination-form" do |form| %>
+            <% if @vaccination_record.errors.any? %>
+              <div class="alert alert-danger">
+                <h6>Please fix the following errors:</h6>
+                <ul class="mb-0">
+                  <% @vaccination_record.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <!-- Hidden field to maintain cow association -->
+            <%= form.hidden_field :cow_id %>
+
+            <div class="row">
+              <!-- Animal Info (Read-only) -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Animal</label>
+                <div class="form-control-plaintext">
+                  <strong><%= @vaccination_record.cow.display_name %></strong>
+                  <small class="text-muted d-block">
+                    <%= @vaccination_record.cow.breed %> • <%= @vaccination_record.cow.age %> years old
+                  </small>
+                </div>
+              </div>
+
+              <!-- Vaccination Date -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :vaccination_date, "Vaccination Date", class: "form-label required" %>
+                <%= form.date_field :vaccination_date, 
+                    class: "form-control", 
+                    required: true,
+                    max: Date.current %>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Vaccine Name -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :vaccine_name, "Vaccine Name", class: "form-label required" %>
+                <%= form.select :vaccine_name,
+                    options_for_select([
+                      ['FMD (Foot and Mouth Disease)', 'FMD'],
+                      ['Anthrax', 'Anthrax'],
+                      ['Blackleg', 'Blackleg'],
+                      ['Brucellosis', 'Brucellosis'],
+                      ['Lumpy Skin Disease', 'LSD'],
+                      ['CBPP', 'CBPP'],
+                      ['Rabies', 'Rabies']
+                    ], @vaccination_record.vaccine_name),
+                    { prompt: "Select vaccine type..." },
+                    { class: "form-select", required: true } %>
+              </div>
+
+              <!-- Administered By -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :administered_by, "Administered By", class: "form-label required" %>
+                <%= form.text_field :administered_by, 
+                    class: "form-control",
+                    required: true,
+                    placeholder: "Veterinarian or staff name" %>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Next Due Date -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :next_due_date, "Next Due Date", class: "form-label" %>
+                <%= form.date_field :next_due_date, 
+                    class: "form-control",
+                    min: Date.current %>
+                <small class="form-text text-muted">
+                  When is the next vaccination due?
+                </small>
+              </div>
+
+              <!-- Batch Number -->
+              <div class="col-md-6 mb-3">
+                <%= form.label :batch_number, "Batch Number", class: "form-label" %>
+                <%= form.text_field :batch_number, 
+                    class: "form-control",
+                    placeholder: "Vaccine batch number" %>
+              </div>
+            </div>
+
+            <!-- Veterinarian -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <%= form.label :veterinarian, "Veterinarian", class: "form-label" %>
+                <%= form.text_field :veterinarian, 
+                    class: "form-control",
+                    placeholder: "Veterinarian name" %>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-3">
+              <%= form.label :notes, "Notes", class: "form-label" %>
+              <%= form.text_area :notes, 
+                  class: "form-control",
+                  rows: 3,
+                  placeholder: "Any additional observations or notes..." %>
+            </div>
+
+            <!-- Submit Actions -->
+            <div class="form-actions">
+              <%= form.submit "Update Vaccination", 
+                  class: "btn btn-success btn-lg",
+                  data: { disable_with: "Updating..." } %>
+              
+              <%= link_to @vaccination_record, 
+                  class: "btn btn-outline-secondary btn-lg ms-2" do %>
+                Cancel
+              <% end %>
+              
+              <%= link_to @vaccination_record, 
+                  method: :delete,
+                  class: "btn btn-outline-danger btn-lg ms-2",
+                  confirm: "Are you sure you want to delete this vaccination record?" do %>
+                <i class="bi bi-trash"></i>
+                Delete
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="card-title mb-0">
+            <i class="bi bi-info-circle"></i>
+            Vaccination Guidelines
+          </h6>
+        </div>
+        <div class="card-body">
+          <h6 class="text-success">Common Schedule:</h6>
+          <ul class="list-unstyled small">
+            <li><strong>FMD:</strong> Every 6 months</li>
+            <li><strong>Anthrax:</strong> Once yearly</li>
+            <li><strong>Blackleg:</strong> Once yearly</li>
+            <li><strong>Brucellosis:</strong> As required</li>
+          </ul>
+
+          <hr>
+
+          <div class="record-info">
+            <h6 class="text-info">Record Information:</h6>
+            <small class="text-muted">
+              <strong>Created:</strong> <%= @vaccination_record.created_at.strftime("%B %d, %Y") %><br>
+              <strong>Last Updated:</strong> <%= @vaccination_record.updated_at.strftime("%B %d, %Y") %>
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.vaccination-records-container {
+  padding: 20px;
+}
+
+.page-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.vaccination-form .form-label.required::after {
+  content: " *";
+  color: #dc3545;
+}
+
+.form-actions {
+  border-top: 1px solid #e9ecef;
+  padding-top: 20px;
+  margin-top: 30px;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 12px;
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+</style>

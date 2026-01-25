@@ -132,12 +132,12 @@
                     placeholder: "Veterinarian name (if applicable)" %>
               </div>
 
-              <!-- Bull Name -->
+              <!-- Leave empty for balance or future field -->
               <div class="col-md-6 mb-3">
-                <%= form.label :bull_name, "Bull Name/ID", class: "form-label" %>
-                <%= form.text_field :bull_name, 
-                    class: "form-control",
-                    placeholder: "Bull identification" %>
+                <label class="form-label text-muted">Additional Information</label>
+                <div class="form-control-plaintext">
+                  <small class="text-muted">Additional fields can be added as needed</small>
+                </div>
               </div>
             </div>
 

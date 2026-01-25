@@ -1,2 +1,261 @@
-<h1>BreedingRecords#show</h1>
-<p>Find me in app/views/breeding_records/show.html.erb</p>
+<div class="breeding-record-details-container">
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="bi bi-heart"></i>
+          Breeding Record Details
+        </h2>
+        <p class="text-muted">
+          <i class="bi bi-calendar"></i>
+          Bred on <%= @breeding_record.breeding_date.strftime("%B %d, %Y") %>
+        </p>
+      </div>
+      <div class="header-actions">
+        <%= link_to breeding_records_path, class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-arrow-left"></i>
+          Back to Breeding Records
+        <% end %>
+        <%= link_to edit_breeding_record_path(@breeding_record), class: "btn btn-primary ms-2" do %>
+          <i class="bi bi-pencil"></i>
+          Edit Record
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-file-medical"></i>
+            Breeding Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Animal Information -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Animal</label>
+              <div class="info-display">
+                <strong><%= @breeding_record.cow.display_name %></strong>
+                <small class="text-muted d-block">
+                  Tag: <%= @breeding_record.cow.tag_number %> • <%= @breeding_record.cow.breed %>
+                </small>
+              </div>
+            </div>
+
+            <!-- Breeding Status -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Breeding Status</label>
+              <div class="info-display">
+                <span class="badge <%= breeding_status_badge_class(@breeding_record.breeding_status) %>">
+                  <%= @breeding_record.breeding_status.titleize %>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Breeding Date -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Breeding Date</label>
+              <div class="info-display">
+                <%= @breeding_record.breeding_date.strftime("%B %d, %Y") %>
+              </div>
+            </div>
+
+            <!-- Breeding Method -->
+            <% if @breeding_record.breeding_method.present? %>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Breeding Method</label>
+                <div class="info-display">
+                  <%= @breeding_record.breeding_method.titleize %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="row">
+            <!-- Bull Name -->
+            <% if @breeding_record.bull_name.present? %>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Bull Name/ID</label>
+                <div class="info-display">
+                  <%= @breeding_record.bull_name %>
+                </div>
+              </div>
+            <% end %>
+
+            <!-- Expected Due Date -->
+            <% if @breeding_record.expected_due_date.present? %>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Expected Due Date</label>
+                <div class="info-display">
+                  <%= @breeding_record.expected_due_date.strftime("%B %d, %Y") %>
+                  <% if @breeding_record.expected_due_date < Date.current %>
+                    <span class="badge bg-warning ms-2">Overdue</span>
+                  <% elsif @breeding_record.expected_due_date <= Date.current + 30.days %>
+                    <span class="badge bg-info ms-2">Due Soon</span>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="row">
+            <!-- Actual Due Date -->
+            <% if @breeding_record.actual_due_date.present? %>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Actual Due Date</label>
+                <div class="info-display">
+                  <%= @breeding_record.actual_due_date.strftime("%B %d, %Y") %>
+                </div>
+              </div>
+            <% end %>
+
+            <!-- Veterinarian -->
+            <% if @breeding_record.veterinarian.present? %>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Veterinarian</label>
+                <div class="info-display">
+                  <%= @breeding_record.veterinarian %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Notes -->
+          <% if @breeding_record.notes.present? %>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Notes</label>
+              <div class="info-display">
+                <%= simple_format(@breeding_record.notes) %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-info-circle"></i>
+            Breeding Information
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="breeding-info">
+            <h6 class="text-success">Gestation Period:</h6>
+            <ul class="list-unstyled small">
+              <li><strong>Cattle:</strong> 283 days (~9.5 months)</li>
+              <li><strong>Range:</strong> 279-287 days</li>
+            </ul>
+
+            <hr>
+
+            <h6 class="text-info">Animal History:</h6>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-value"><%= @breeding_record.cow.breeding_records.count %></span>
+                <span class="stat-label">Total Breedings</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value"><%= @breeding_record.cow.breeding_records.confirmed.count %></span>
+                <span class="stat-label">Successful</span>
+              </div>
+            </div>
+
+            <% if @breeding_record.expected_due_date.present? %>
+              <hr>
+              <h6 class="text-primary">Pregnancy Progress:</h6>
+              <% 
+                days_since_breeding = (Date.current - @breeding_record.breeding_date).to_i
+                total_gestation = 283
+                progress_percentage = [(days_since_breeding.to_f / total_gestation * 100), 100].min
+              %>
+              <div class="progress mb-2">
+                <div class="progress-bar" role="progressbar" style="width: <%= progress_percentage %>%"></div>
+              </div>
+              <small class="text-muted">
+                <%= days_since_breeding %> of <%= total_gestation %> days
+                (<%= progress_percentage.round(1) %>%)
+              </small>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.breeding-record-details-container {
+  padding: 20px;
+}
+
+.page-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.info-display {
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #e91e63;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #e91e63;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 12px;
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.progress {
+  height: 8px;
+  background-color: #f1f3f4;
+}
+
+.progress-bar {
+  background: linear-gradient(45deg, #e91e63, #f06292);
+}
+</style>

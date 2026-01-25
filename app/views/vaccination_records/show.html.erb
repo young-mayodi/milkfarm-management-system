@@ -1,2 +1,223 @@
-<h1>VaccinationRecords#show</h1>
-<p>Find me in app/views/vaccination_records/show.html.erb</p>
+<div class="vaccination-record-details-container">
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="page-title">
+          <i class="bi bi-shield-plus"></i>
+          Vaccination Record Details
+        </h2>
+        <p class="text-muted">
+          <i class="bi bi-calendar"></i>
+          Administered on <%= @vaccination_record.vaccination_date.strftime("%B %d, %Y") %>
+        </p>
+      </div>
+      <div class="header-actions">
+        <%= link_to vaccination_records_path, class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-arrow-left"></i>
+          Back to Vaccinations
+        <% end %>
+        <%= link_to edit_vaccination_record_path(@vaccination_record), class: "btn btn-primary ms-2" do %>
+          <i class="bi bi-pencil"></i>
+          Edit Record
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-file-medical"></i>
+            Vaccination Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Animal Information -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Animal</label>
+              <div class="info-display">
+                <strong><%= @vaccination_record.cow.display_name %></strong>
+                <small class="text-muted d-block">
+                  Tag: <%= @vaccination_record.cow.tag_number %> • <%= @vaccination_record.cow.breed %>
+                </small>
+              </div>
+            </div>
+
+            <!-- Vaccine Name -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Vaccine</label>
+              <div class="info-display">
+                <strong><%= @vaccination_record.vaccine_name %></strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Vaccination Date -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Vaccination Date</label>
+              <div class="info-display">
+                <%= @vaccination_record.vaccination_date.strftime("%B %d, %Y") %>
+              </div>
+            </div>
+
+            <!-- Next Due Date -->
+            <% if @vaccination_record.next_due_date.present? %>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Next Due Date</label>
+                <div class="info-display">
+                  <%= @vaccination_record.next_due_date.strftime("%B %d, %Y") %>
+                  <% if @vaccination_record.next_due_date < Date.current %>
+                    <span class="badge bg-warning ms-2">Overdue</span>
+                  <% elsif @vaccination_record.next_due_date <= Date.current + 30.days %>
+                    <span class="badge bg-info ms-2">Due Soon</span>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="row">
+            <!-- Administered By -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Administered By</label>
+              <div class="info-display">
+                <%= @vaccination_record.administered_by %>
+              </div>
+            </div>
+
+            <!-- Batch Number -->
+            <% if @vaccination_record.batch_number.present? %>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Batch Number</label>
+                <div class="info-display">
+                  <%= @vaccination_record.batch_number %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Veterinarian -->
+          <% if @vaccination_record.veterinarian.present? %>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Veterinarian</label>
+                <div class="info-display">
+                  <%= @vaccination_record.veterinarian %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+          <!-- Notes -->
+          <% if @vaccination_record.notes.present? %>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Notes</label>
+              <div class="info-display">
+                <%= simple_format(@vaccination_record.notes) %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <div class="card bg-light">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-info-circle"></i>
+            Vaccination Schedule
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="schedule-info">
+            <h6 class="text-success">Common Schedules:</h6>
+            <ul class="list-unstyled small">
+              <li><strong>FMD:</strong> Every 6 months</li>
+              <li><strong>Anthrax:</strong> Once yearly</li>
+              <li><strong>Blackleg:</strong> Once yearly</li>
+              <li><strong>Brucellosis:</strong> As required</li>
+            </ul>
+
+            <hr>
+
+            <h6 class="text-info">Animal History:</h6>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-value"><%= @vaccination_record.cow.vaccination_records.count %></span>
+                <span class="stat-label">Total Vaccinations</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value"><%= @vaccination_record.cow.vaccination_records.due_soon.count %></span>
+                <span class="stat-label">Due Soon</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.vaccination-record-details-container {
+  padding: 20px;
+}
+
+.page-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.info-display {
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid #28a745;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 12px;
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+</style>
