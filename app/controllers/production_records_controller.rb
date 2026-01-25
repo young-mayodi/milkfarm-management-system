@@ -277,9 +277,14 @@ class ProductionRecordsController < ApplicationController
       end
     end
 
-    # PERFORMANCE OPTIMIZATION: Broadcast real-time updates asynchronously
+    # PERFORMANCE OPTIMIZATION: Broadcast real-time updates synchronously for now
+    # TODO: Move back to async after fixing job loading issue
     if real_time_updates.any?
-      BroadcastUpdatesJob.perform_later(@farm&.id, @date, real_time_updates)
+      begin
+        broadcast_bulk_entry_updates(@farm&.id, @date, real_time_updates)
+      rescue StandardError => e
+        Rails.logger.error "Failed to broadcast updates: #{e.message}"
+      end
     end
 
     # Handle different response formats

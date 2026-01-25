@@ -3,7 +3,7 @@
 
 puts "🐄 PRODUCTION ENTRY PERFORMANCE ANALYSIS & OPTIMIZATION"
 puts "=" * 70
-puts "Date: #{Time.current.strftime('%Y-%m-%d %H:%M:%S')}"
+puts "Date: #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}"
 puts ""
 
 puts "🔍 IDENTIFIED PERFORMANCE ISSUES:"
