@@ -212,6 +212,188 @@
 </div>
 <% end %>
 
+<!-- System Alerts & Upcoming Events Widget -->
+<div class="row mb-4">
+  <div class="col">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-gradient-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-bell me-2"></i>🚨 System Alerts & Upcoming Events
+          </h5>
+          <span class="badge bg-white text-primary">
+            <%= @system_alerts&.count || 0 %> Active Alerts
+          </span>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if @system_alerts&.any? %>
+          <div class="row">
+            <!-- Priority Alerts (Left Column) -->
+            <div class="col-md-6">
+              <h6 class="text-danger mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>Priority Actions Needed
+              </h6>
+              
+              <% critical_alerts = @system_alerts.select { |a| a[:priority] == 'critical' }.first(4) %>
+              <% if critical_alerts.any? %>
+                <% critical_alerts.each do |alert| %>
+                  <div class="alert alert-<%= alert[:type] %> alert-sm d-flex align-items-start border-start border-4 border-<%= alert[:type] %>" style="border-left-width: 4px !important;">
+                    <div class="me-3">
+                      <i class="bi bi-<%= alert[:icon] %> text-<%= alert[:type] %>" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                          <strong class="d-block"><%= alert[:title] %></strong>
+                          <small class="text-muted"><%= alert[:message] %></small>
+                          <div class="mt-1">
+                            <span class="badge bg-<%= alert[:type] %>-subtle text-<%= alert[:type] %>">
+                              <%= alert[:category] %>
+                            </span>
+                            <span class="badge bg-light text-dark">
+                              <%= time_ago_in_words(alert[:date]) %> ago
+                            </span>
+                          </div>
+                        </div>
+                        <div class="text-end">
+                          <%= link_to alert[:link], class: "btn btn-outline-#{alert[:type]} btn-sm", title: "Take Action" do %>
+                            <i class="bi bi-arrow-right"></i>
+                          <% end %>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="text-center py-3 text-success">
+                  <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                  <p class="mb-0 mt-2"><strong>No Critical Issues</strong></p>
+                  <small class="text-muted">All priority items are up to date</small>
+                </div>
+              <% end %>
+            </div>
+
+            <!-- Upcoming Events (Right Column) -->
+            <div class="col-md-6">
+              <h6 class="text-info mb-3">
+                <i class="bi bi-calendar-event me-2"></i>Upcoming Events & Reminders
+              </h6>
+              
+              <% upcoming_alerts = @system_alerts.select { |a| a[:priority].in?(['high', 'medium']) }.first(4) %>
+              <% if upcoming_alerts.any? %>
+                <% upcoming_alerts.each do |alert| %>
+                  <div class="alert alert-<%= alert[:type] %> alert-sm d-flex align-items-start border-start border-4 border-<%= alert[:type] %>" style="border-left-width: 4px !important;">
+                    <div class="me-3">
+                      <i class="bi bi-<%= alert[:icon] %> text-<%= alert[:type] %>" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                          <strong class="d-block"><%= alert[:title] %></strong>
+                          <small class="text-muted"><%= alert[:message] %></small>
+                          <div class="mt-1">
+                            <span class="badge bg-<%= alert[:type] %>-subtle text-<%= alert[:type] %>">
+                              <%= alert[:category] %>
+                            </span>
+                            <% if alert[:date] %>
+                              <span class="badge bg-light text-dark">
+                                <%= alert[:date].strftime("%b %d") %>
+                              </span>
+                            <% end %>
+                          </div>
+                        </div>
+                        <div class="text-end">
+                          <%= link_to alert[:link], class: "btn btn-outline-#{alert[:type]} btn-sm", title: "View Details" do %>
+                            <i class="bi bi-eye"></i>
+                          <% end %>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="text-center py-3 text-info">
+                  <i class="bi bi-calendar-check" style="font-size: 2rem;"></i>
+                  <p class="mb-0 mt-2"><strong>No Upcoming Events</strong></p>
+                  <small class="text-muted">Schedule is clear for the next week</small>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Alert Summary Bar -->
+          <div class="row mt-4 pt-3 border-top">
+            <div class="col">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-3">
+                  <% alert_counts = @system_alerts.group_by { |a| a[:priority] }.transform_values(&:count) %>
+                  
+                  <div class="text-center">
+                    <div class="fw-bold text-danger fs-4"><%= alert_counts['critical'] || 0 %></div>
+                    <small class="text-muted">Critical</small>
+                  </div>
+                  <div class="text-center">
+                    <div class="fw-bold text-warning fs-4"><%= alert_counts['high'] || 0 %></div>
+                    <small class="text-muted">High</small>
+                  </div>
+                  <div class="text-center">
+                    <div class="fw-bold text-info fs-4"><%= alert_counts['medium'] || 0 %></div>
+                    <small class="text-muted">Medium</small>
+                  </div>
+                  <div class="text-center">
+                    <div class="fw-bold text-secondary fs-4"><%= alert_counts['low'] || 0 %></div>
+                    <small class="text-muted">Low</small>
+                  </div>
+                </div>
+                
+                <div class="btn-group btn-group-sm">
+                  <%= link_to vaccination_records_path, class: "btn btn-outline-warning", title: "Manage Vaccinations" do %>
+                    <i class="bi bi-shield-check me-1"></i>Vaccinations
+                  <% end %>
+                  <%= link_to health_records_path, class: "btn btn-outline-success", title: "Health Records" do %>
+                    <i class="bi bi-heart-pulse me-1"></i>Health
+                  <% end %>
+                  <%= link_to breeding_records_path, class: "btn btn-outline-primary", title: "Breeding Records" do %>
+                    <i class="bi bi-heart me-1"></i>Breeding
+                  <% end %>
+                  <%= link_to alerts_path, class: "btn btn-outline-secondary", title: "View All Alerts" do %>
+                    <i class="bi bi-list me-1"></i>All Alerts
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        <% else %>
+          <!-- No Alerts State -->
+          <div class="text-center py-5">
+            <div class="mb-3">
+              <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+            </div>
+            <h5 class="text-success mb-2">All Systems Green! 🎉</h5>
+            <p class="text-muted mb-3">No alerts or urgent actions needed at this time.</p>
+            <p class="small text-muted">
+              <i class="bi bi-clock me-1"></i>
+              Last checked: <%= Time.current.strftime("%I:%M %p") %> • 
+              <i class="bi bi-calendar-date me-1"></i>
+              <%= Date.current.strftime("%B %d, %Y") %>
+            </p>
+            <div class="d-flex justify-content-center gap-2 mt-3">
+              <%= link_to animal_management_dashboard_path, class: "btn btn-outline-success btn-sm" do %>
+                <i class="bi bi-heart-pulse me-1"></i>Animal Health Dashboard
+              <% end %>
+              <%= link_to new_health_record_path, class: "btn btn-outline-primary btn-sm" do %>
+                <i class="bi bi-plus-circle me-1"></i>Add Health Record
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Quick Actions & Status Dashboard -->
 <div class="row g-4 mb-5">
   <div class="col-lg-6">
@@ -1721,5 +1903,71 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 10px;
     transition: width 1.5s ease-in-out;
     background: var(--success-gradient);
+  }
+
+  /* System Alerts Widget Styles */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .alert-sm {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .alert-sm:hover {
+    transform: translateX(3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .border-danger { border-color: #dc3545 !important; }
+  .border-warning { border-color: #ffc107 !important; }
+  .border-info { border-color: #0dcaf0 !important; }
+  .border-success { border-color: #198754 !important; }
+
+  .bg-danger-subtle { background-color: rgba(220, 53, 69, 0.1); }
+  .bg-warning-subtle { background-color: rgba(255, 193, 7, 0.1); }
+  .bg-info-subtle { background-color: rgba(13, 202, 240, 0.1); }
+  .bg-success-subtle { background-color: rgba(25, 135, 84, 0.1); }
+
+  .text-danger { color: #dc3545; }
+  .text-warning { color: #ffc107; }
+  .text-info { color: #0dcaf0; }
+  .text-success { color: #198754; }
+
+  .alert-pulse {
+    animation: alertPulse 2s infinite;
+  }
+
+  @keyframes alertPulse {
+    0% { box-shadow: 0 2px 4px rgba(220, 53, 69, 0.1); }
+    50% { box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3); }
+    100% { box-shadow: 0 2px 4px rgba(220, 53, 69, 0.1); }
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Alert category icons */
+  .alert .bi {
+    margin-top: 2px;
+  }
+
+  /* Responsive adjustments for alerts */
+  @media (max-width: 768px) {
+    .alert-sm {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+    }
+    
+    .alert-sm .btn-sm {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.75rem;
+    }
   }
 </style>
