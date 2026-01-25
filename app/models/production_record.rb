@@ -12,9 +12,7 @@ class ProductionRecord < ApplicationRecord
 
   # Callbacks
   before_save :calculate_total_production
-  after_create :invalidate_analytics_cache
-  after_update :invalidate_analytics_cache
-  after_destroy :invalidate_analytics_cache
+  after_commit :invalidate_analytics_cache_async, on: [:create, :update, :destroy]
 
   # Scopes
   scope :for_date, ->(date) { where(production_date: date) }
@@ -223,19 +221,23 @@ class ProductionRecord < ApplicationRecord
     self.total_production = (morning_production || 0) + (noon_production || 0) + (evening_production || 0)
   end
 
+  def invalidate_analytics_cache_async
+    # Use specific cache keys instead of expensive regex patterns
+    CacheInvalidationJob.perform_later(
+      farm_id: farm_id,
+      cow_id: cow_id,
+      production_date: production_date
+    )
+  end
+
+  # Immediate cache invalidation for critical operations (keep this for backwards compatibility)
   def invalidate_analytics_cache
-    # Clear farm-specific caches (using proper regex patterns)
-    Rails.cache.delete_matched(/.*farm_#{farm_id}.*/)
-    Rails.cache.delete_matched(/.*cow_#{cow_id}.*/)
-
-    # Clear general analytics caches
-    Rails.cache.delete_matched(/top_performers.*/)
-    Rails.cache.delete_matched(/production_summary.*/)
-    Rails.cache.delete_matched(/analytics.*/)
-    Rails.cache.delete_matched(/weekly_trends.*/)
-
-    # Clear daily and monthly totals
-    Rails.cache.delete_matched(/.*daily_farm_total.*/)
-    Rails.cache.delete_matched(/.*monthly_farm_total.*/)
+    # Clear only the most critical caches immediately
+    Rails.cache.delete("daily_farm_total_#{farm_id}_#{production_date}")
+    Rails.cache.delete("monthly_farm_total_#{farm_id}_#{production_date.month}_#{production_date.year}")
+    
+    # Clear production summary for this farm and date range
+    date_key = production_date.to_date
+    Rails.cache.delete("production_summary_#{farm_id}_#{date_key}_#{date_key}")
   end
 end

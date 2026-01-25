@@ -146,19 +146,23 @@ class ProductionRecordsController < ApplicationController
       @readonly_mode = false
     end
 
-    # Get all animals that can be milked with optimized single query
-    @cows = if @farm
-              @farm.cows.milkable_animals.includes(:farm).order(:name)
-    else
-              Cow.milkable_animals.includes(:farm).order(:name)
+    # PERFORMANCE OPTIMIZATION: Get all animals that can be milked with caching
+    cache_key = "milkable_cows_#{@farm&.id}_#{Date.current}"
+    @cows = Rails.cache.fetch(cache_key, expires_in: 2.hours) do
+      if @farm
+        @farm.cows.milkable_animals.includes(:farm).order(:name).to_a
+      else
+        Cow.milkable_animals.includes(:farm).order(:name).to_a
+      end
     end
 
-    # Get existing records for the date with optimized single query
+    # PERFORMANCE OPTIMIZATION: Get existing records with single optimized query
     @existing_records = {}
     if @cows.any?
-      cow_ids = @cows.pluck(:id)
+      cow_ids = @cows.map(&:id)
       existing_records_array = ProductionRecord
         .where(cow_id: cow_ids, production_date: @date)
+        .includes(:cow)
         .index_by(&:cow_id)
       @existing_records = existing_records_array
     end
@@ -202,55 +206,80 @@ class ProductionRecordsController < ApplicationController
     updated_cows = []
     real_time_updates = []
 
-    params[:records]&.each do |cow_id, record_params|
-      # Skip if all production values are blank or zero
-      next if all_production_empty?(record_params)
+    # PERFORMANCE OPTIMIZATION: Batch load all cows to prevent N+1 queries
+    cow_ids = params[:records]&.keys || []
+    cows_by_id = Cow.where(id: cow_ids).includes(:farm).index_by(&:id)
 
-      cow = Cow.find(cow_id)
-      record = ProductionRecord.find_or_initialize_by(
-        cow: cow,
-        production_date: @date
-      )
+    # PERFORMANCE OPTIMIZATION: Batch load existing records
+    existing_records = ProductionRecord.where(
+      cow_id: cow_ids,
+      production_date: @date
+    ).index_by(&:cow_id)
 
-      # Track original values for change detection
-      was_new_record = record.new_record?
-      original_total = record.total_production || 0
+    # PERFORMANCE OPTIMIZATION: Use database transaction for atomicity
+    ProductionRecord.transaction do
+      params[:records]&.each do |cow_id, record_params|
+        # Skip if all production values are blank or zero
+        next if all_production_empty?(record_params)
 
-      record.assign_attributes(
-        farm: @farm,
-        morning_production: sanitize_production_value(record_params[:morning_production]),
-        noon_production: sanitize_production_value(record_params[:noon_production]),
-        evening_production: sanitize_production_value(record_params[:evening_production])
-      )
+        cow = cows_by_id[cow_id.to_i]
+        unless cow
+          error_count += 1
+          errors << "Cow with ID #{cow_id} not found"
+          next
+        end
 
-      if record.save
-        success_count += 1
-        updated_cows << {
-          name: cow.name,
-          was_new: was_new_record,
-          old_total: original_total,
-          new_total: record.total_production
-        }
+        # Use existing record or create new one
+        record = existing_records[cow.id] || ProductionRecord.new(
+          cow: cow,
+          production_date: @date,
+          farm: @farm
+        )
 
-        # Prepare real-time update data
-        real_time_updates << {
-          cow_id: cow.id,
-          cow_name: cow.name,
-          morning_production: record.morning_production,
-          noon_production: record.noon_production,
-          evening_production: record.evening_production,
-          total_production: record.total_production,
-          updated_at: record.updated_at.iso8601
-        }
-      else
-        error_count += 1
-        errors << "#{cow.name}: #{record.errors.full_messages.join(', ')}"
+        # Track original values for change detection
+        was_new_record = record.new_record?
+        original_total = record.total_production || 0
+
+        record.assign_attributes(
+          morning_production: sanitize_production_value(record_params[:morning_production]),
+          noon_production: sanitize_production_value(record_params[:noon_production]),
+          evening_production: sanitize_production_value(record_params[:evening_production])
+        )
+
+        if record.save
+          success_count += 1
+          updated_cows << {
+            name: cow.name,
+            was_new: was_new_record,
+            old_total: original_total,
+            new_total: record.total_production
+          }
+
+          # Prepare real-time update data
+          real_time_updates << {
+            cow_id: cow.id,
+            cow_name: cow.name,
+            morning_production: record.morning_production,
+            noon_production: record.noon_production,
+            evening_production: record.evening_production,
+            total_production: record.total_production,
+            updated_at: record.updated_at.iso8601
+          }
+        else
+          error_count += 1
+          errors << "#{cow.name}: #{record.errors.full_messages.join(', ')}"
+        end
+      end
+
+      # If there are any errors, rollback the transaction
+      if error_count > 0 && success_count == 0
+        raise ActiveRecord::Rollback, "All records failed validation"
       end
     end
 
-    # Broadcast real-time updates to other browser windows
+    # PERFORMANCE OPTIMIZATION: Broadcast real-time updates asynchronously
     if real_time_updates.any?
-      broadcast_bulk_entry_updates(@farm&.id, @date, real_time_updates)
+      BroadcastUpdatesJob.perform_later(@farm&.id, @date, real_time_updates)
     end
 
     # Handle different response formats
