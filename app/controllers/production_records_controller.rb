@@ -146,22 +146,24 @@ class ProductionRecordsController < ApplicationController
       @readonly_mode = false
     end
 
-    # Get all animals that can be milked (active cows + graduated calves)
+    # Get all animals that can be milked with optimized single query
     @cows = if @farm
-              @farm.cows.milkable_animals.order(:name)
+              @farm.cows.milkable_animals.includes(:farm).order(:name)
     else
-              Cow.milkable_animals.order(:name)
+              Cow.milkable_animals.includes(:farm).order(:name)
     end
 
-    # Get existing records for the date with optimized query
+    # Get existing records for the date with optimized single query
     @existing_records = {}
     if @cows.any?
-      ProductionRecord.where(cow: @cows, production_date: @date).includes(:cow).each do |record|
-        @existing_records[record.cow_id] = record
-      end
+      cow_ids = @cows.pluck(:id)
+      existing_records_array = ProductionRecord
+        .where(cow_id: cow_ids, production_date: @date)
+        .index_by(&:cow_id)
+      @existing_records = existing_records_array
     end
 
-    # Create records for all cows (existing or new)
+    # Create records for all cows (existing or new) - avoid N+1 queries
     @records = @cows.map do |cow|
       @existing_records[cow.id] || ProductionRecord.new(
         cow: cow,
@@ -173,10 +175,10 @@ class ProductionRecordsController < ApplicationController
       )
     end
 
-    # Calculate enhanced summary statistics
+    # Calculate enhanced summary statistics efficiently
     @summary_stats = calculate_bulk_entry_stats(@records, @existing_records)
 
-    # Additional data for enhanced UI
+    # Additional data for enhanced UI - optimized queries
     @previous_day_data = get_previous_day_averages(@farm, @date - 1.day) if @farm
     @farm_average = calculate_farm_daily_average(@farm) if @farm
 

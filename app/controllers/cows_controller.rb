@@ -3,20 +3,18 @@ class CowsController < ApplicationController
   before_action :set_cow, only: [ :show, :edit, :update, :destroy, :graduate_to_dairy, :mark_as_sold, :mark_as_deceased, :reactivate ]
 
   def index
-    # Build base query with optimizations for large datasets
-    @base_query = Cow.includes(:farm).joins(:farm)
+    # Build base query with aggressive eager loading to prevent N+1 queries
+    @base_query = Cow.includes(:farm, :mother, production_records: [:farm])
+                     .joins(:farm)
+                     .references(:farm)
 
     # Apply farm filter
     @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
     @base_query = @base_query.where(farm_id: @farm.id) if @farm
 
-    # Apply search filter
+    # Apply search filter using optimized scope
     if params[:search].present?
-      search_term = "%#{params[:search]}%"
-      @base_query = @base_query.where(
-        "cows.name ILIKE ? OR cows.tag_number ILIKE ? OR cows.breed ILIKE ?",
-        search_term, search_term, search_term
-      )
+      @base_query = @base_query.search_by_name_or_tag(params[:search])
     end
 
     # Apply status filter
@@ -63,17 +61,14 @@ class CowsController < ApplicationController
     # Get total count before pagination (for pagination info)
     @total_count = @base_query.count
 
-    # Apply pagination
+    # Apply pagination with consistent includes
     per_page = (params[:per_page] || 50).to_i.clamp(25, 250)
     @cows = @base_query.page(params[:page]).per(per_page)
 
-    # Ensure @cows is properly initialized for Kaminari
-    @cows = @cows.includes(:farm) if @cows.respond_to?(:includes)
-
-    # Calculate statistics
+    # Calculate statistics efficiently
     @stats = calculate_cow_stats
 
-    # Load production data efficiently for table display
+    # Load production data efficiently for table display only when needed
     load_production_data_for_table if params[:view] != "cards"
 
     # Handle different response formats
@@ -343,32 +338,37 @@ class CowsController < ApplicationController
                                 :current_weight, :prev_weight, :weight_gain, :avg_daily_gain, :birth_date)
   end
 
-  # Calculate summary statistics efficiently
+  # Calculate summary statistics efficiently with caching
   def calculate_cow_stats
-    # Get cow IDs from the filtered query to avoid GROUP BY issues
-    cow_ids = @base_query.pluck(:id)
+    # Use cache key based on query parameters to avoid recalculation
+    cache_key = "cow_stats_#{@farm&.id}_#{params[:animal_type]}_#{params[:status]}_#{params[:search]}_#{Date.current}"
+    
+    Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+      # Get cow IDs from the filtered query to avoid GROUP BY issues
+      cow_ids = @base_query.pluck(:id)
 
-    if cow_ids.any?
-      stats = {}
-      stats[:total_count] = cow_ids.count
-      stats[:active_count] = @base_query.where(status: "active").count
+      if cow_ids.any?
+        stats = {}
+        stats[:total_count] = cow_ids.count
+        stats[:active_count] = @base_query.where(status: "active").count
 
-      # Add calves-specific stats when viewing calves
-      if params[:animal_type] == "calves"
-        stats.merge!(calculate_calves_stats(cow_ids))
+        # Add calves-specific stats when viewing calves
+        if params[:animal_type] == "calves"
+          stats.merge!(calculate_calves_stats(cow_ids))
+        else
+          # Optimized stats for adults/all with single query
+          recent_production = ProductionRecord.joins(:cow)
+            .where(cow_id: cow_ids)
+            .where("production_date >= ?", 7.days.ago)
+
+          stats[:avg_daily_production] = recent_production.average(:total_production)&.round(2) || 0
+          stats[:total_recent_production] = recent_production.sum(:total_production)&.round(2) || 0
+        end
+
+        stats
       else
-        # Existing stats for adults/all
-        recent_production = ProductionRecord.joins(:cow)
-          .where(cow_id: cow_ids)
-          .where("production_date >= ?", 7.days.ago)
-
-        stats[:avg_daily_production] = recent_production.average(:total_production)&.round(2) || 0
-        stats[:total_recent_production] = recent_production.sum(:total_production)&.round(2) || 0
+        default_stats
       end
-
-      stats
-    else
-      default_stats
     end
   end
 
@@ -467,20 +467,36 @@ class CowsController < ApplicationController
     }
   end
 
+  # Default statistics when no cows found
+  def default_stats
+    {
+      total_count: 0,
+      active_count: 0,
+      avg_daily_production: 0,
+      total_recent_production: 0,
+      avg_weight: 0,
+      total_weight_gain: 0,
+      avg_daily_gain: 0,
+      with_mothers_count: 0,
+      fast_growing_count: 0,
+      birth_this_year: 0
+    }
+  end
+
   # Load production data for table display (only when needed)
   def load_production_data_for_table
     return if @cows.empty?
 
     cow_ids = @cows.pluck(:id)
 
-    # Get last production record for each cow
+    # Get last production record for each cow - optimized query
     @last_productions = ProductionRecord
       .select("DISTINCT ON (cow_id) cow_id, production_date, total_production")
       .where(cow_id: cow_ids)
       .order(:cow_id, production_date: :desc)
       .index_by(&:cow_id)
 
-    # Get 30-day totals for each cow
+    # Get 30-day totals for each cow in single query
     @monthly_productions = ProductionRecord
       .where(cow_id: cow_ids, production_date: 30.days.ago..Date.current)
       .group(:cow_id)

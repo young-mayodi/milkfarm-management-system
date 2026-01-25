@@ -4,25 +4,22 @@ class CalvesController < ApplicationController
   before_action :load_farms, only: [ :new, :edit, :create, :update ]
 
   def index
-    @calves = Cow.calves.includes(:farm, :mother)
+    # Optimize with eager loading and scopes to prevent N+1 queries
+    @calves = Cow.calves.with_farm_and_mother
 
     # Apply filters
     @calves = @calves.where(farm: current_user.accessible_farms) unless current_user.farm_owner?
     @calves = @calves.where(farm_id: params[:farm_id]) if params[:farm_id].present?
     @calves = @calves.where("cows.status = ?", params[:status]) if params[:status].present?
-    @calves = @calves.where("cows.name ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+    @calves = @calves.search_by_name_or_tag(params[:search]) if params[:search].present?
 
-    # For analytics, we don't need production_records since we use database columns
-    # Only include production_records for the show page or when specifically needed
-    @calves_with_production = @calves.includes(:production_records) if params[:with_production] == "true"
-
-    # Pagination and ordering
+    # Pagination and ordering - avoid loading production records unless specifically needed
     @calves = @calves.order("cows.name").page(params[:page]).per(20)
 
-    # Calculate statistics
+    # Calculate statistics efficiently
     calculate_calf_stats
 
-    # Chart data for calf analytics
+    # Chart data for calf analytics - only when calves exist
     prepare_calf_analytics if @calves.any?
 
     respond_to do |format|
