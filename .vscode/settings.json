@@ -1,0 +1,40 @@
+{
+  "files.exclude": {
+    "**/log/**": true,
+    "**/tmp/**": true,
+    "**/*.log": true,
+    "**/node_modules/**": true,
+    "**/vendor/bundle/**": true,
+    "**/.ruby-lsp/Gemfile.lock": true,
+    "**/docs/archive/**": true,
+    "**/scripts/tests/**": true
+  },
+  "search.exclude": {
+    "**/log/**": true,
+    "**/tmp/**": true,
+    "**/node_modules/**": true,
+    "**/vendor/bundle/**": true,
+    "**/.git/**": true,
+    "**/docs/archive/**": true,
+    "**/scripts/tests/**": true
+  },
+  "files.watcherExclude": {
+    "**/log/**": true,
+    "**/tmp/**": true,
+    "**/node_modules/**": true,
+    "**/vendor/bundle/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/docs/archive/**": true,
+    "**/scripts/tests/**": true
+  },
+  "ruby.intellisense": "rubyLsp",
+  "ruby.format": "rubyLsp",
+  "ruby.lint": {
+    "rubocop": false
+  },
+  "editor.formatOnSave": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": false
+  }
+}
