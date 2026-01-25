@@ -40,24 +40,16 @@ class SessionsController < ApplicationController
               <input type="hidden" name="authenticity_token" value="#{form_authenticity_token}">
               <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
-                <input type="email" name="email" id="email" class="form-control" required value="owner@bamafarm.com">
+                <input type="email" name="email" id="email" class="form-control" required>
               </div>
               <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
-                <input type="password" name="password" id="password" class="form-control" required value="password123">
+                <input type="password" name="password" id="password" class="form-control" required>
               </div>
               <div class="d-grid">
                 <button type="submit" class="btn btn-primary">Sign In</button>
               </div>
             </form>
-            
-            <div class="mt-3 p-3 bg-light rounded">
-              <small>
-                <strong>Demo Account:</strong><br>
-                Email: owner@bamafarm.com<br>
-                Password: password123
-              </small>
-            </div>
           </div>
         </div>
       </body>
@@ -152,14 +144,6 @@ class SessionsController < ApplicationController
                 <button type="submit" class="btn btn-primary">Sign In</button>
               </div>
             </form>
-            
-            <div class="mt-3 p-3 bg-light rounded">
-              <small>
-                <strong>Demo Account:</strong><br>
-                Email: owner@bamafarm.com<br>
-                Password: password123
-              </small>
-            </div>
           </div>
         </div>
       </body>
