@@ -430,6 +430,36 @@ class ProductionRecordsController < ApplicationController
     end
   end
 
+  # Detailed production trends report with individual cow data by milking periods
+  def production_trends
+    @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
+    @start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : 7.days.ago
+    @end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.current
+    
+    # Ensure valid date range
+    if @start_date > @end_date
+      @start_date, @end_date = @end_date, @start_date
+    end
+    
+    date_range = @start_date..@end_date
+    
+    # Cache key for performance
+    cache_key = "production_trends_#{@farm&.id}_#{@start_date}_#{@end_date}"
+    
+    @trends_data = Rails.cache.fetch(cache_key, expires_in: 30.minutes) do
+      generate_detailed_trends_data(date_range, @farm)
+    end
+
+    # Get farms for dropdown
+    @farms = Farm.includes(:cows).order(:name)
+
+    respond_to do |format|
+      format.html
+      format.json { render json: @trends_data }
+      format.csv { send_trends_csv_report }
+    end
+  end
+
   private
 
   def set_farm_and_cow
@@ -668,4 +698,184 @@ class ProductionRecordsController < ApplicationController
       days_counted: recent_records.group(:production_date).count.keys.count
     }
   end
+
+  # Helper methods for detailed production trends
+  def generate_detailed_trends_data(date_range, farm)
+    # Base query for production records
+    records = ProductionRecord.includes(cow: [:farm])
+                             .where(production_date: date_range)
+    records = records.where(farm: farm) if farm
+
+    # Group by date and cow
+    daily_cow_data = {}
+    cow_totals = Hash.new { |h, k| h[k] = { morning: 0, noon: 0, evening: 0, night: 0, total: 0, days: 0 } }
+    date_totals = Hash.new { |h, k| h[k] = { morning: 0, noon: 0, evening: 0, night: 0, total: 0, cow_count: 0 } }
+
+    records.each do |record|
+      date = record.production_date
+      cow = record.cow
+      
+      # Initialize date hash if needed
+      daily_cow_data[date] ||= {}
+      
+      # Store individual cow data for the date
+      daily_cow_data[date][cow.id] = {
+        cow_name: cow.name,
+        cow_tag: cow.tag_number,
+        farm_name: cow.farm.name,
+        morning: record.morning_production.to_f,
+        noon: record.noon_production.to_f,
+        evening: record.evening_production.to_f,
+        night: record.night_production.to_f,
+        total: record.total_production.to_f
+      }
+      
+      # Update cow totals
+      cow_totals[cow.id][:morning] += record.morning_production.to_f
+      cow_totals[cow.id][:noon] += record.noon_production.to_f
+      cow_totals[cow.id][:evening] += record.evening_production.to_f
+      cow_totals[cow.id][:night] += record.night_production.to_f
+      cow_totals[cow.id][:total] += record.total_production.to_f
+      cow_totals[cow.id][:days] += 1
+      cow_totals[cow.id][:cow_name] = cow.name
+      cow_totals[cow.id][:cow_tag] = cow.tag_number
+      cow_totals[cow.id][:farm_name] = cow.farm.name
+      
+      # Update date totals
+      date_totals[date][:morning] += record.morning_production.to_f
+      date_totals[date][:noon] += record.noon_production.to_f
+      date_totals[date][:evening] += record.evening_production.to_f
+      date_totals[date][:night] += record.night_production.to_f
+      date_totals[date][:total] += record.total_production.to_f
+      date_totals[date][:cow_count] += 1
+    end
+
+    # Calculate cow averages
+    cow_totals.each do |cow_id, data|
+      days = data[:days]
+      if days > 0
+        data[:avg_morning] = (data[:morning] / days).round(1)
+        data[:avg_noon] = (data[:noon] / days).round(1)
+        data[:avg_evening] = (data[:evening] / days).round(1)
+        data[:avg_night] = (data[:night] / days).round(1)
+        data[:avg_total] = (data[:total] / days).round(1)
+      end
+    end
+
+    # Summary statistics
+    summary = calculate_trends_summary(records, date_range)
+
+    {
+      daily_data: daily_cow_data.sort_by { |date, _| date }.reverse.to_h,
+      date_totals: date_totals.sort_by { |date, _| date }.reverse.to_h,
+      cow_totals: cow_totals.sort_by { |_, data| -data[:total] }.to_h,
+      summary: summary,
+      date_range: { start: date_range.begin, end: date_range.end },
+      total_days: date_range.count,
+      farm_name: farm&.name
+    }
+  end
+
+  def calculate_trends_summary(records, date_range)
+    total_records = records.count
+    return { message: "No production data found for the selected period" } if total_records.zero?
+
+    # Aggregate totals
+    morning_total = records.sum(:morning_production).to_f
+    noon_total = records.sum(:noon_production).to_f
+    evening_total = records.sum(:evening_production).to_f
+    night_total = records.sum(:night_production).to_f
+    grand_total = morning_total + noon_total + evening_total + night_total
+
+    # Calculate averages
+    avg_morning = (records.average(:morning_production) || 0).to_f.round(1)
+    avg_noon = (records.average(:noon_production) || 0).to_f.round(1)
+    avg_evening = (records.average(:evening_production) || 0).to_f.round(1)
+    avg_night = (records.average(:night_production) || 0).to_f.round(1)
+    avg_total = (records.average(:total_production) || 0).to_f.round(1)
+
+    # Find peak performers
+    peak_performers = {
+      morning: records.order(morning_production: :desc).first,
+      noon: records.order(noon_production: :desc).first,
+      evening: records.order(evening_production: :desc).first,
+      night: records.order(night_production: :desc).first,
+      total: records.order(total_production: :desc).first
+    }
+
+    {
+      total_records: total_records,
+      period_days: date_range.count,
+      totals: {
+        morning: morning_total.round(1),
+        noon: noon_total.round(1),
+        evening: evening_total.round(1),
+        night: night_total.round(1),
+        grand_total: grand_total.round(1)
+      },
+      averages: {
+        morning: avg_morning,
+        noon: avg_noon,
+        evening: avg_evening,
+        night: avg_night,
+        total: avg_total
+      },
+      percentages: {
+        morning: grand_total > 0 ? (morning_total / grand_total * 100).round(1) : 0,
+        noon: grand_total > 0 ? (noon_total / grand_total * 100).round(1) : 0,
+        evening: grand_total > 0 ? (evening_total / grand_total * 100).round(1) : 0,
+        night: grand_total > 0 ? (night_total / grand_total * 100).round(1) : 0
+      },
+      peak_performers: peak_performers.transform_values do |record|
+        if record
+          {
+            cow_name: record.cow.name,
+            cow_tag: record.cow.tag_number,
+            value: record.total_production.to_f,
+            date: record.production_date
+          }
+        else
+          nil
+        end
+      end,
+      unique_cows: records.joins(:cow).distinct.count("cows.id"),
+      active_farms: records.joins(:farm).distinct.count("farms.id")
+    }
+  end
+
+  def send_trends_csv_report
+    require 'csv'
+    
+    csv_data = CSV.generate(headers: true) do |csv|
+      # Headers
+      csv << [
+        'Date', 'Cow Name', 'Tag Number', 'Farm',
+        'Morning (L)', 'Noon (L)', 'Evening (L)', 'Night (L)', 'Total (L)'
+      ]
+      
+      # Data rows
+      @trends_data[:daily_data].each do |date, cows_data|
+        cows_data.each do |cow_id, cow_data|
+          csv << [
+            date,
+            cow_data[:cow_name],
+            cow_data[:cow_tag],
+            cow_data[:farm_name],
+            cow_data[:morning],
+            cow_data[:noon],
+            cow_data[:evening],
+            cow_data[:night],
+            cow_data[:total]
+          ]
+        end
+      end
+    end
+
+    filename = "production_trends_#{@start_date}_to_#{@end_date}"
+    filename += "_#{@farm.name.parameterize}" if @farm
+    filename += ".csv"
+
+    send_data csv_data, filename: filename, type: 'text/csv'
+  end
+
 end
