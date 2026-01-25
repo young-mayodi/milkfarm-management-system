@@ -107,47 +107,21 @@
             </div>
 
             <div class="row">
-              <!-- Heart Rate -->
+              <!-- Recorded By -->
               <div class="col-md-6 mb-3">
-                <%= form.label :heart_rate, "Heart Rate (BPM)", class: "form-label" %>
-                <%= form.number_field :heart_rate, 
+                <%= form.label :recorded_by, "Recorded By", class: "form-label" %>
+                <%= form.text_field :recorded_by, 
                     class: "form-control",
-                    min: 0,
-                    placeholder: "60" %>
-                <small class="form-text text-muted">
-                  Normal range: 60-80 BPM
-                </small>
+                    placeholder: "Your name" %>
               </div>
 
-              <!-- Respiratory Rate -->
+              <!-- Veterinarian -->
               <div class="col-md-6 mb-3">
-                <%= form.label :respiratory_rate, "Respiratory Rate (/min)", class: "form-label" %>
-                <%= form.number_field :respiratory_rate, 
+                <%= form.label :veterinarian, "Veterinarian", class: "form-label" %>
+                <%= form.text_field :veterinarian, 
                     class: "form-control",
-                    min: 0,
-                    placeholder: "20" %>
-                <small class="form-text text-muted">
-                  Normal range: 15-30 per minute
-                </small>
+                    placeholder: "Dr. Smith (optional)" %>
               </div>
-            </div>
-
-            <!-- Symptoms -->
-            <div class="mb-3">
-              <%= form.label :symptoms, "Symptoms/Observations", class: "form-label" %>
-              <%= form.text_area :symptoms, 
-                  class: "form-control",
-                  rows: 3,
-                  placeholder: "Describe any symptoms, behavior changes, or observations..." %>
-            </div>
-
-            <!-- Treatment -->
-            <div class="mb-3">
-              <%= form.label :treatment, "Treatment Given", class: "form-label" %>
-              <%= form.text_area :treatment, 
-                  class: "form-control",
-                  rows: 2,
-                  placeholder: "Describe any treatment, medication, or intervention..." %>
             </div>
 
             <!-- Additional Notes -->

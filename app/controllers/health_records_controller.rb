@@ -78,7 +78,7 @@ class HealthRecordsController < ApplicationController
   def health_record_params
     params.require(:health_record).permit(
       :cow_id, :health_status, :temperature, :weight, :notes,
-      :recorded_by, :recorded_at, :veterinarian, :symptoms, :treatment
+      :recorded_by, :recorded_at, :veterinarian
     )
   end
 end
