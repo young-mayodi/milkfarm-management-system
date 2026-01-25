@@ -359,20 +359,20 @@ class DashboardController < ApplicationController
 
     # Critical Health Alerts (Red)
     sick_animals = HealthRecord.joins(:cow)
-                              .where(health_status: ['sick', 'critical', 'injured'])
+                              .where(health_status: [ "sick", "critical", "injured" ])
                               .where(recorded_at: 7.days.ago..Time.current)
                               .includes(:cow)
                               .limit(5)
 
     sick_animals.each do |record|
       alerts << {
-        type: 'danger',
-        category: 'Health',
+        type: "danger",
+        category: "Health",
         title: "#{record.cow.name} requires attention",
         message: "Status: #{record.health_status.humanize}#{record.temperature ? " (#{record.temperature}°C)" : ''}",
         date: record.recorded_at,
-        priority: 'critical',
-        icon: 'heart-pulse',
+        priority: "critical",
+        icon: "heart-pulse",
         link: health_record_path(record),
         cow: record.cow
       }
@@ -382,13 +382,13 @@ class DashboardController < ApplicationController
     @overdue_vaccinations.each do |vaccination|
       days_overdue = (Date.current - vaccination.next_due_date).to_i
       alerts << {
-        type: 'danger',
-        category: 'Vaccination',
+        type: "danger",
+        category: "Vaccination",
         title: "#{vaccination.cow.name} - Overdue vaccination",
         message: "#{vaccination.vaccine_name} (#{days_overdue} days overdue)",
         date: vaccination.next_due_date,
-        priority: 'critical',
-        icon: 'shield-exclamation',
+        priority: "critical",
+        icon: "shield-exclamation",
         link: vaccination_records_path,
         cow: vaccination.cow
       }
@@ -398,13 +398,13 @@ class DashboardController < ApplicationController
     @due_vaccinations.each do |vaccination|
       days_until_due = (vaccination.next_due_date - Date.current).to_i
       alerts << {
-        type: 'warning',
-        category: 'Vaccination',
+        type: "warning",
+        category: "Vaccination",
         title: "#{vaccination.cow.name} - Vaccination due",
         message: "#{vaccination.vaccine_name} (due in #{days_until_due} days)",
         date: vaccination.next_due_date,
-        priority: 'high',
-        icon: 'shield-check',
+        priority: "high",
+        icon: "shield-check",
         link: vaccination_records_path,
         cow: vaccination.cow
       }
@@ -414,13 +414,13 @@ class DashboardController < ApplicationController
     @overdue_births.each do |breeding|
       days_overdue = (Date.current - breeding.expected_due_date).to_i
       alerts << {
-        type: 'danger',
-        category: 'Breeding',
+        type: "danger",
+        category: "Breeding",
         title: "#{breeding.cow.name} - Birth overdue",
         message: "Expected due date was #{breeding.expected_due_date.strftime('%b %d')} (#{days_overdue} days ago)",
         date: breeding.expected_due_date,
-        priority: 'critical',
-        icon: 'heart-exclamation',
+        priority: "critical",
+        icon: "heart-exclamation",
         link: breeding_records_path,
         cow: breeding.cow
       }
@@ -430,13 +430,13 @@ class DashboardController < ApplicationController
     @due_births.each do |breeding|
       days_until_due = (breeding.expected_due_date - Date.current).to_i
       alerts << {
-        type: 'info',
-        category: 'Breeding',
+        type: "info",
+        category: "Breeding",
         title: "#{breeding.cow.name} - Birth expected",
         message: "Due date: #{breeding.expected_due_date.strftime('%b %d')} (in #{days_until_due} days)",
         date: breeding.expected_due_date,
-        priority: 'medium',
-        icon: 'heart-fill',
+        priority: "medium",
+        icon: "heart-fill",
         link: breeding_records_path,
         cow: breeding.cow
       }
@@ -445,9 +445,9 @@ class DashboardController < ApplicationController
     # Low Milk Production Alerts (Warning)
     low_producer_cow_ids = ProductionRecord.joins(:cow)
                                           .where(production_date: 7.days.ago..Date.current)
-                                          .where(cows: { status: 'active' })
+                                          .where(cows: { status: "active" })
                                           .group(:cow_id)
-                                          .having('AVG(total_production) < ?', 15) # Less than 15L average
+                                          .having("AVG(total_production) < ?", 15) # Less than 15L average
                                           .limit(3)
                                           .pluck(:cow_id)
 
@@ -456,13 +456,13 @@ class DashboardController < ApplicationController
       avg_production = ProductionRecord.where(cow: cow, production_date: 7.days.ago..Date.current)
                                       .average(:total_production)&.round(1) || 0
       alerts << {
-        type: 'warning',
-        category: 'Production',
+        type: "warning",
+        category: "Production",
         title: "#{cow.name} - Low production",
         message: "Average: #{avg_production}L/day (below 15L threshold)",
         date: Date.current,
-        priority: 'medium',
-        icon: 'droplet-half',
+        priority: "medium",
+        icon: "droplet-half",
         link: cow_path(cow),
         cow: cow
       }
@@ -479,30 +479,30 @@ class DashboardController < ApplicationController
     animals_due_checkup.each do |cow|
       last_checkup = cow.health_records.order(recorded_at: :desc).first
       days_since = last_checkup ? (Date.current - last_checkup.recorded_at.to_date).to_i : 99
-      
+
       alerts << {
-        type: 'info',
-        category: 'Health',
+        type: "info",
+        category: "Health",
         title: "#{cow.name} - Health checkup due",
         message: last_checkup ? "Last checkup #{days_since} days ago" : "No previous health records",
         date: Date.current,
-        priority: 'low',
-        icon: 'clipboard-heart',
+        priority: "low",
+        icon: "clipboard-heart",
         link: new_health_record_path(cow_id: cow.id),
         cow: cow
       }
     end
 
     # Weather/Seasonal Alerts (if applicable)
-    if Date.current.month.in?([6, 7, 8]) # Summer months
+    if Date.current.month.in?([ 6, 7, 8 ]) # Summer months
       alerts << {
-        type: 'warning',
-        category: 'Weather',
-        title: 'Heat stress monitoring',
-        message: 'Monitor animals for heat stress during peak summer',
+        type: "warning",
+        category: "Weather",
+        title: "Heat stress monitoring",
+        message: "Monitor animals for heat stress during peak summer",
         date: Date.current,
-        priority: 'medium',
-        icon: 'thermometer-high',
+        priority: "medium",
+        icon: "thermometer-high",
         link: health_records_path,
         cow: nil
       }
@@ -510,8 +510,8 @@ class DashboardController < ApplicationController
 
     # Sort alerts by priority and date
     alerts.sort_by do |alert|
-      priority_order = { 'critical' => 1, 'high' => 2, 'medium' => 3, 'low' => 4 }
-      [priority_order[alert[:priority]], alert[:date]]
+      priority_order = { "critical" => 1, "high" => 2, "medium" => 3, "low" => 4 }
+      [ priority_order[alert[:priority]], alert[:date] ]
     end
   end
 end

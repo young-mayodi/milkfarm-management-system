@@ -12,7 +12,7 @@ class ProductionRecord < ApplicationRecord
 
   # Callbacks
   before_save :calculate_total_production
-  after_commit :invalidate_analytics_cache, on: [:create, :update, :destroy]
+  after_commit :invalidate_analytics_cache, on: [ :create, :update, :destroy ]
 
   # Scopes
   scope :for_date, ->(date) { where(production_date: date) }
@@ -226,11 +226,11 @@ class ProductionRecord < ApplicationRecord
     # Clear only the most critical caches immediately
     Rails.cache.delete("daily_farm_total_#{farm_id}_#{production_date}")
     Rails.cache.delete("monthly_farm_total_#{farm_id}_#{production_date.month}_#{production_date.year}")
-    
+
     # Clear production summary for this farm and date range
     date_key = production_date.to_date
     Rails.cache.delete("production_summary_#{farm_id}_#{date_key}_#{date_key}")
-    
+
     # TODO: Move comprehensive cache invalidation back to background job
     # For now, clear a few more important caches immediately
     Rails.cache.delete_matched("top_performers_*")

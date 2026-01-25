@@ -1,8 +1,8 @@
 class SessionsController < ApplicationController
-  skip_before_action :authenticate_user!, only: [:new, :create, :test]
-  skip_before_action :verify_authenticity_token, only: [:create]
-  layout false, only: [:new, :test]
-  
+  skip_before_action :authenticate_user!, only: [ :new, :create, :test ]
+  skip_before_action :verify_authenticity_token, only: [ :create ]
+  layout false, only: [ :new, :test ]
+
   def new
     html = <<~HTML
       <!DOCTYPE html>
@@ -55,13 +55,13 @@ class SessionsController < ApplicationController
       </body>
       </html>
     HTML
-    
+
     render html: html.html_safe
   end
-  
+
   def test
     # Quick login for testing
-    if params[:quick_login] == 'true'
+    if params[:quick_login] == "true"
       user = User.first
       if user
         session[:user_id] = user.id
@@ -73,10 +73,10 @@ class SessionsController < ApplicationController
       render layout: false
     end
   end
-  
+
   def create
     user = User.find_by(email: params[:email]&.downcase)
-    
+
     if user&.authenticate(params[:password])
       session[:user_id] = user.id
       user.update_last_sign_in!
@@ -85,14 +85,14 @@ class SessionsController < ApplicationController
       render_login_with_error("Invalid email or password")
     end
   end
-  
+
   def destroy
     session[:user_id] = nil
     redirect_to login_path, notice: "Logged out successfully"
   end
-  
+
   private
-  
+
   def render_login_with_error(error_message)
     html = <<~HTML
       <!DOCTYPE html>
@@ -149,7 +149,7 @@ class SessionsController < ApplicationController
       </body>
       </html>
     HTML
-    
+
     render html: html.html_safe
   end
 end

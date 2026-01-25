@@ -127,7 +127,7 @@ RSpec.describe 'MilkProductionSystem', type: :feature do
     it 'handles missing data gracefully' do
       # Create farm with no data
       empty_farm = FactoryBot.create(:farm)
-      
+
       visit financial_reports_path(farm_id: empty_farm.id)
       expect(page).to have_content('No data available')
     end
@@ -136,7 +136,7 @@ RSpec.describe 'MilkProductionSystem', type: :feature do
       sales = @farm.sales_records.sum(:total_sales)
       expenses = @farm.expenses.sum(:amount)
       profit = sales - expenses
-      
+
       visit financial_reports_path
       # Check that displayed profit matches calculation
       expect(page).to have_content(profit.round(2).to_s)
@@ -146,23 +146,23 @@ RSpec.describe 'MilkProductionSystem', type: :feature do
   describe 'Production Entry System' do
     it 'allows creating new production records' do
       visit production_entry_path
-      
+
       fill_in 'Morning Production', with: '15.5'
       fill_in 'Noon Production', with: '12.3'
       fill_in 'Evening Production', with: '14.2'
       select @cow.name, from: 'Cow'
-      
+
       click_button 'Save Production'
-      
+
       expect(page).to have_content('Production record saved')
       expect(ProductionRecord.last.total_production).to eq(42.0)
     end
 
     it 'validates production entry data' do
       visit production_entry_path
-      
+
       click_button 'Save Production'
-      
+
       expect(page).to have_content('Please correct the errors')
     end
   end
@@ -184,13 +184,13 @@ RSpec.describe 'MilkProductionSystem', type: :feature do
   describe 'Chart Functionality' do
     it 'renders charts without JavaScript errors', js: true do
       visit financial_reports_path
-      
+
       # Wait for charts to load
       sleep 2
-      
+
       # Check that Chart.js has loaded
       expect(page.evaluate_script('typeof Chart')).to eq('function')
-      
+
       # Check for chart elements
       expect(page).to have_css('canvas')
     end
@@ -198,9 +198,9 @@ RSpec.describe 'MilkProductionSystem', type: :feature do
     it 'charts are interactive on mobile', js: true do
       page.driver.browser.manage.window.resize_to(375, 667)
       visit financial_reports_path
-      
+
       sleep 2
-      
+
       # Touch events should be enabled
       chart_canvas = page.find('canvas', match: :first)
       expect(chart_canvas).to be_present
@@ -211,7 +211,7 @@ RSpec.describe 'MilkProductionSystem', type: :feature do
     it 'handles database connection errors gracefully' do
       # Simulate database error
       allow(ActiveRecord::Base).to receive(:connection).and_raise(ActiveRecord::ConnectionNotEstablished)
-      
+
       visit financial_reports_path
       expect(page).to have_content('Database connection error')
     end
@@ -277,7 +277,7 @@ RSpec.describe FinancialReportsController, type: :controller do
     it 'calculates profit and loss correctly' do
       create_test_financial_data(farm, cow)
       get :profit_loss
-      
+
       expect(assigns(:profit_loss_data)).to be_present
       expect(assigns(:profit_loss_data)[:revenue]).to be > 0
     end
@@ -287,7 +287,7 @@ RSpec.describe FinancialReportsController, type: :controller do
     it 'calculates cost per liter correctly' do
       create_test_financial_data(farm, cow)
       get :cost_analysis
-      
+
       expect(assigns(:cost_analysis_data)).to be_present
       expect(assigns(:cost_per_liter)).to be > 0
     end
@@ -297,7 +297,7 @@ RSpec.describe FinancialReportsController, type: :controller do
     it 'calculates ROI metrics correctly' do
       create_test_financial_data(farm, cow)
       get :roi_report
-      
+
       expect(assigns(:roi_data)).to be_present
       expect(assigns(:animal_roi)).to be_present
     end

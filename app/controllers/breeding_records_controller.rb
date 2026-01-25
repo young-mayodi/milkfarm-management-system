@@ -4,21 +4,28 @@ class BreedingRecordsController < ApplicationController
   before_action :set_cow, only: [ :index, :new, :create ]
 
   def index
-    @breeding_records = if @cow
-      @cow.breeding_records.includes(:cow).order(breeding_date: :desc)
+    # Optimize query with proper eager loading
+    base_query = if @cow
+      @cow.breeding_records
     else
-      BreedingRecord.includes(:cow).order(breeding_date: :desc)
+      BreedingRecord.all
     end
 
-    # Breeding statistics (calculate before pagination)
-    @breeding_stats = {
-      total_records: @breeding_records.count,
-      pregnant_animals: BreedingRecord.confirmed.joins(:cow).merge(Cow.active).count,
-      due_soon: BreedingRecord.due_soon.count,
-      overdue: BreedingRecord.overdue.count
-    }
+    # Cache breeding statistics for better performance
+    @breeding_stats = Rails.cache.fetch("breeding_stats_#{cache_key_for_breeding_stats}", expires_in: 5.minutes) do
+      {
+        total_records: base_query.count,
+        pregnant_animals: BreedingRecord.confirmed.joins(:cow).merge(Cow.active).count,
+        due_soon: BreedingRecord.due_soon.count,
+        overdue: BreedingRecord.overdue.count
+      }
+    end
 
-    @breeding_records = @breeding_records.page(params[:page]).per(20)
+    @breeding_records = base_query
+      .includes(cow: [ :farm ])
+      .order(breeding_date: :desc)
+      .page(params[:page])
+      .per(20)
   end
 
   def show
@@ -66,7 +73,7 @@ class BreedingRecordsController < ApplicationController
   private
 
   def set_breeding_record
-    @breeding_record = BreedingRecord.find(params[:id])
+    @breeding_record = BreedingRecord.includes(:cow).find(params[:id])
   end
 
   def set_cow
@@ -79,5 +86,10 @@ class BreedingRecordsController < ApplicationController
       :expected_due_date, :actual_due_date, :breeding_status,
       :notes, :veterinarian
     )
+  end
+
+  # Helper methods for optimization
+  def cache_key_for_breeding_stats
+    [ @cow&.id, "breeding_stats", BreedingRecord.maximum(:updated_at)&.to_i ].compact.join("_")
   end
 end

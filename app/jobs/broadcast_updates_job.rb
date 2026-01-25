@@ -11,9 +11,9 @@ class BroadcastUpdatesJob < ApplicationJob
   def broadcast_bulk_entry_updates(farm_id, date, updates)
     # Use ActionCable to broadcast updates to connected clients
     channel_name = "production_entry_#{farm_id}_#{date}"
-    
+
     ActionCable.server.broadcast(channel_name, {
-      type: 'bulk_update',
+      type: "bulk_update",
       farm_id: farm_id,
       date: date,
       updates: updates,

@@ -56,7 +56,7 @@ optimizations = [
   "",
   "3. 🔄 USE DATABASE TRANSACTIONS:",
   "   • Wrap bulk operations in single transaction",
-  "   • Implement proper rollback on errors", 
+  "   • Implement proper rollback on errors",
   "   • Use bulk_insert for new records",
   "",
   "4. ⏰ ASYNC BROADCASTING:",

@@ -41,11 +41,11 @@ class Cow < ApplicationRecord
   scope :ready_for_dairy, -> { calves.where("age >= 1.5").where("current_weight >= 80") }
   scope :can_be_milked, -> { where(status: [ "active", "graduated_to_dairy" ]).where("age >= 1.5") }
   scope :milkable_animals, -> { where(status: [ "active", "graduated_to_dairy" ]).where("age >= 1.5") }
-  
+
   # Performance optimized scopes
   scope :with_farm_and_mother, -> { includes(:farm, :mother) }
   scope :with_recent_production, -> { includes(:production_records).where(production_records: { production_date: 1.week.ago..Date.current }) }
-  scope :search_by_name_or_tag, ->(term) { 
+  scope :search_by_name_or_tag, ->(term) {
     where("cows.name ILIKE ? OR cows.tag_number ILIKE ?", "%#{term}%", "%#{term}%") if term.present?
   }
 

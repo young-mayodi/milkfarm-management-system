@@ -109,17 +109,17 @@ class ReportsController < ApplicationController
 
     # Pre-fetch production statistics for all cows in one efficient query
     cow_ids = @all_cows.pluck(:id)
-    
+
     # Use raw SQL for better performance
     production_stats = ProductionRecord.connection.execute(
-      "SELECT 
+      "SELECT
          cow_id,
          SUM(total_production) as total_production,
          AVG(total_production) as avg_daily_production,
          COUNT(*) as record_count,
          MAX(total_production) as best_day
-       FROM production_records 
-       WHERE cow_id IN (#{cow_ids.join(',')}) 
+       FROM production_records
+       WHERE cow_id IN (#{cow_ids.join(',')})
          AND production_date BETWEEN '#{start_date}' AND '#{Date.current}'
        GROUP BY cow_id"
     )
@@ -127,11 +127,11 @@ class ReportsController < ApplicationController
     # Convert results to hash
     @cow_stats = {}
     production_stats.each do |row|
-      @cow_stats[row['cow_id'].to_i] = {
-        total_production: row['total_production'].to_f,
-        avg_daily_production: row['avg_daily_production'].to_f,
-        record_count: row['record_count'].to_i,
-        best_day: row['best_day'].to_f
+      @cow_stats[row["cow_id"].to_i] = {
+        total_production: row["total_production"].to_f,
+        avg_daily_production: row["avg_daily_production"].to_f,
+        record_count: row["record_count"].to_i,
+        best_day: row["best_day"].to_f
       }
     end
 

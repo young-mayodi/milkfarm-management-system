@@ -1,24 +1,58 @@
 class VaccinationRecordsController < ApplicationController
-  before_action :authenticate_user!
+  before_action   def set_vaccination_record
+    @vaccination_record = VaccinationRecord.includes(:cow).find(params[:id])
+  end
+
+  def set_cow
+    @cow = Cow.find(params[:cow_id]) if params[:cow_id]
+  end
+
+  def vaccination_record_params
+    params.require(:vaccination_record).permit(
+      :cow_id, :vaccine_name, :vaccination_date, :administered_by,
+      :next_due_date, :batch_number, :notes, :cost
+    )
+  end
+
+  # Helper methods for optimization
+  def cache_key_for_vaccination_stats
+    [@cow&.id, 'vaccination_stats', VaccinationRecord.maximum(:updated_at)&.to_i].compact.join('_')
+  end
+
+  def calculate_up_to_date_animals
+    # More efficient database query instead of loading all cows into memory
+    Cow.active
+       .joins(:vaccination_records)
+       .where(vaccination_records: { next_due_date: Date.current.. })
+       .distinct
+       .count
+  enduser!
   before_action :set_vaccination_record, only: [ :show, :edit, :update, :destroy ]
   before_action :set_cow, only: [ :index, :new, :create ]
 
   def index
-    @vaccination_records = if @cow
-      @cow.vaccination_records.includes(:cow).order(vaccination_date: :desc)
+    # Optimize query with proper eager loading
+    base_query = if @cow
+      @cow.vaccination_records
     else
-      VaccinationRecord.includes(:cow).order(vaccination_date: :desc)
+      VaccinationRecord.all
     end
 
-    @vaccination_records = @vaccination_records.page(params[:page]).per(20)
+    @vaccination_records = base_query
+      .includes(cow: [:farm])
+      .order(vaccination_date: :desc)
+      .page(params[:page])
+      .per(20)
 
-    # Vaccination statistics
-    @vaccination_stats = {
-      total_records: @vaccination_records.count,
-      overdue_vaccinations: VaccinationRecord.overdue.count,
-      due_soon: VaccinationRecord.due_soon.count,
-      up_to_date_animals: Cow.active.select { |c| c.vaccination_status == "up_to_date" }.count
-    }
+    # Cache vaccination statistics for better performance
+    @vaccination_stats = Rails.cache.fetch("vaccination_stats_#{cache_key_for_vaccination_stats}", expires_in: 5.minutes) do
+      {
+        total_records: base_query.count,
+        overdue_vaccinations: VaccinationRecord.overdue.count,
+        due_soon: VaccinationRecord.due_soon.count,
+        up_to_date_animals: calculate_up_to_date_animals
+      }
+    end
   end
 
   def show

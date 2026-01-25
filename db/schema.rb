@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_24_235820) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_25_095716) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -101,7 +101,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_24_235820) do
     t.string "veterinarian"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["cow_id", "health_status"], name: "index_health_records_on_cow_and_status"
+    t.index ["cow_id", "recorded_at"], name: "index_health_records_on_cow_and_date"
     t.index ["cow_id"], name: "index_health_records_on_cow_id"
+    t.index ["health_status", "recorded_at"], name: "index_health_records_on_status_and_date"
+    t.index ["health_status"], name: "index_health_records_on_status"
+    t.index ["recorded_at"], name: "index_health_records_on_recorded_at"
+    t.index ["temperature"], name: "index_health_records_on_temperature"
   end
 
   create_table "production_records", force: :cascade do |t|

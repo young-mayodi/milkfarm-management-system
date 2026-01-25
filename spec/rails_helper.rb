@@ -21,7 +21,7 @@ RSpec.configure do |config|
   # Capybara configuration
   Capybara.default_driver = :selenium_chrome_headless
   Capybara.javascript_driver = :selenium_chrome_headless
-  
+
   # Configure Chrome options for headless testing
   Capybara.register_driver :selenium_chrome_headless do |app|
     chrome_options = Selenium::WebDriver::Chrome::Options.new
@@ -29,7 +29,7 @@ RSpec.configure do |config|
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--window-size=1200,800')
-    
+
     Capybara::Selenium::Driver.new(app, browser: :chrome, options: chrome_options)
   end
 
@@ -43,11 +43,11 @@ RSpec.configure do |config|
   def exceed_query_limit(limit)
     query_count = 0
     counter = ->(sql, name) { query_count += 1 }
-    
+
     ActiveSupport::Notifications.subscribed(counter, 'sql.active_record') do
       yield
     end
-    
+
     raise "Expected at most #{limit} queries, got #{query_count}" if query_count > limit
   end
 
@@ -64,23 +64,23 @@ RSpec.configure do |config|
   def create_financial_test_scenario(farm)
     # Create a realistic financial scenario
     cow = FactoryBot.create(:cow, farm: farm)
-    
+
     # Create 30 days of production records
     30.times do |i|
       date = i.days.ago.to_date
-      FactoryBot.create(:production_record, 
-                       cow: cow, 
-                       farm: farm, 
+      FactoryBot.create(:production_record,
+                       cow: cow,
+                       farm: farm,
                        production_date: date)
     end
-    
+
     # Create sales records
     10.times do |i|
-      FactoryBot.create(:sales_record, 
-                       farm: farm, 
+      FactoryBot.create(:sales_record,
+                       farm: farm,
                        sale_date: i.days.ago.to_date)
     end
-    
+
     # Create expense records
     %w[feed veterinary labor maintenance].each do |category|
       3.times do |i|
@@ -90,7 +90,7 @@ RSpec.configure do |config|
                          expense_date: i.weeks.ago.to_date)
       end
     end
-    
+
     farm.reload
   end
 

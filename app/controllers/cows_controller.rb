@@ -4,7 +4,7 @@ class CowsController < ApplicationController
 
   def index
     # Build base query with aggressive eager loading to prevent N+1 queries
-    @base_query = Cow.includes(:farm, :mother, production_records: [:farm])
+    @base_query = Cow.includes(:farm, :mother, production_records: [ :farm ])
                      .joins(:farm)
                      .references(:farm)
 
@@ -342,7 +342,7 @@ class CowsController < ApplicationController
   def calculate_cow_stats
     # Use cache key based on query parameters to avoid recalculation
     cache_key = "cow_stats_#{@farm&.id}_#{params[:animal_type]}_#{params[:status]}_#{params[:search]}_#{Date.current}"
-    
+
     Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
       # Get cow IDs from the filtered query to avoid GROUP BY issues
       cow_ids = @base_query.pluck(:id)

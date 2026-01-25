@@ -22,13 +22,16 @@ class HealthRecord < ApplicationRecord
 
   validates :health_status, inclusion: { in: HEALTH_STATUSES }
 
-  # Scopes
+  # Optimized Scopes with better database queries
   scope :recent, -> { where(recorded_at: 30.days.ago..Time.current) }
   scope :by_status, ->(status) { where(health_status: status) }
   scope :with_temperature, -> { where.not(temperature: nil) }
   scope :with_weight, -> { where.not(weight: nil) }
   scope :sick_animals, -> { where(health_status: %w[sick injured critical quarantine]) }
   scope :healthy_animals, -> { where(health_status: %w[healthy recovering]) }
+  scope :with_cow_details, -> { includes(:cow) }
+  scope :ordered_by_date, -> { order(recorded_at: :desc) }
+  scope :for_active_cows, -> { joins(:cow).merge(Cow.active) }
 
   # Instance methods
   def temperature_celsius

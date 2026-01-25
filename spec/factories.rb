@@ -29,10 +29,10 @@ FactoryBot.define do
     morning_production { rand(8.0..20.0).round(1) }
     noon_production { rand(6.0..15.0).round(1) }
     evening_production { rand(7.0..18.0).round(1) }
-    
+
     before(:create) do |record|
-      record.total_production = record.morning_production + 
-                               record.noon_production + 
+      record.total_production = record.morning_production +
+                               record.noon_production +
                                record.evening_production
     end
   end
@@ -43,7 +43,7 @@ FactoryBot.define do
     milk_sold { rand(50..500) }
     price_per_liter { rand(40..60) }
     buyer_name { "Test Buyer #{rand(100)}" }
-    
+
     before(:create) do |record|
       record.total_sales = record.milk_sold * record.price_per_liter
     end
@@ -63,17 +63,17 @@ FactoryBot.define do
     after(:create) do |farm|
       # Create cows
       create_list(:cow, 3, farm: farm)
-      
+
       # Create production records for each cow
       farm.cows.each do |cow|
-        create_list(:production_record, 30, cow: cow, farm: farm, 
+        create_list(:production_record, 30, cow: cow, farm: farm,
                    production_date: rand(30.days.ago..Date.current))
       end
-      
+
       # Create sales records
       create_list(:sales_record, 10, farm: farm,
                  sale_date: rand(30.days.ago..Date.current))
-      
+
       # Create expenses
       create_list(:expense, 15, farm: farm,
                  expense_date: rand(30.days.ago..Date.current))

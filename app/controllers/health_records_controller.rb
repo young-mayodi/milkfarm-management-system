@@ -4,21 +4,28 @@ class HealthRecordsController < ApplicationController
   before_action :set_cow, only: [ :index, :new, :create ]
 
   def index
-    @health_records = if @cow
-      @cow.health_records.includes(:cow).order(recorded_at: :desc)
+    # Optimize query with proper eager loading and indexing
+    base_query = if @cow
+      @cow.health_records
     else
-      HealthRecord.includes(:cow).order(recorded_at: :desc)
+      HealthRecord.all
     end
 
-    @health_records = @health_records.page(params[:page]).per(20)
+    @health_records = base_query
+      .includes(cow: [ :farm ])  # Include farm relation for better optimization
+      .order(recorded_at: :desc)
+      .page(params[:page])
+      .per(20)
 
-    # Health statistics
-    @health_stats = {
-      total_records: @health_records.count,
-      sick_animals: HealthRecord.sick_animals.joins(:cow).merge(Cow.active).count,
-      animals_needing_attention: Cow.active.select(&:requires_health_attention?).count,
-      recent_checkups: HealthRecord.recent.count
-    }
+    # Optimize health statistics with efficient queries
+    @health_stats = Rails.cache.fetch("health_stats_#{cache_key_for_stats}", expires_in: 5.minutes) do
+      {
+        total_records: base_query.count,
+        sick_animals: HealthRecord.sick_animals.joins(:cow).merge(Cow.active).count,
+        animals_needing_attention: calculate_animals_needing_attention,
+        recent_checkups: HealthRecord.recent.count
+      }
+    end
   end
 
   def show
@@ -68,7 +75,7 @@ class HealthRecordsController < ApplicationController
   private
 
   def set_health_record
-    @health_record = HealthRecord.find(params[:id])
+    @health_record = HealthRecord.includes(:cow).find(params[:id])
   end
 
   def set_cow
@@ -80,5 +87,19 @@ class HealthRecordsController < ApplicationController
       :cow_id, :health_status, :temperature, :weight, :notes,
       :recorded_by, :recorded_at, :veterinarian
     )
+  end
+
+  # Helper methods for optimization
+  def cache_key_for_stats
+    [ @cow&.id, "health_stats", HealthRecord.maximum(:updated_at)&.to_i ].compact.join("_")
+  end
+
+  def calculate_animals_needing_attention
+    # More efficient query instead of loading all cows into memory
+    Cow.active
+       .joins(:health_records)
+       .where(health_records: { health_status: [ "sick", "injured", "critical", "quarantine" ] })
+       .distinct
+       .count
   end
 end

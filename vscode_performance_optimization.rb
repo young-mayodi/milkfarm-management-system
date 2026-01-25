@@ -17,17 +17,17 @@ require 'filesize'
 
 def format_size(bytes)
   return "0 B" if bytes == 0
-  
-  units = ['B', 'KB', 'MB', 'GB']
+
+  units = [ 'B', 'KB', 'MB', 'GB' ]
   exp = (Math.log(bytes) / Math.log(1024)).floor
   formatted = (bytes / 1024.0**exp).round(1)
-  
+
   "#{formatted} #{units[exp]}"
 end
 
 def get_directory_size(path)
   return 0 unless Dir.exist?(path)
-  
+
   `du -sk #{path} 2>/dev/null`.split.first.to_i * 1024
 end
 
@@ -150,7 +150,7 @@ puts ""
 rails_optimizations = [
   "1. 🗄️  Database Query Optimization:",
   "   ✅ Already implemented eager loading",
-  "   ✅ Database indexes optimized", 
+  "   ✅ Database indexes optimized",
   "   ✅ N+1 query prevention in place",
   "",
   "2. 🧹 Regular Maintenance:",
@@ -172,7 +172,7 @@ puts ""
 
 immediate_actions = [
   "1. 🔄 Restart VS Code completely",
-  "2. 🧹 Run: rails tmp:clear && rails log:clear", 
+  "2. 🧹 Run: rails tmp:clear && rails log:clear",
   "3. ⚙️  Create .vscode/settings.json with file exclusions",
   "4. 🔍 Check VS Code Extensions and disable heavy ones",
   "5. 💾 Check available disk space and memory",
