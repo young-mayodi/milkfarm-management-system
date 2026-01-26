@@ -110,7 +110,7 @@
             <h5 class="mb-0">🏆 Top Performers</h5>
           </div>
           <div class="card-body">
-            <% if @trends_data[:summary][:peak_performers][:total] %>
+            <% if @trends_data[:summary][:peak_performers] && @trends_data[:summary][:peak_performers][:total] %>
               <div class="text-center">
                 <h6 class="text-success">Best Overall Production</h6>
                 <p class="mb-1"><strong><%= @trends_data[:summary][:peak_performers][:total][:cow_name] %></strong></p>
@@ -199,25 +199,29 @@
                       </tr>
                     <% end %>
                     <!-- Summary Row -->
-                    <tr class="table-warning fw-bold">
-                      <td><strong>TOTALS</strong></td>
-                      <td class="text-warning"><%= @trends_data[:daily_totals_summary][:period_totals][:morning] %>L</td>
-                      <td class="text-danger"><%= @trends_data[:daily_totals_summary][:period_totals][:noon] %>L</td>
-                      <td class="text-info"><%= @trends_data[:daily_totals_summary][:period_totals][:evening] %>L</td>
-                      <td class="text-dark"><%= @trends_data[:daily_totals_summary][:period_totals][:night] %>L</td>
-                      <td class="text-success"><%= @trends_data[:daily_totals_summary][:period_totals][:daily] %>L</td>
-                      <td colspan="2" class="text-muted">Overall Period Performance</td>
-                    </tr>
+                    <% if @trends_data[:daily_totals_summary][:period_totals] %>
+                      <tr class="table-warning fw-bold">
+                        <td><strong>TOTALS</strong></td>
+                        <td class="text-warning"><%= @trends_data[:daily_totals_summary][:period_totals][:morning] %>L</td>
+                        <td class="text-danger"><%= @trends_data[:daily_totals_summary][:period_totals][:noon] %>L</td>
+                        <td class="text-info"><%= @trends_data[:daily_totals_summary][:period_totals][:evening] %>L</td>
+                        <td class="text-dark"><%= @trends_data[:daily_totals_summary][:period_totals][:night] %>L</td>
+                        <td class="text-success"><%= @trends_data[:daily_totals_summary][:period_totals][:daily] %>L</td>
+                        <td colspan="2" class="text-muted">Overall Period Performance</td>
+                      </tr>
+                    <% end %>
                     <!-- Averages Row -->
-                    <tr class="table-info">
-                      <td><strong>AVERAGES</strong></td>
-                      <td class="text-warning"><%= @trends_data[:daily_totals_summary][:averages][:morning] %>L</td>
-                      <td class="text-danger"><%= @trends_data[:daily_totals_summary][:averages][:noon] %>L</td>
-                      <td class="text-info"><%= @trends_data[:daily_totals_summary][:averages][:evening] %>L</td>
-                      <td class="text-dark"><%= @trends_data[:daily_totals_summary][:averages][:night] %>L</td>
-                      <td class="text-success"><%= @trends_data[:daily_totals_summary][:averages][:daily] %>L</td>
-                      <td colspan="2" class="text-muted">Daily Averages</td>
-                    </tr>
+                    <% if @trends_data[:daily_totals_summary][:averages] %>
+                      <tr class="table-info">
+                        <td><strong>AVERAGES</strong></td>
+                        <td class="text-warning"><%= @trends_data[:daily_totals_summary][:averages][:morning] %>L</td>
+                        <td class="text-danger"><%= @trends_data[:daily_totals_summary][:averages][:noon] %>L</td>
+                        <td class="text-info"><%= @trends_data[:daily_totals_summary][:averages][:evening] %>L</td>
+                        <td class="text-dark"><%= @trends_data[:daily_totals_summary][:averages][:night] %>L</td>
+                        <td class="text-success"><%= @trends_data[:daily_totals_summary][:averages][:daily] %>L</td>
+                        <td colspan="2" class="text-muted">Daily Averages</td>
+                      </tr>
+                    <% end %>
                   <% end %>
                 </tbody>
               </table>
