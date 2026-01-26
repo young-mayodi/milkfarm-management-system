@@ -132,60 +132,67 @@
         </div>
         
         <!-- Enhanced Summary Statistics -->
-        <div class="smart-summary-stats">
-          <div class="row g-0 text-center">
-            <div class="col-md-2">
-              <div class="stat-item">
-                <div class="stat-value text-primary" id="completion_percentage">
-                  <%= @summary_stats[:completion_percentage] %>%
-                </div>
-                <div class="stat-label">Completion</div>
-                <div class="progress mt-2" style="height: 4px;">
-                  <div class="progress-bar bg-primary" id="completion_bar" 
-                       style="width: <%= @summary_stats[:completion_percentage] %>%"></div>
+        <% if @summary_stats && @summary_stats.is_a?(Hash) %>
+          <div class="smart-summary-stats">
+            <div class="row g-0 text-center">
+              <div class="col-md-2">
+                <div class="stat-item">
+                  <div class="stat-value text-primary" id="completion_percentage">
+                    <%= @summary_stats[:completion_percentage] || 0 %>%
+                  </div>
+                  <div class="stat-label">Completion</div>
+                  <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-primary" id="completion_bar" 
+                         style="width: <%= @summary_stats[:completion_percentage] || 0 %>%"></div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="col-md-2">
-              <div class="stat-item">
-                <div class="stat-value text-info" id="total_cows"><%= @summary_stats[:total_cows] %></div>
-                <div class="stat-label">Total Cows</div>
-              </div>
-            </div>
-            <div class="col-md-2">
-              <div class="stat-item">
-                <div class="stat-value text-success" id="completed_records">
-                  <%= @summary_stats[:completed_records] %>
+              <div class="col-md-2">
+                <div class="stat-item">
+                  <div class="stat-value text-info" id="total_cows"><%= @summary_stats[:total_cows] || 0 %></div>
+                  <div class="stat-label">Total Cows</div>
                 </div>
-                <div class="stat-label">Completed</div>
               </div>
-            </div>
-            <div class="col-md-2">
-              <div class="stat-item">
-                <div class="stat-value text-warning" id="remaining_cows">
-                  <%= @summary_stats[:remaining_cows] %>
+              <div class="col-md-2">
+                <div class="stat-item">
+                  <div class="stat-value text-success" id="completed_records">
+                    <%= @summary_stats[:completed_records] || 0 %>
+                  </div>
+                  <div class="stat-label">Completed</div>
                 </div>
-                <div class="stat-label">Remaining</div>
               </div>
-            </div>
-            <div class="col-md-2">
-              <div class="stat-item">
-                <div class="stat-value text-primary" id="avg_production">
-                  <%= @summary_stats[:average_production] %>L
+              <div class="col-md-2">
+                <div class="stat-item">
+                  <div class="stat-value text-warning" id="remaining_cows">
+                    <%= @summary_stats[:remaining_cows] || 0 %>
+                  </div>
+                  <div class="stat-label">Remaining</div>
                 </div>
-                <div class="stat-label">Avg per Cow</div>
               </div>
-            </div>
-            <div class="col-md-2">
-              <div class="stat-item">
-                <div class="stat-value text-success" id="daily_total">
-                  <%= @summary_stats[:total_production] %>L
+              <div class="col-md-2">
+                <div class="stat-item">
+                  <div class="stat-value text-primary" id="avg_production">
+                    <%= @summary_stats[:average_production] || 0 %>L
+                  </div>
+                  <div class="stat-label">Avg per Cow</div>
                 </div>
-                <div class="stat-label">Daily Total</div>
+              </div>
+              <div class="col-md-2">
+                <div class="stat-item">
+                  <div class="stat-value text-success" id="daily_total">
+                    <%= @summary_stats[:total_production] || 0 %>L
+                  </div>
+                  <div class="stat-label">Daily Total</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        <% else %>
+          <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Summary statistics are temporarily unavailable. Please refresh the page.
+          </div>
+        <% end %>
       </div>
     </div>
     

@@ -18,12 +18,22 @@ class VaccinationRecordsController < ApplicationController
       .per(20)
 
     # Cache vaccination statistics for better performance
-    @vaccination_stats = Rails.cache.fetch("vaccination_stats_#{cache_key_for_vaccination_stats}", expires_in: 5.minutes) do
+    @vaccination_stats = begin
+      Rails.cache.fetch("vaccination_stats_#{cache_key_for_vaccination_stats}", expires_in: 5.minutes) do
+        {
+          total_records: base_query.count,
+          overdue_vaccinations: VaccinationRecord.overdue.count,
+          due_soon: VaccinationRecord.due_soon.count,
+          up_to_date_animals: calculate_up_to_date_animals
+        }
+      end
+    rescue => e
+      Rails.logger.error "Error calculating vaccination statistics: #{e.message}"
       {
         total_records: base_query.count,
-        overdue_vaccinations: VaccinationRecord.overdue.count,
-        due_soon: VaccinationRecord.due_soon.count,
-        up_to_date_animals: calculate_up_to_date_animals
+        overdue_vaccinations: 0,
+        due_soon: 0,
+        up_to_date_animals: 0
       }
     end
   end

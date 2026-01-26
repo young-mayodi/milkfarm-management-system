@@ -180,7 +180,19 @@ class ProductionRecordsController < ApplicationController
     end
 
     # Calculate enhanced summary statistics efficiently
-    @summary_stats = calculate_bulk_entry_stats(@records, @existing_records)
+    @summary_stats = begin
+      calculate_bulk_entry_stats(@records, @existing_records)
+    rescue => e
+      Rails.logger.error "Error calculating bulk entry stats: #{e.message}"
+      {
+        total_cows: @records&.count || 0,
+        completed_records: 0,
+        completion_percentage: 0,
+        total_production: 0.0,
+        average_production: 0.0,
+        remaining_cows: @records&.count || 0
+      }
+    end
 
     # Additional data for enhanced UI - optimized queries
     @previous_day_data = get_previous_day_averages(@farm, @date - 1.day) if @farm

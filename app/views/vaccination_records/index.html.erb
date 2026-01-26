@@ -18,7 +18,7 @@
   </div>
 
   <!-- Statistics Cards -->
-  <% if @vaccination_stats %>
+  <% if @vaccination_stats && @vaccination_stats.is_a?(Hash) %>
     <div class="row mb-4">
       <div class="col-md-3">
         <div class="stat-card bg-primary text-white">
@@ -26,7 +26,7 @@
             <i class="bi bi-clipboard-check"></i>
           </div>
           <div class="stat-content">
-            <h3><%= @vaccination_stats[:total_records] %></h3>
+            <h3><%= @vaccination_stats[:total_records] || 0 %></h3>
             <p>Total Records</p>
           </div>
         </div>
@@ -37,7 +37,7 @@
             <i class="bi bi-exclamation-triangle"></i>
           </div>
           <div class="stat-content">
-            <h3><%= @vaccination_stats[:overdue_vaccinations] %></h3>
+            <h3><%= @vaccination_stats[:overdue_vaccinations] || 0 %></h3>
             <p>Overdue</p>
           </div>
         </div>
@@ -48,7 +48,7 @@
             <i class="bi bi-clock"></i>
           </div>
           <div class="stat-content">
-            <h3><%= @vaccination_stats[:due_soon] %></h3>
+            <h3><%= @vaccination_stats[:due_soon] || 0 %></h3>
             <p>Due Soon</p>
           </div>
         </div>
@@ -59,9 +59,18 @@
             <i class="bi bi-check-circle"></i>
           </div>
           <div class="stat-content">
-            <h3><%= @vaccination_stats[:up_to_date_animals] %></h3>
+            <h3><%= @vaccination_stats[:up_to_date_animals] || 0 %></h3>
             <p>Up to Date</p>
           </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          Vaccination statistics are temporarily unavailable. Please refresh the page.
         </div>
       </div>
     </div>
