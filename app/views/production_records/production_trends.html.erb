@@ -58,35 +58,47 @@
             <div class="row">
               <div class="col-md-6">
                 <h6 class="text-muted">Period Overview</h6>
-                <ul class="list-unstyled">
-                  <li><strong>Total Records:</strong> <%= @trends_data[:summary][:total_records] %></li>
-                  <li><strong>Period Days:</strong> <%= @trends_data[:summary][:period_days] %></li>
-                  <li><strong>Unique Cows:</strong> <%= @trends_data[:summary][:unique_cows] %></li>
-                  <li><strong>Grand Total:</strong> <%= @trends_data[:summary][:totals][:grand_total] %>L</li>
-                </ul>
+                <% if @trends_data[:summary][:totals] %>
+                  <ul class="list-unstyled">
+                    <li><strong>Total Records:</strong> <%= @trends_data[:summary][:total_records] %></li>
+                    <li><strong>Period Days:</strong> <%= @trends_data[:summary][:period_days] %></li>
+                    <li><strong>Unique Cows:</strong> <%= @trends_data[:summary][:unique_cows] %></li>
+                    <li><strong>Grand Total:</strong> <%= @trends_data[:summary][:totals][:grand_total] %>L</li>
+                  </ul>
+                <% else %>
+                  <div class="alert alert-info">
+                    <%= @trends_data[:summary][:message] || "No production data available for the selected period." %>
+                  </div>
+                <% end %>
               </div>
               <div class="col-md-6">
                 <h6 class="text-muted">Milking Period Breakdown</h6>
-                <div class="row">
-                  <% %w[morning noon evening night].each do |period| %>
-                    <div class="col-6 mb-2">
-                      <div class="border rounded p-2 text-center">
-                        <div class="h6 mb-1 text-<%= case period
-                          when 'morning' then 'warning'
-                          when 'noon' then 'danger'
-                          when 'evening' then 'info'
-                          when 'night' then 'dark'
-                          end %>">
-                          <%= period.titleize %>
-                        </div>
-                        <div class="small">
-                          <%= @trends_data[:summary][:totals][period.to_sym] %>L 
-                          (<%= @trends_data[:summary][:percentages][period.to_sym] %>%)
+                <% if @trends_data[:summary][:totals] %>
+                  <div class="row">
+                    <% %w[morning noon evening night].each do |period| %>
+                      <div class="col-6 mb-2">
+                        <div class="border rounded p-2 text-center">
+                          <div class="h6 mb-1 text-<%= case period
+                            when 'morning' then 'warning'
+                            when 'noon' then 'danger'
+                            when 'evening' then 'info'
+                            when 'night' then 'dark'
+                            end %>">
+                            <%= period.titleize %>
+                          </div>
+                          <div class="small">
+                            <%= @trends_data[:summary][:totals][period.to_sym] %>L 
+                            (<%= @trends_data[:summary][:percentages][period.to_sym] %>%)
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  <% end %>
-                </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <div class="alert alert-info">
+                    <small>No production data available for period breakdown.</small>
+                  </div>
+                <% end %>
               </div>
             </div>
           </div>
