@@ -20,6 +20,12 @@ class ReportsController < ApplicationController
         icon: "bi-graph-up"
       },
       {
+        title: "Production Trends Analysis",
+        description: "Comprehensive cow-level production analysis by milking periods (Morning, Noon, Evening, Night)",
+        path: production_trends_production_records_path,
+        icon: "bi-graph-up-arrow"
+      },
+      {
         title: "Data Export",
         description: "Export data to CSV format",
         path: export_reports_path,

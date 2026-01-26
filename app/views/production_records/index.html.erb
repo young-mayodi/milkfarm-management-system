@@ -56,6 +56,12 @@
                 <span class="badge bg-success ms-1">New</span>
               <% end %>
             </li>
+            <li>
+              <%= link_to production_trends_production_records_path, class: "dropdown-item" do %>
+                <i class="bi bi-graph-up-arrow me-2"></i>Production Trends Analysis
+                <span class="badge bg-warning ms-1">🆕</span>
+              <% end %>
+            </li>
             <li><hr class="dropdown-divider"></li>
             <li>
               <%= link_to request.url + (request.query_string.present? ? "&format=csv" : "?format=csv"), 
