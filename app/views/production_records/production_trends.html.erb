@@ -471,7 +471,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  <% if @trends_data&.key?(:summary) %>
+  <% if @trends_data&.key?(:summary) && @trends_data[:summary][:totals] %>
     // Distribution Chart
     const distributionCtx = document.getElementById('distributionChart').getContext('2d');
     new Chart(distributionCtx, {
