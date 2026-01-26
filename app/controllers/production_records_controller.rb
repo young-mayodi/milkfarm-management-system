@@ -850,6 +850,7 @@ class ProductionRecordsController < ApplicationController
       error: true
     }
   end
+  end
 
   def calculate_trends_summary(records, date_range)
     total_records = records.count
