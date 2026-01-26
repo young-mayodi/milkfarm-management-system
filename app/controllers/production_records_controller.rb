@@ -710,6 +710,15 @@ class ProductionRecordsController < ApplicationController
     daily_cow_data = {}
     cow_totals = Hash.new { |h, k| h[k] = { morning: 0, noon: 0, evening: 0, night: 0, total: 0, days: 0 } }
     date_totals = Hash.new { |h, k| h[k] = { morning: 0, noon: 0, evening: 0, night: 0, total: 0, cow_count: 0 } }
+    
+    # Enhanced analytics for daily totals and milking time performance
+    daily_performers = Hash.new { |h, k| h[k] = { morning: {}, noon: {}, evening: {}, night: {} } }
+    milking_time_analytics = {
+      morning: { total: 0, sessions: [], best_day: nil, worst_day: nil },
+      noon: { total: 0, sessions: [], best_day: nil, worst_day: nil },
+      evening: { total: 0, sessions: [], best_day: nil, worst_day: nil },
+      night: { total: 0, sessions: [], best_day: nil, worst_day: nil }
+    }
 
     records.each do |record|
       date = record.production_date
@@ -742,13 +751,40 @@ class ProductionRecordsController < ApplicationController
       cow_totals[cow.id][:farm_name] = cow.farm.name
       
       # Update date totals
-      date_totals[date][:morning] += record.morning_production.to_f
-      date_totals[date][:noon] += record.noon_production.to_f
-      date_totals[date][:evening] += record.evening_production.to_f
-      date_totals[date][:night] += record.night_production.to_f
+      morning_prod = record.morning_production.to_f
+      noon_prod = record.noon_production.to_f
+      evening_prod = record.evening_production.to_f
+      night_prod = record.night_production.to_f
+      
+      date_totals[date][:morning] += morning_prod
+      date_totals[date][:noon] += noon_prod
+      date_totals[date][:evening] += evening_prod
+      date_totals[date][:night] += night_prod
       date_totals[date][:total] += record.total_production.to_f
       date_totals[date][:cow_count] += 1
+      
+      # Track daily performers for each milking time
+      %w[morning noon evening night].each do |period|
+        production_value = record.send("#{period}_production").to_f
+        if production_value > 0
+          current_best = daily_performers[date][period.to_sym]
+          if current_best.empty? || production_value > current_best[:value]
+            daily_performers[date][period.to_sym] = {
+              cow_name: cow.name,
+              cow_tag: cow.tag_number,
+              value: production_value
+            }
+          end
+          
+          # Update milking time analytics
+          milking_time_analytics[period.to_sym][:total] += production_value
+          milking_time_analytics[period.to_sym][:sessions] << { date: date, value: production_value }
+        end
+      end
     end
+    
+    # Calculate milking time performance metrics
+    milking_time_performance = calculate_milking_time_performance(milking_time_analytics, date_totals)
 
     # Calculate cow averages
     cow_totals.each do |cow_id, data|
@@ -769,6 +805,9 @@ class ProductionRecordsController < ApplicationController
       daily_data: daily_cow_data.sort_by { |date, _| date }.reverse.to_h,
       date_totals: date_totals.sort_by { |date, _| date }.reverse.to_h,
       cow_totals: cow_totals.sort_by { |_, data| -data[:total] }.to_h,
+      daily_performers: daily_performers.sort_by { |date, _| date }.reverse.to_h,
+      milking_time_performance: milking_time_performance,
+      daily_totals_summary: generate_daily_totals_summary(date_totals),
       summary: summary,
       date_range: { start: date_range.begin, end: date_range.end },
       total_days: date_range.count,
@@ -847,7 +886,63 @@ class ProductionRecordsController < ApplicationController
     require 'csv'
     
     csv_data = CSV.generate(headers: true) do |csv|
-      # Headers
+      # Daily Totals Summary Section
+      csv << ['DAILY TOTALS SUMMARY']
+      csv << ['Date', 'Morning Total', 'Noon Total', 'Evening Total', 'Night Total', 'Daily Total', 'Cow Count']
+      
+      if @trends_data[:daily_totals_summary]
+        @trends_data[:daily_totals_summary][:daily_rows].each do |row|
+          csv << [
+            row[:date],
+            "#{row[:morning_total]}L",
+            "#{row[:noon_total]}L", 
+            "#{row[:evening_total]}L",
+            "#{row[:night_total]}L",
+            "#{row[:daily_total]}L",
+            row[:cow_count]
+          ]
+        end
+        
+        # Period totals
+        totals = @trends_data[:daily_totals_summary][:period_totals]
+        csv << [
+          'PERIOD TOTALS',
+          "#{totals[:morning]}L",
+          "#{totals[:noon]}L",
+          "#{totals[:evening]}L", 
+          "#{totals[:night]}L",
+          "#{totals[:daily]}L",
+          'ALL PERIODS'
+        ]
+      end
+      
+      csv << [] # Empty row separator
+      
+      # Milking Time Performance Section
+      csv << ['MILKING TIME PERFORMANCE ANALYSIS']
+      csv << ['Period', 'Total Production', 'Daily Average', 'Best Day Value', 'Worst Day Value', 'Consistency Score', 'Trend']
+      
+      if @trends_data[:milking_time_performance]
+        %w[morning noon evening night].each do |period|
+          performance = @trends_data[:milking_time_performance][period.to_sym]
+          if performance
+            csv << [
+              period.titleize,
+              "#{performance[:total_production]}L",
+              "#{performance[:average_per_day]}L",
+              performance[:best_day] ? "#{performance[:best_day][:value]}L" : 'N/A',
+              performance[:worst_day] ? "#{performance[:worst_day][:value]}L" : 'N/A',
+              "#{performance[:consistency_score]}%",
+              performance[:trend].titleize
+            ]
+          end
+        end
+      end
+      
+      csv << [] # Empty row separator
+      
+      # Individual Cow Data Section
+      csv << ['INDIVIDUAL COW PRODUCTION DATA']
       csv << [
         'Date', 'Cow Name', 'Tag Number', 'Farm',
         'Morning (L)', 'Noon (L)', 'Evening (L)', 'Night (L)', 'Total (L)'
@@ -871,11 +966,111 @@ class ProductionRecordsController < ApplicationController
       end
     end
 
-    filename = "production_trends_#{@start_date}_to_#{@end_date}"
+    filename = "enhanced_production_trends_#{@start_date}_to_#{@end_date}"
     filename += "_#{@farm.name.parameterize}" if @farm
     filename += ".csv"
 
     send_data csv_data, filename: filename, type: 'text/csv'
+  end
+
+  # Calculate milking time performance metrics
+  def calculate_milking_time_performance(milking_time_analytics, date_totals)
+    performance = {}
+    
+    %w[morning noon evening night].each do |period|
+      period_sym = period.to_sym
+      analytics = milking_time_analytics[period_sym]
+      
+      # Calculate daily totals for this period across all days
+      daily_totals = date_totals.values.map { |day| day[period_sym] }
+      
+      performance[period_sym] = {
+        total_production: analytics[:total].round(1),
+        average_per_day: daily_totals.any? ? (analytics[:total] / daily_totals.count).round(1) : 0,
+        best_day: daily_totals.any? ? { date: date_totals.max_by { |_, data| data[period_sym] }[0], value: daily_totals.max.round(1) } : nil,
+        worst_day: daily_totals.any? ? { date: date_totals.min_by { |_, data| data[period_sym] }[0], value: daily_totals.min.round(1) } : nil,
+        consistency_score: calculate_consistency_score(daily_totals),
+        trend: calculate_trend(daily_totals)
+      }
+    end
+    
+    performance
+  end
+
+  # Generate daily totals summary table data
+  def generate_daily_totals_summary(date_totals)
+    summary_rows = []
+    
+    # Period totals across all days
+    period_totals = { morning: 0, noon: 0, evening: 0, night: 0, daily: 0 }
+    
+    date_totals.each do |date, totals|
+      period_totals[:morning] += totals[:morning]
+      period_totals[:noon] += totals[:noon] 
+      period_totals[:evening] += totals[:evening]
+      period_totals[:night] += totals[:night]
+      period_totals[:daily] += totals[:total]
+      
+      # Find best performer for each period on this date
+      summary_rows << {
+        date: date,
+        morning_total: totals[:morning].round(1),
+        noon_total: totals[:noon].round(1),
+        evening_total: totals[:evening].round(1),
+        night_total: totals[:night].round(1),
+        daily_total: totals[:total].round(1),
+        cow_count: totals[:cow_count]
+      }
+    end
+    
+    {
+      daily_rows: summary_rows.sort_by { |row| row[:date] }.reverse,
+      period_totals: period_totals.transform_values { |v| v.round(1) },
+      averages: {
+        morning: date_totals.any? ? (period_totals[:morning] / date_totals.count).round(1) : 0,
+        noon: date_totals.any? ? (period_totals[:noon] / date_totals.count).round(1) : 0,
+        evening: date_totals.any? ? (period_totals[:evening] / date_totals.count).round(1) : 0,
+        night: date_totals.any? ? (period_totals[:night] / date_totals.count).round(1) : 0,
+        daily: date_totals.any? ? (period_totals[:daily] / date_totals.count).round(1) : 0
+      }
+    }
+  end
+
+  # Calculate consistency score (100% = perfectly consistent)
+  def calculate_consistency_score(values)
+    return 100.0 if values.empty? || values.count == 1
+    
+    mean = values.sum.to_f / values.count
+    return 100.0 if mean == 0
+    
+    variance = values.sum { |v| (v - mean) ** 2 } / values.count
+    std_deviation = Math.sqrt(variance)
+    coefficient_of_variation = std_deviation / mean
+    
+    # Convert to consistency score (higher is better)
+    consistency = [(1 - coefficient_of_variation) * 100, 0].max
+    consistency.round(1)
+  end
+
+  # Calculate trend direction (positive/negative/stable)
+  def calculate_trend(values)
+    return 'stable' if values.count < 2
+    
+    first_half = values[0...(values.count / 2)]
+    second_half = values[(values.count / 2)..-1]
+    
+    first_avg = first_half.sum.to_f / first_half.count
+    second_avg = second_half.sum.to_f / second_half.count
+    
+    difference_percent = first_avg > 0 ? ((second_avg - first_avg) / first_avg * 100) : 0
+    
+    if difference_percent > 5
+      'improving'
+    elsif difference_percent < -5
+      'declining'
+    else
+      'stable'
+    end
   end
 
 end

@@ -139,6 +139,196 @@
       </div>
     </div>
 
+    <!-- Enhanced Analytics: Daily Totals Summary -->
+    <div class="row mb-4">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">📊 Daily Totals & Milking Time Breakdown</h5>
+            <small class="text-muted">Total production by day and milking period</small>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-bordered table-sm" id="dailyTotalsTable">
+                <thead class="table-light">
+                  <tr>
+                    <th>Date</th>
+                    <th class="text-warning">🌅 Morning</th>
+                    <th class="text-danger">☀️ Noon</th>
+                    <th class="text-info">🌆 Evening</th>
+                    <th class="text-dark">🌙 Night</th>
+                    <th class="text-success">Daily Total</th>
+                    <th>Cow Count</th>
+                    <th>Best Period</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if @trends_data[:daily_totals_summary] %>
+                    <% @trends_data[:daily_totals_summary][:daily_rows].each do |row| %>
+                      <tr>
+                        <td><strong><%= row[:date].strftime("%m/%d/%Y") %></strong></td>
+                        <td class="text-warning"><%= row[:morning_total] %>L</td>
+                        <td class="text-danger"><%= row[:noon_total] %>L</td>
+                        <td class="text-info"><%= row[:evening_total] %>L</td>
+                        <td class="text-dark"><%= row[:night_total] %>L</td>
+                        <td class="text-success fw-bold"><%= row[:daily_total] %>L</td>
+                        <td class="text-muted"><%= row[:cow_count] %> cows</td>
+                        <td>
+                          <% best_period = %w[morning noon evening night].max_by { |p| row[:"#{p}_total"] } %>
+                          <span class="badge bg-<%= case best_period
+                            when 'morning' then 'warning'
+                            when 'noon' then 'danger'
+                            when 'evening' then 'info'
+                            when 'night' then 'dark'
+                            end %>">
+                            <%= best_period.titleize %>
+                          </span>
+                        </td>
+                      </tr>
+                    <% end %>
+                    <!-- Summary Row -->
+                    <tr class="table-warning fw-bold">
+                      <td><strong>TOTALS</strong></td>
+                      <td class="text-warning"><%= @trends_data[:daily_totals_summary][:period_totals][:morning] %>L</td>
+                      <td class="text-danger"><%= @trends_data[:daily_totals_summary][:period_totals][:noon] %>L</td>
+                      <td class="text-info"><%= @trends_data[:daily_totals_summary][:period_totals][:evening] %>L</td>
+                      <td class="text-dark"><%= @trends_data[:daily_totals_summary][:period_totals][:night] %>L</td>
+                      <td class="text-success"><%= @trends_data[:daily_totals_summary][:period_totals][:daily] %>L</td>
+                      <td colspan="2" class="text-muted">Overall Period Performance</td>
+                    </tr>
+                    <!-- Averages Row -->
+                    <tr class="table-info">
+                      <td><strong>AVERAGES</strong></td>
+                      <td class="text-warning"><%= @trends_data[:daily_totals_summary][:averages][:morning] %>L</td>
+                      <td class="text-danger"><%= @trends_data[:daily_totals_summary][:averages][:noon] %>L</td>
+                      <td class="text-info"><%= @trends_data[:daily_totals_summary][:averages][:evening] %>L</td>
+                      <td class="text-dark"><%= @trends_data[:daily_totals_summary][:averages][:night] %>L</td>
+                      <td class="text-success"><%= @trends_data[:daily_totals_summary][:averages][:daily] %>L</td>
+                      <td colspan="2" class="text-muted">Daily Averages</td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Milking Time Performance Analysis -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">⏰ Milking Time Performance</h5>
+          </div>
+          <div class="card-body">
+            <% if @trends_data[:milking_time_performance] %>
+              <% %w[morning noon evening night].each do |period| %>
+                <% performance = @trends_data[:milking_time_performance][period.to_sym] %>
+                <% if performance %>
+                  <div class="mb-3 p-3 border rounded">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <h6 class="mb-0 text-<%= case period
+                        when 'morning' then 'warning'
+                        when 'noon' then 'danger'
+                        when 'evening' then 'info'
+                        when 'night' then 'dark'
+                        end %>">
+                        <%= case period
+                          when 'morning' then '🌅'
+                          when 'noon' then '☀️'
+                          when 'evening' then '🌆'
+                          when 'night' then '🌙'
+                          end %> <%= period.titleize %>
+                      </h6>
+                      <span class="badge bg-<%= case period
+                        when 'morning' then 'warning'
+                        when 'noon' then 'danger'
+                        when 'evening' then 'info'
+                        when 'night' then 'dark'
+                        end %>">
+                        <%= performance[:consistency_score] %>% consistent
+                      </span>
+                    </div>
+                    <small class="text-muted d-block mb-1">
+                      <strong>Total:</strong> <%= performance[:total_production] %>L
+                    </small>
+                    <small class="text-muted d-block mb-1">
+                      <strong>Daily Avg:</strong> <%= performance[:average_per_day] %>L
+                    </small>
+                    <small class="text-muted d-block">
+                      <strong>Trend:</strong> 
+                      <span class="badge bg-<%= case performance[:trend]
+                        when 'improving' then 'success'
+                        when 'declining' then 'danger'
+                        else 'secondary'
+                        end %>">
+                        <%= performance[:trend].titleize %>
+                      </span>
+                    </small>
+                  </div>
+                <% end %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Top Performers Table -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">🏆 Daily Top Performers by Milking Period</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-sm" id="dailyPerformersTable">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th class="text-warning">🌅 Morning Leader</th>
+                <th class="text-danger">☀️ Noon Leader</th>
+                <th class="text-info">🌆 Evening Leader</th>
+                <th class="text-dark">🌙 Night Leader</th>
+                <th class="text-success">Daily Champion</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if @trends_data[:daily_performers] %>
+                <% @trends_data[:daily_performers].each do |date, performers| %>
+                  <tr>
+                    <td><strong><%= date.strftime("%m/%d/%Y") %></strong></td>
+                    <% %w[morning noon evening night].each do |period| %>
+                      <% performer = performers[period.to_sym] %>
+                      <td class="text-<%= case period
+                        when 'morning' then 'warning'
+                        when 'noon' then 'danger'
+                        when 'evening' then 'info'
+                        when 'night' then 'dark'
+                        end %>">
+                        <% if performer && !performer.empty? %>
+                          <strong><%= performer[:cow_name] %></strong><br>
+                          <small><%= performer[:value] %>L</small>
+                        <% else %>
+                          <small class="text-muted">No data</small>
+                        <% end %>
+                      </td>
+                    <% end %>
+                    <td class="text-success">
+                      <% daily_best = @trends_data[:daily_data][date]&.max_by { |_, data| data[:total] } %>
+                      <% if daily_best %>
+                        <strong><%= daily_best[1][:cow_name] %></strong><br>
+                        <small><%= daily_best[1][:total] %>L total</small>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- Cow Performance Summary -->
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -351,13 +541,35 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   <% end %>
 
-  // Initialize DataTable for cow summary
+  // Initialize DataTables for all tables
   if (document.getElementById('cowSummaryTable')) {
     $('#cowSummaryTable').DataTable({
       pageLength: 25,
       order: [[9, 'desc']], // Sort by total production
       columnDefs: [
         { orderable: false, targets: [2] } // Farm name not orderable
+      ]
+    });
+  }
+  
+  // Initialize Daily Totals Table
+  if (document.getElementById('dailyTotalsTable')) {
+    $('#dailyTotalsTable').DataTable({
+      pageLength: 15,
+      order: [[0, 'desc']], // Sort by date (newest first)
+      columnDefs: [
+        { orderable: false, targets: [6, 7] } // Best period and cow count not orderable
+      ]
+    });
+  }
+  
+  // Initialize Daily Performers Table  
+  if (document.getElementById('dailyPerformersTable')) {
+    $('#dailyPerformersTable').DataTable({
+      pageLength: 15,
+      order: [[0, 'desc']], // Sort by date (newest first)
+      columnDefs: [
+        { orderable: false, targets: [1, 2, 3, 4, 5] } // Performer columns not orderable
       ]
     });
   }
