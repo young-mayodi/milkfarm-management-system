@@ -810,7 +810,7 @@ class ProductionRecordsController < ApplicationController
       daily_totals_summary: generate_daily_totals_summary(date_totals),
       summary: summary,
       date_range: { start: date_range.begin, end: date_range.end },
-      total_days: date_range.count,
+      total_days: (date_range.end - date_range.begin).to_i + 1,
       farm_name: farm&.name
     }
   end
@@ -844,7 +844,7 @@ class ProductionRecordsController < ApplicationController
 
     {
       total_records: total_records,
-      period_days: date_range.count,
+      period_days: (date_range.end - date_range.begin).to_i + 1,
       totals: {
         morning: morning_total.round(1),
         noon: noon_total.round(1),
