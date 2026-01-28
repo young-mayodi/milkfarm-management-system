@@ -22,7 +22,7 @@ class ReportsController < ApplicationController
       {
         title: "Production Trends Analysis",
         description: "Comprehensive cow-level production analysis by milking periods (Morning, Noon, Evening, Night)",
-        path: production_trends_production_records_path,
+        path: production_trends_reports_path,
         icon: "bi-graph-up-arrow"
       },
       {
