@@ -1,0 +1,4 @@
+# Skylight configuration for production monitoring
+# The authentication token is set via SKYLIGHT_AUTHENTICATION environment variable
+# Application name as displayed in Skylight dashboard
+application: milkyway-production
