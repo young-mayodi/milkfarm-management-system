@@ -119,6 +119,8 @@ Rails.application.routes.draw do
       post :bulk_update
       post :save_draft  # Auto-save draft endpoint
       get :bulk_entry_stream  # SSE endpoint for real-time updates
+      get :production_time_reports  # Production time reports
+      get :production_trends  # Detailed production trends by cow and period
     end
   end
   resources :sales_records
