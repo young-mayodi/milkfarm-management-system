@@ -1,4 +1,8 @@
 Rails.application.routes.draw do
+  # Health check and monitoring routes
+  get "health", to: "health#index"
+  get "health/bugsnag_test", to: "health#bugsnag_test"
+
   # Financial Reports routes
   resources :financial_reports, only: [ :index ] do
     collection do
@@ -115,8 +119,6 @@ Rails.application.routes.draw do
       post :bulk_update
       post :save_draft  # Auto-save draft endpoint
       get :bulk_entry_stream  # SSE endpoint for real-time updates
-      get :production_time_reports  # New production time reports
-      get :production_trends  # Detailed production trends by cow and period
     end
   end
   resources :sales_records
