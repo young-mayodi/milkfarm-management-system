@@ -16,13 +16,13 @@ class ReportsController < ApplicationController
       {
         title: "Production Trends",
         description: "Interactive charts showing production trends over time",
-        path: production_trends_reports_path,
+        path: production_trends_production_records_path,
         icon: "bi-graph-up"
       },
       {
         title: "Production Trends Analysis",
         description: "Comprehensive cow-level production analysis by milking periods (Morning, Noon, Evening, Night)",
-        path: production_trends_reports_path,
+        path: production_trends_production_records_path,
         icon: "bi-graph-up-arrow"
       },
       {
