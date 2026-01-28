@@ -19,6 +19,9 @@ gem "jbuilder"
 
 # Pagination
 gem "kaminari"
+#sklight
+
+gem "skylight"
 
 # CSV export
 gem "csv"
@@ -89,3 +92,5 @@ end
 # gem "sassc-rails"
 
 gem "kaminari-bootstrap", "~> 3.0"
+
+gem "bugsnag", "~> 6.29"

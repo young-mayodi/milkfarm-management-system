@@ -87,6 +87,8 @@ GEM
       msgpack (~> 1.2)
     brakeman (7.1.2)
       racc
+    bugsnag (6.29.0)
+      concurrent-ruby (~> 1.0)
     builder (3.3.0)
     bullet (8.1.0)
       activesupport (>= 3.0.0)
@@ -335,6 +337,8 @@ GEM
       logger
       rack (>= 2.2.4)
       redis-client (>= 0.22.2)
+    skylight (7.0.0)
+      activesupport (>= 7.1.0)
     sshkit (1.25.0)
       base64
       logger
@@ -394,6 +398,7 @@ DEPENDENCIES
   bcrypt (~> 3.1.7)
   bootsnap
   brakeman
+  bugsnag (~> 6.29)
   bullet
   capybara
   csv
@@ -414,6 +419,7 @@ DEPENDENCIES
   rubocop-rails-omakase
   selenium-webdriver
   sidekiq (~> 7.0)
+  skylight
   stimulus-rails
   thruster
   turbo-rails
