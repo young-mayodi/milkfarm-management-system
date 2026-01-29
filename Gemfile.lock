@@ -419,7 +419,7 @@ DEPENDENCIES
   rubocop-rails-omakase
   selenium-webdriver
   sidekiq (~> 7.0)
-  skylight
+  skylight (~> 7.0)
   stimulus-rails
   thruster
   turbo-rails
