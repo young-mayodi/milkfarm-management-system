@@ -1280,7 +1280,7 @@
                         <span>🐄 Adult Cows</span>
                         <% if current_user %>
                           <span class="badge bg-primary bg-opacity-75 ms-auto">
-                            <%= Cow.adult_cows.where(farm: current_user.accessible_farms).count %>
+                            <%= navigation_stats[:adult_cows_count] || 0 %>
                           </span>
                         <% end %>
                       <% end %>
@@ -1291,7 +1291,7 @@
                         <span>🐮 Calves</span>
                         <% if current_user %>
                           <span class="badge bg-success bg-opacity-75 ms-auto">
-                            <%= Cow.calves.where(farm: current_user.accessible_farms).count %>
+                            <%= navigation_stats[:calves_count] || 0 %>
                           </span>
                         <% end %>
                       <% end %>
@@ -1306,16 +1306,10 @@
                   <i class="bi bi-heart-pulse-fill me-2"></i>
                   <span>Animal Management</span>
                   <% 
-                    health_alerts = begin
-                      Cow.active.select { |c| c.requires_health_attention? }.count rescue 0
-                    end
-                    vaccination_alerts = begin
-                      VaccinationRecord.overdue.count rescue 0
-                    end
-                    breeding_alerts = begin
-                      BreedingRecord.overdue.count rescue 0
-                    end
-                    total_alerts = health_alerts + vaccination_alerts + breeding_alerts
+                    # PERFORMANCE FIX: Use cached navigation stats
+                    total_alerts = (navigation_stats[:health_alerts_count] || 0) + 
+                                  (navigation_stats[:vaccination_alerts_count] || 0) + 
+                                  (navigation_stats[:breeding_alerts_count] || 0)
                   %>
                   <% if total_alerts > 0 %>
                     <span class="badge bg-danger ms-auto pulse-badge"><%= total_alerts %></span>
@@ -1331,23 +1325,8 @@
                   <i class="bi bi-bell-fill me-2"></i>
                   <span>System Alerts</span>
                   <% 
-                    begin
-                      # Quick count for navigation badge
-                      critical_count = Cow.joins(:health_records)
-                                         .where(health_records: { health_status: 'sick', recorded_at: 7.days.ago..Time.current })
-                                         .distinct.count +
-                                      HealthRecord.where('temperature > ? AND recorded_at > ?', 39.5, 24.hours.ago).count +
-                                      VaccinationRecord.where('next_due_date < ?', Date.current).count
-                      
-                      warning_count = BreedingRecord.where(expected_due_date: Date.current..7.days.from_now).count +
-                                     HealthRecord.joins(:cow)
-                                               .where('weight < ? AND recorded_at > ?', 350, 7.days.ago)
-                                               .where(cows: { status: 'active' }).count
-                      
-                      total_alert_count = critical_count + warning_count
-                    rescue => e
-                      total_alert_count = 0
-                    end
+                    # PERFORMANCE FIX: Use cached navigation stats
+                    total_alert_count = navigation_stats[:system_alerts_count] || 0
                   %>
                   <% if total_alert_count > 0 %>
                     <span class="badge bg-danger ms-auto notification-pulse">

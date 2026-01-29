@@ -172,12 +172,38 @@ class FinancialReportsController < ApplicationController
   end
 
   def calculate_animal_roi
-    @farm.cows.active.limit(20).map do |cow|
-      cow_revenue = SalesRecord.joins("JOIN production_records ON production_records.farm_id = sales_records.farm_id")
-                              .where("production_records.cow_id = ? AND sales_records.sale_date >= ?", cow.id, 6.months.ago.to_date)
-                              .sum("(production_records.total_production / (SELECT SUM(total_production) FROM production_records pr WHERE pr.farm_id = sales_records.farm_id AND pr.production_date = sales_records.sale_date)) * sales_records.total_sales")
+    # PERFORMANCE FIX: Use single optimized query instead of N+1
+    # Calculate total production per cow in the last 6 months
+    cow_production = ProductionRecord
+      .where(farm: @farm, production_date: 6.months.ago.to_date..Date.current)
+      .group(:cow_id)
+      .sum(:total_production)
 
-      cow_expenses = 500 * 180 # Estimated 6 months expenses per cow (should be more precise)
+    # Calculate total revenue for the farm
+    total_farm_revenue = SalesRecord
+      .where(farm: @farm, sale_date: 6.months.ago.to_date..Date.current)
+      .sum(:total_sales)
+
+    # Get total production for the farm
+    total_farm_production = cow_production.values.sum
+    
+    # Calculate ROI for each cow based on their production share
+    cows = @farm.cows.active.includes(:production_records)
+                .where(production_records: { production_date: 6.months.ago.to_date..Date.current })
+                .group('cows.id')
+                .limit(20)
+
+    cows.map do |cow|
+      cow_total_production = cow_production[cow.id] || 0
+      
+      # Calculate revenue share based on production
+      cow_revenue = if total_farm_production > 0
+        (cow_total_production / total_farm_production) * total_farm_revenue
+      else
+        0
+      end
+
+      cow_expenses = 500 * 6 # Estimated 6 months expenses per cow ($500/month)
       cow_profit = cow_revenue - cow_expenses
 
       {

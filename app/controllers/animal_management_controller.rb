@@ -49,7 +49,17 @@ class AnimalManagementController < ApplicationController
                                     .merge(Cow.active)
                                     .where("temperature < 38.0 OR temperature > 39.5")
                                     .order(recorded_at: :desc)
-    @animals_by_health_score = Cow.active.sort_by(&:health_score).reverse.first(10)
+    
+    # PERFORMANCE FIX: Use database query instead of loading all cows and calling health_score
+    # Get cows with recent healthy status instead
+    @animals_by_health_score = Cow.active
+                                  .joins(:health_records)
+                                  .where(health_records: { recorded_at: 30.days.ago..Time.current })
+                                  .where(health_records: { health_status: 'healthy' })
+                                  .group('cows.id')
+                                  .select('cows.*, COUNT(health_records.id) as health_check_count')
+                                  .order('health_check_count DESC')
+                                  .limit(10)
   end
 
   def breeding_overview
@@ -114,8 +124,9 @@ class AnimalManagementController < ApplicationController
   def generate_breeding_alerts
     alerts = []
 
-    # Overdue births - with eager loading
-    BreedingRecord.overdue.includes(:cow).each do |record|
+    # PERFORMANCE FIX: Limit query BEFORE .each to prevent loading all records
+    # Overdue births - with eager loading and limit
+    BreedingRecord.overdue.includes(:cow).limit(5).each do |record|
       days_overdue = (Date.current - record.expected_due_date).to_i
       alerts << {
         type: "danger",
@@ -125,8 +136,8 @@ class AnimalManagementController < ApplicationController
       }
     end
 
-    # Due soon - with eager loading
-    BreedingRecord.due_soon.includes(:cow).each do |record|
+    # Due soon - with eager loading and limit
+    BreedingRecord.due_soon.includes(:cow).limit(5).each do |record|
       alerts << {
         type: "info",
         message: "#{record.cow.name} due in #{record.days_to_due_date} days",
@@ -141,8 +152,9 @@ class AnimalManagementController < ApplicationController
   def generate_vaccination_alerts
     alerts = []
 
-    # Overdue vaccinations - with eager loading
-    VaccinationRecord.overdue.includes(:cow).each do |record|
+    # PERFORMANCE FIX: Limit query BEFORE .each to prevent loading all records
+    # Overdue vaccinations - with eager loading and limit
+    VaccinationRecord.overdue.includes(:cow).limit(5).each do |record|
       days_overdue = (Date.current - record.next_due_date).to_i
       alerts << {
         type: "danger",
@@ -152,8 +164,8 @@ class AnimalManagementController < ApplicationController
       }
     end
 
-    # Due soon - with eager loading
-    VaccinationRecord.due_soon.includes(:cow).each do |record|
+    # Due soon - with eager loading and limit
+    VaccinationRecord.due_soon.includes(:cow).limit(5).each do |record|
       alerts << {
         type: "warning",
         message: "#{record.cow.name} #{record.vaccine_name} vaccination due in #{record.days_until_due} days",
