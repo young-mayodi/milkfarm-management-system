@@ -1,0 +1,423 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-2">
+        <i class="fas fa-chart-line me-2"></i>
+        Production Trends Analysis
+      </h1>
+      <p class="text-muted mb-0">
+        <%= @farm ? "#{@farm.name} - " : "" %>
+        Comprehensive analysis with all 4 daily milking periods
+      </p>
+    </div>
+    <div>
+      <%= link_to raw('<i class="fas fa-download me-2"></i>Export CSV'), 
+                  production_trends_production_records_path(format: :csv, farm_id: @farm&.id, start_date: @start_date, end_date: @end_date), 
+                  class: "btn btn-success me-2" %>
+      <%= link_to raw('<i class="fas fa-arrow-left me-2"></i>Back to Reports'), 
+                  reports_path, 
+                  class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <%= form_with url: production_trends_production_records_path, method: :get, local: true, class: "row g-3" do |form| %>
+        <div class="col-md-3">
+          <%= form.label :farm_id, "Select Farm", class: "form-label fw-bold" %>
+          <%= form.select :farm_id, 
+                          options_from_collection_for_select(@farms, :id, :name, @farm&.id), 
+                          { prompt: "All Farms" }, 
+                          { class: "form-select" } %>
+        </div>
+        <div class="col-md-3">
+          <%= form.label :start_date, "Start Date", class: "form-label fw-bold" %>
+          <%= form.date_field :start_date, 
+                              value: @start_date, 
+                              class: "form-control" %>
+        </div>
+        <div class="col-md-3">
+          <%= form.label :end_date, "End Date", class: "form-label fw-bold" %>
+          <%= form.date_field :end_date, 
+                              value: @end_date, 
+                              class: "form-control" %>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <%= form.submit "Update Report", class: "btn btn-primary w-100" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @trends_data && !@trends_data[:error] %>
+    <!-- Summary Statistics -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="card bg-gradient-primary text-white shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-white-50 mb-1">Total Production</h6>
+                <h3 class="mb-0"><%= number_with_precision(@trends_data[:summary][:totals][:grand_total], precision: 1) %>L</h3>
+              </div>
+              <div class="fs-1 opacity-50">
+                <i class="fas fa-tint"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-gradient-success text-white shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-white-50 mb-1">Daily Average</h6>
+                <h3 class="mb-0"><%= number_with_precision(@trends_data[:summary][:averages][:total], precision: 1) %>L</h3>
+              </div>
+              <div class="fs-1 opacity-50">
+                <i class="fas fa-chart-bar"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-gradient-info text-white shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-white-50 mb-1">Active Cows</h6>
+                <h3 class="mb-0"><%= @trends_data[:summary][:unique_cows] %></h3>
+              </div>
+              <div class="fs-1 opacity-50">
+                <i class="fas fa-cow"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-gradient-warning text-white shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="text-white-50 mb-1">Period Days</h6>
+                <h3 class="mb-0"><%= @trends_data[:summary][:period_days] %></h3>
+              </div>
+              <div class="fs-1 opacity-50">
+                <i class="fas fa-calendar-alt"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 Milking Periods Breakdown -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-clock me-2"></i>
+          4 Daily Milking Periods Performance
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <% 
+            milking_periods = [
+              { key: :morning, name: 'Morning', icon: 'fa-sun', color: 'warning' },
+              { key: :noon, name: 'Noon', icon: 'fa-sun', color: 'info' },
+              { key: :evening, name: 'Evening', icon: 'fa-cloud-sun', color: 'primary' },
+              { key: :night, name: 'Night', icon: 'fa-moon', color: 'dark' }
+            ]
+          %>
+          <% milking_periods.each do |period| %>
+            <div class="col-md-6 col-lg-3">
+              <div class="card border-<%= period[:color] %> h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-circle bg-<%= period[:color] %> text-white p-3 me-3">
+                      <i class="fas <%= period[:icon] %> fa-2x"></i>
+                    </div>
+                    <div>
+                      <h5 class="mb-0"><%= period[:name] %></h5>
+                      <small class="text-muted">Milking Period</small>
+                    </div>
+                  </div>
+                  
+                  <% if @trends_data[:milking_time_performance] && @trends_data[:milking_time_performance][period[:key]] %>
+                    <% perf = @trends_data[:milking_time_performance][period[:key]] %>
+                    <ul class="list-unstyled mb-0">
+                      <li class="mb-2">
+                        <small class="text-muted">Total:</small>
+                        <strong class="float-end"><%= number_with_precision(perf[:total_production], precision: 1) %>L</strong>
+                      </li>
+                      <li class="mb-2">
+                        <small class="text-muted">Daily Avg:</small>
+                        <strong class="float-end"><%= number_with_precision(perf[:average_per_day], precision: 1) %>L</strong>
+                      </li>
+                      <li class="mb-2">
+                        <small class="text-muted">Best Day:</small>
+                        <strong class="float-end"><%= number_with_precision(perf[:best_day][:value], precision: 1) %>L</strong>
+                      </li>
+                      <li class="mb-2">
+                        <small class="text-muted">Consistency:</small>
+                        <strong class="float-end"><%= perf[:consistency_score] %>%</strong>
+                      </li>
+                      <li>
+                        <small class="text-muted">Trend:</small>
+                        <span class="float-end badge bg-<%= perf[:trend] == 'improving' ? 'success' : (perf[:trend] == 'declining' ? 'danger' : 'secondary') %>">
+                          <%= perf[:trend].titleize %>
+                        </span>
+                      </li>
+                    </ul>
+                    
+                    <!-- Percentage of total -->
+                    <div class="progress mt-3" style="height: 8px;">
+                      <div class="progress-bar bg-<%= period[:color] %>" 
+                           role="progressbar" 
+                           style="width: <%= @trends_data[:summary][:percentages][period[:key]] %>%"
+                           aria-valuenow="<%= @trends_data[:summary][:percentages][period[:key]] %>" 
+                           aria-valuemin="0" 
+                           aria-valuemax="100">
+                      </div>
+                    </div>
+                    <small class="text-muted d-block mt-1 text-center">
+                      <%= @trends_data[:summary][:percentages][period[:key]] %>% of total production
+                    </small>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Totals Summary Table -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-table me-2"></i>
+          Daily Production Summary (All 4 Periods)
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th class="text-end">
+                  <i class="fas fa-sun text-warning me-1"></i>
+                  Morning
+                </th>
+                <th class="text-end">
+                  <i class="fas fa-sun text-info me-1"></i>
+                  Noon
+                </th>
+                <th class="text-end">
+                  <i class="fas fa-cloud-sun text-primary me-1"></i>
+                  Evening
+                </th>
+                <th class="text-end">
+                  <i class="fas fa-moon text-dark me-1"></i>
+                  Night
+                </th>
+                <th class="text-end fw-bold">Daily Total</th>
+                <th class="text-center">Cows</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if @trends_data[:daily_totals_summary] %>
+                <% @trends_data[:daily_totals_summary][:daily_rows].each do |row| %>
+                  <tr>
+                    <td><%= row[:date].strftime("%b %d, %Y") %></td>
+                    <td class="text-end"><%= number_with_precision(row[:morning_total], precision: 1) %>L</td>
+                    <td class="text-end"><%= number_with_precision(row[:noon_total], precision: 1) %>L</td>
+                    <td class="text-end"><%= number_with_precision(row[:evening_total], precision: 1) %>L</td>
+                    <td class="text-end"><%= number_with_precision(row[:night_total], precision: 1) %>L</td>
+                    <td class="text-end fw-bold"><%= number_with_precision(row[:daily_total], precision: 1) %>L</td>
+                    <td class="text-center">
+                      <span class="badge bg-secondary"><%= row[:cow_count] %></span>
+                    </td>
+                  </tr>
+                <% end %>
+                <!-- Period Totals Row -->
+                <tr class="table-primary fw-bold">
+                  <td>PERIOD TOTALS</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:period_totals][:morning], precision: 1) %>L</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:period_totals][:noon], precision: 1) %>L</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:period_totals][:evening], precision: 1) %>L</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:period_totals][:night], precision: 1) %>L</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:period_totals][:daily], precision: 1) %>L</td>
+                  <td class="text-center">-</td>
+                </tr>
+                <!-- Daily Averages Row -->
+                <tr class="table-info">
+                  <td>DAILY AVERAGES</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:averages][:morning], precision: 1) %>L</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:averages][:noon], precision: 1) %>L</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:averages][:evening], precision: 1) %>L</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:averages][:night], precision: 1) %>L</td>
+                  <td class="text-end"><%= number_with_precision(@trends_data[:daily_totals_summary][:averages][:daily], precision: 1) %>L</td>
+                  <td class="text-center">-</td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Top Performers by Milking Period -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+          <i class="fas fa-trophy me-2"></i>
+          Daily Top Performers by Milking Period
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>
+                  <i class="fas fa-sun text-warning me-1"></i>
+                  Morning Leader
+                </th>
+                <th>
+                  <i class="fas fa-sun text-info me-1"></i>
+                  Noon Leader
+                </th>
+                <th>
+                  <i class="fas fa-cloud-sun text-primary me-1"></i>
+                  Evening Leader
+                </th>
+                <th>
+                  <i class="fas fa-moon text-dark me-1"></i>
+                  Night Leader
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if @trends_data[:daily_performers] %>
+                <% @trends_data[:daily_performers].each do |date, performers| %>
+                  <tr>
+                    <td><%= date.strftime("%b %d, %Y") %></td>
+                    <% [:morning, :noon, :evening, :night].each do |period| %>
+                      <td>
+                        <% if performers[period] && performers[period][:cow_name] %>
+                          <div>
+                            <strong><%= performers[period][:cow_name] %></strong>
+                            <small class="text-muted">(#<%= performers[period][:cow_tag] %>)</small>
+                            <br>
+                            <span class="badge bg-success"><%= number_with_precision(performers[period][:value], precision: 1) %>L</span>
+                          </div>
+                        <% else %>
+                          <small class="text-muted">No data</small>
+                        <% end %>
+                      </td>
+                    <% end %>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Producing Cows Overall -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-medal me-2"></i>
+          Top Producing Cows (All Periods Combined)
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Rank</th>
+                <th>Cow</th>
+                <th>Farm</th>
+                <th class="text-end">Morning Avg</th>
+                <th class="text-end">Noon Avg</th>
+                <th class="text-end">Evening Avg</th>
+                <th class="text-end">Night Avg</th>
+                <th class="text-end">Daily Avg</th>
+                <th class="text-end">Total Production</th>
+                <th class="text-center">Days</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if @trends_data[:cow_totals] %>
+                <% @trends_data[:cow_totals].first(20).each_with_index do |(cow_id, data), index| %>
+                  <tr>
+                    <td>
+                      <% if index == 0 %>
+                        <i class="fas fa-trophy text-warning"></i>
+                      <% elsif index == 1 %>
+                        <i class="fas fa-medal text-secondary"></i>
+                      <% elsif index == 2 %>
+                        <i class="fas fa-medal text-danger"></i>
+                      <% else %>
+                        <%= index + 1 %>
+                      <% end %>
+                    </td>
+                    <td>
+                      <strong><%= data[:cow_name] %></strong>
+                      <br>
+                      <small class="text-muted">#<%= data[:cow_tag] %></small>
+                    </td>
+                    <td><%= data[:farm_name] %></td>
+                    <td class="text-end"><%= number_with_precision(data[:avg_morning], precision: 1) %>L</td>
+                    <td class="text-end"><%= number_with_precision(data[:avg_noon], precision: 1) %>L</td>
+                    <td class="text-end"><%= number_with_precision(data[:avg_evening], precision: 1) %>L</td>
+                    <td class="text-end"><%= number_with_precision(data[:avg_night], precision: 1) %>L</td>
+                    <td class="text-end fw-bold"><%= number_with_precision(data[:avg_total], precision: 1) %>L</td>
+                    <td class="text-end fw-bold text-primary"><%= number_with_precision(data[:total], precision: 1) %>L</td>
+                    <td class="text-center">
+                      <span class="badge bg-secondary"><%= data[:days] %></span>
+                    </td>
+                  </tr>
+                <% end %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  <% else %>
+    <!-- Error or No Data -->
+    <div class="alert alert-warning">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      <%= @trends_data[:summary][:message] if @trends_data[:summary] %>
+      No production data found for the selected period. Please try a different date range or farm.
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  .bg-gradient-success {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+  .bg-gradient-info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+  .bg-gradient-warning {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  }
+</style>
