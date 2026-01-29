@@ -8,27 +8,27 @@ require_relative 'config/environment'
 class PerformanceOptimizer
   def self.run_optimization_tests
     puts "\n📊 Starting Performance Analysis..."
-
+    
     # Test 1: Database Query Performance
     puts "\n🗄️  Testing Database Query Performance:"
     test_database_queries
-
+    
     # Test 2: Edit Forms Load Time
     puts "\n📝 Testing Edit Forms Load Time:"
     test_edit_forms_performance
-
+    
     # Test 3: Cache Performance
     puts "\n💾 Testing Cache Performance:"
     test_cache_performance
-
+    
     # Test 4: Memory Usage
     puts "\n🧠 Testing Memory Usage:"
     test_memory_usage
-
+    
     # Test 5: Overall System Performance
     puts "\n⚡ Testing Overall System Performance:"
     test_overall_performance
-
+    
     puts "\n🎯 Performance Optimization Complete!"
   end
 
@@ -46,10 +46,10 @@ class PerformanceOptimizer
       start_time = Time.current
       results = test[:query].call
       end_time = Time.current
-
+      
       execution_time = ((end_time - start_time) * 1000).round(2)
       status = execution_time < 100 ? "🟢 Fast" : execution_time < 500 ? "🟡 OK" : "🔴 Slow"
-
+      
       puts "  #{test[:name]}: #{results.count} records - #{execution_time}ms #{status}"
     end
   end
@@ -59,15 +59,15 @@ class PerformanceOptimizer
     if HealthRecord.any?
       health_record = HealthRecord.includes(:cow).first
       start_time = Time.current
-
+      
       # Simulate edit form data access
       cow_name = health_record.cow.name rescue "N/A"
       cow_tag = health_record.cow.tag_number rescue "N/A"
       health_status = health_record.health_status
-
+      
       end_time = Time.current
       execution_time = ((end_time - start_time) * 1000).round(2)
-
+      
       puts "  ✅ Health Records Edit Form: #{execution_time}ms"
     else
       puts "  ⚠️  No health records to test"
@@ -77,15 +77,15 @@ class PerformanceOptimizer
     if VaccinationRecord.any?
       vaccination_record = VaccinationRecord.includes(:cow).first
       start_time = Time.current
-
+      
       # Simulate edit form data access
       cow_name = vaccination_record.cow.name rescue "N/A"
       vaccine_name = vaccination_record.vaccine_name
       vaccination_date = vaccination_record.vaccination_date
-
+      
       end_time = Time.current
       execution_time = ((end_time - start_time) * 1000).round(2)
-
+      
       puts "  ✅ Vaccination Records Edit Form: #{execution_time}ms"
     else
       puts "  ⚠️  No vaccination records to test"
@@ -95,15 +95,15 @@ class PerformanceOptimizer
     if BreedingRecord.any?
       breeding_record = BreedingRecord.includes(:cow).first
       start_time = Time.current
-
+      
       # Simulate edit form data access
       cow_name = breeding_record.cow.name rescue "N/A"
       breeding_date = breeding_record.breeding_date
       breeding_status = breeding_record.breeding_status
-
+      
       end_time = Time.current
       execution_time = ((end_time - start_time) * 1000).round(2)
-
+      
       puts "  ✅ Breeding Records Edit Form: #{execution_time}ms"
     else
       puts "  ⚠️  No breeding records to test"
@@ -130,7 +130,7 @@ class PerformanceOptimizer
 
       status = cached_data == test[:data] ? "✅" : "❌"
       puts "  #{status} #{test[:name]}: Write #{write_time}ms, Read #{read_time}ms"
-
+      
       # Cleanup
       Rails.cache.delete(test[:key])
     end
@@ -139,44 +139,44 @@ class PerformanceOptimizer
   def self.test_memory_usage
     # Get initial memory usage
     initial_memory = get_memory_usage
-
+    
     # Perform some operations
     1000.times do |i|
       Cow.active.limit(1).first&.name
     end
-
+    
     # Get final memory usage
     final_memory = get_memory_usage
     memory_increase = final_memory - initial_memory
-
+    
     puts "  📊 Initial Memory: #{initial_memory}MB"
     puts "  📊 Final Memory: #{final_memory}MB"
     puts "  📊 Memory Increase: #{memory_increase}MB"
-
+    
     status = memory_increase < 10 ? "🟢 Good" : memory_increase < 50 ? "🟡 OK" : "🔴 High"
     puts "  #{status} Memory Usage Status"
   end
 
   def self.test_overall_performance
     start_time = Time.current
-
+    
     # Simulate a typical user workflow
     cow_count = Cow.count
     health_records = HealthRecord.includes(:cow).limit(5).to_a
     vaccination_records = VaccinationRecord.includes(:cow).limit(5).to_a
     breeding_records = BreedingRecord.includes(:cow).limit(5).to_a
-
+    
     # Simulate form access
     health_records.each { |record| record.cow.display_name rescue nil }
     vaccination_records.each { |record| record.cow.display_name rescue nil }
     breeding_records.each { |record| record.cow.display_name rescue nil }
-
+    
     end_time = Time.current
     total_time = ((end_time - start_time) * 1000).round(2)
-
+    
     status = total_time < 500 ? "🟢 Excellent" : total_time < 1000 ? "🟡 Good" : "🔴 Needs Improvement"
     puts "  #{status} Overall Performance: #{total_time}ms"
-
+    
     puts "\n📈 Performance Summary:"
     puts "  • Cows in System: #{cow_count}"
     puts "  • Health Records: #{HealthRecord.count}"

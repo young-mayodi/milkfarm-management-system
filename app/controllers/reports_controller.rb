@@ -16,7 +16,7 @@ class ReportsController < ApplicationController
       {
         title: "Production Trends",
         description: "Interactive charts showing production trends over time",
-        path: production_trends_production_records_path,
+        path: production_trends_reports_path,
         icon: "bi-graph-up"
       },
       {
@@ -35,70 +35,84 @@ class ReportsController < ApplicationController
   end
 
   def farm_summary
-    @farms = Farm.includes(:cows, :production_records, :sales_records)
+    # PERFORMANCE FIX: Use single optimized query instead of N+1
+    @farm_stats = Farm.left_joins(:production_records, :sales_records, :cows)
+      .select(
+        'farms.*',
+        'COUNT(DISTINCT cows.id) as total_cows',
+        'COUNT(DISTINCT CASE WHEN cows.status = \'active\' THEN cows.id END) as active_cows',
+        'COALESCE(SUM(CASE WHEN production_records.production_date >= ? THEN production_records.total_production END), 0) as recent_production',
+        'COALESCE(AVG(CASE WHEN production_records.production_date >= ? THEN production_records.total_production END), 0) as avg_daily_production',
+        'COALESCE(SUM(CASE WHEN sales_records.sale_date >= ? THEN sales_records.milk_sold END), 0) as recent_sales_volume',
+        'COALESCE(SUM(CASE WHEN sales_records.sale_date >= ? THEN sales_records.total_sales END), 0) as recent_sales_revenue'
+      )
+      .where('production_records.production_date >= ? OR production_records.production_date IS NULL', 30.days.ago.to_date)
+      .where('sales_records.sale_date >= ? OR sales_records.sale_date IS NULL', 30.days.ago.to_date)
+      .group('farms.id')
+      .map do |farm|
+        {
+          farm: farm,
+          total_cows: farm.total_cows.to_i,
+          active_cows: farm.active_cows.to_i,
+          recent_production: farm.recent_production.to_f,
+          avg_daily_production: farm.avg_daily_production.to_f,
+          recent_sales_volume: farm.recent_sales_volume.to_f,
+          recent_sales_revenue: farm.recent_sales_revenue.to_f
+        }
+      end
 
-    @farm_stats = @farms.map do |farm|
-      recent_records = farm.production_records.where(production_date: 30.days.ago..Date.current)
-      recent_sales = farm.sales_records.where(sale_date: 30.days.ago..Date.current)
-
+    # PERFORMANCE FIX: Cache chart data generation
+    @farm_chart_data = Rails.cache.fetch(['farm-chart-data', Date.current], expires_in: 1.hour) do
       {
-        farm: farm,
-        total_cows: farm.cows_count || 0,
-        active_cows: farm.active_cows_count || 0,
-        recent_production: recent_records.sum(:total_production),
-        avg_daily_production: recent_records.any? ? recent_records.average(:total_production) : 0,
-        recent_sales_volume: recent_sales.sum(:milk_sold),
-        recent_sales_revenue: recent_sales.sum(:total_sales)
+        labels: @farm_stats.map { |stat| stat[:farm].name },
+        datasets: [
+          {
+            label: "30-Day Total Production (L)",
+            data: @farm_stats.map { |stat| stat[:recent_production].round(1).to_f },
+            backgroundColor: [
+              "rgba(54, 162, 235, 0.8)",
+              "rgba(255, 99, 132, 0.8)",
+              "rgba(255, 205, 86, 0.8)",
+              "rgba(75, 192, 192, 0.8)",
+              "rgba(153, 102, 255, 0.8)",
+              "rgba(255, 159, 64, 0.8)"
+            ],
+            borderColor: [
+              "rgba(54, 162, 235, 1)",
+              "rgba(255, 99, 132, 1)",
+              "rgba(255, 205, 86, 1)",
+              "rgba(75, 192, 192, 1)",
+              "rgba(153, 102, 255, 1)",
+              "rgba(255, 159, 64, 1)"
+            ],
+            borderWidth: 2
+          }
+        ]
       }
     end
 
-    # Chart data for farm production comparison
-    @farm_chart_data = {
-      labels: @farm_stats.map { |stat| stat[:farm].name },
-      datasets: [
-        {
-          label: "30-Day Total Production (L)",
-          data: @farm_stats.map { |stat| stat[:recent_production].round(1).to_f },
-          backgroundColor: [
-            "rgba(54, 162, 235, 0.8)",
-            "rgba(255, 99, 132, 0.8)",
-            "rgba(255, 205, 86, 0.8)",
-            "rgba(75, 192, 192, 0.8)",
-            "rgba(153, 102, 255, 0.8)",
-            "rgba(255, 159, 64, 0.8)"
-          ],
-          borderColor: [
-            "rgba(54, 162, 235, 1)",
-            "rgba(255, 99, 132, 1)",
-            "rgba(255, 205, 86, 1)",
-            "rgba(75, 192, 192, 1)",
-            "rgba(153, 102, 255, 1)",
-            "rgba(255, 159, 64, 1)"
-          ],
-          borderWidth: 2
-        }
-      ]
-    }
+    # PERFORMANCE FIX: Cache daily production trend with optimized query
+    @trend_chart_data = Rails.cache.fetch(['daily-production-trend', Date.current], expires_in: 1.hour) do
+      # Use single optimized query with grouping
+      daily_production = ProductionRecord
+        .where(production_date: 30.days.ago..Date.current)
+        .group(:production_date)
+        .sum(:total_production)
 
-    # Daily production trend for all farms combined
-    daily_production = ProductionRecord
-      .where(production_date: 30.days.ago..Date.current)
-      .group(:production_date)
-      .sum(:total_production)
-
-    @trend_chart_data = {
-      labels: daily_production.keys.map { |date| date.strftime("%m/%d") },
-      datasets: [
-        {
-          label: "Daily Total Production (L)",
-          data: daily_production.values.map { |val| val.round(1).to_f },
-          borderColor: "rgba(75, 192, 192, 1)",
-          backgroundColor: "rgba(75, 192, 192, 0.2)",
-          tension: 0.4,
-          fill: true
-        }
-      ]
-    }
+      {
+        labels: daily_production.keys.map { |date| date.strftime("%m/%d") },
+        datasets: [
+          {
+            label: "Daily Total Production (L)",
+            data: daily_production.values.map { |val| val.round(1).to_f },
+            borderColor: "rgba(75, 192, 192, 1)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            tension: 0.4,
+            fill: true
+          }
+        ]
+      }
+    end
   end
 
   def cow_summary

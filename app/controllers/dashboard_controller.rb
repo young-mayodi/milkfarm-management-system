@@ -19,112 +19,52 @@ class DashboardController < ApplicationController
   private
 
   def load_dashboard_data
-    # PERFORMANCE OPTIMIZATION: Use cached aggregated dashboard data
-    cache_key = "dashboard_data_#{current_user.farm_owner? ? 'all' : current_user.farm&.id}_#{Date.current}"
-    
-    @dashboard_summary = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
-      generate_optimized_dashboard_data
-    end
-    
-    # Extract cached data
-    @farms = @dashboard_summary[:farms]
-    @total_farms = @dashboard_summary[:total_farms]
-    @total_cows = @dashboard_summary[:total_cows]
-    @active_cows = @dashboard_summary[:active_cows]
-    @today_production = @dashboard_summary[:today_production]
-    @yesterday_production = @dashboard_summary[:yesterday_production]
-    @monthly_production = @dashboard_summary[:monthly_production]
-    @monthly_sales = @dashboard_summary[:monthly_sales]
-    @monthly_revenue = @dashboard_summary[:monthly_revenue]
-    @farm_production_today = @dashboard_summary[:farm_production_today]
-    
-    # Load non-cached data that changes frequently
+    # Simple data loading without complex caching
+    @farms = current_user.farm_owner? ? Farm.all : [ current_user.farm ]
+    @total_farms = @farms.count
+    @total_cows = Cow.count
+    @active_cows = Cow.active.count
+
+    # Today's production
+    @today_production = ProductionRecord.where(production_date: Date.current).sum(:total_production)
+
+    # Yesterday's production for comparison
+    @yesterday_production = ProductionRecord.where(production_date: Date.yesterday).sum(:total_production)
+
+    # This month's production
+    @monthly_production = ProductionRecord.for_month(Date.current.month, Date.current.year).sum(:total_production)
+
+    # Recent production records
     @recent_records = ProductionRecord.includes(:cow, :farm).recent.limit(10)
-    @recent_active_cows = @dashboard_summary[:recent_active_cows]
 
-    # Add vaccination and breeding notifications (lightweight)
-    load_notifications_data
+    # Recent active cows with high production
+    @recent_active_cows = Cow.where(status: "active")
+                             .joins(:production_records)
+                             .where(production_records: { production_date: 1.week.ago..Date.current })
+                             .group("cows.id")
+                             .select("cows.*, AVG(production_records.total_production) as avg_production")
+                             .limit(5)
+                             .order("avg_production DESC")
 
-    # Enhanced Analytics Data (cached separately)
-    load_enhanced_analytics
-  end
-
-  private
-
-  def generate_optimized_dashboard_data
-    # Get farms for user
-    farms = current_user.farm_owner? ? Farm.all : [current_user.farm].compact
-    
-    # SINGLE OPTIMIZED QUERY: Get all production data for date range
-    production_data = ProductionRecord
-      .joins(:cow, :farm)
-      .select(
-        'production_records.production_date',
-        'production_records.total_production', 
-        'production_records.farm_id',
-        'cows.id as cow_id',
-        'cows.status as cow_status',
-        'farms.name as farm_name'
-      )
-      .where(production_date: [Date.yesterday, Date.current, Date.current.beginning_of_month..Date.current])
-      .where(farm_id: farms.map(&:id))
-
-    # AGGREGATED CALCULATIONS from single query result
-    today_production = production_data.select { |r| r.production_date == Date.current }
-                                     .sum { |r| r.total_production.to_f }
-    
-    yesterday_production = production_data.select { |r| r.production_date == Date.yesterday }
-                                         .sum { |r| r.total_production.to_f }
-    
-    monthly_production = production_data.select { |r| r.production_date >= Date.current.beginning_of_month }
-                                       .sum { |r| r.total_production.to_f }
-
-    # SINGLE COW COUNT QUERY with status breakdown
-    cow_counts = Cow.where(farm_id: farms.map(&:id))
-                   .group(:status)
-                   .count
-    
-    total_cows = cow_counts.values.sum
-    active_cows = cow_counts['active'] || 0
-
-    # SINGLE SALES QUERY for the month
-    monthly_sales = SalesRecord
-      .where(farm_id: farms.map(&:id))
-      .for_month(Date.current.month, Date.current.year)
-      .sum(:total_sales)
-
-    # OPTIMIZED: Farm production today (from already loaded data)
-    farm_production_today = farms.map do |farm|
-      production = production_data.select { |r| r.farm_id == farm.id && r.production_date == Date.current }
-                                 .sum { |r| r.total_production.to_f }
+    # Farm-wise production today
+    @farm_production_today = @farms.map do |farm|
       {
         farm: farm,
-        production: production.round(1)
+        production: ProductionRecord.daily_farm_total(farm, Date.current)
       }
     end
 
-    # OPTIMIZED: Recent high-producing cows (single query)
-    recent_active_cows = Cow.joins(:production_records)
-                           .where(status: "active", farm_id: farms.map(&:id))
-                           .where(production_records: { production_date: 1.week.ago..Date.current })
-                           .group("cows.id, cows.name, cows.tag_number")
-                           .select("cows.*, AVG(production_records.total_production) as avg_production")
-                           .order("avg_production DESC")
-                           .limit(5)
+    # Monthly sales
+    @monthly_sales = SalesRecord.for_month(Date.current.month, Date.current.year).sum(:total_sales)
 
-    {
-      farms: farms,
-      total_farms: farms.count,
-      total_cows: total_cows,
-      active_cows: active_cows,
-      today_production: today_production.round(1),
-      yesterday_production: yesterday_production.round(1), 
-      monthly_production: monthly_production.round(1),
-      monthly_sales: monthly_sales.round(1),
-      monthly_revenue: monthly_sales.round(1),
-      farm_production_today: farm_production_today,
-      recent_active_cows: recent_active_cows
-    }
+    # Monthly revenue calculation
+    @monthly_revenue = @monthly_sales * 1.0 # Assuming total sales is the revenue
+
+    # Add vaccination and breeding notifications
+    load_notifications_data
+
+    # Enhanced Analytics Data
+    load_enhanced_analytics
   end
 
   def load_enhanced_analytics
@@ -154,187 +94,35 @@ class DashboardController < ApplicationController
   end
 
   def prepare_chart_data
-    # PERFORMANCE OPTIMIZATION: Single query for all chart data
-    chart_cache_key = "chart_data_#{current_user.farm_owner? ? 'all' : current_user.farm&.id}_#{Date.current}"
-    
-    cached_chart_data = Rails.cache.fetch(chart_cache_key, expires_in: 30.minutes) do
-      generate_optimized_chart_data
-    end
-    
-    @chart_data = cached_chart_data[:simple_chart]
-    @weekly_trend_chart = cached_chart_data[:weekly_trend]
-    @farm_comparison_chart = cached_chart_data[:farm_comparison]
-    @production_vs_sales_chart = cached_chart_data[:production_vs_sales]
-    @profit_loss_chart = cached_chart_data[:profit_loss]
-    @cost_breakdown_chart = cached_chart_data[:cost_breakdown]
-    @prediction_chart = cached_chart_data[:prediction]
-  end
-
-  def generate_optimized_chart_data
-    farms = current_user.farm_owner? ? Farm.all : [current_user.farm].compact
-    farm_ids = farms.map(&:id)
-    
-    # SINGLE QUERY: Get all production data for charts (last 30 days)
-    date_range = 30.days.ago.to_date..Date.current
-    
-    production_chart_data = ProductionRecord
-      .joins(:cow, :farm)
-      .select(
-        'production_records.production_date',
-        'production_records.total_production',
-        'production_records.farm_id',
-        'farms.name as farm_name'
-      )
-      .where(production_date: date_range)
-      .where(farm_id: farm_ids)
-      .order(:production_date)
-
-    # SINGLE QUERY: Get sales data for the same period
-    sales_chart_data = SalesRecord
-      .select('sale_date', 'milk_sold', 'farm_id')
-      .where(sale_date: date_range)
-      .where(farm_id: farm_ids)
-      .order(:sale_date)
-
-    # Process data efficiently in memory
+    # Simple chart data for the main chart
     last_7_days = (7.days.ago.to_date..Date.current).to_a
-    
-    # Simple chart data (last 7 days)
-    daily_production = last_7_days.map do |date|
-      production = production_chart_data
-        .select { |r| r.production_date == date }
-        .sum { |r| r.total_production.to_f }
-      [date.strftime("%m/%d"), production.round(1)]
+    daily_data = last_7_days.map do |date|
+      production = ProductionRecord.where(production_date: date).sum(:total_production)
+      [ date.strftime("%m/%d"), production.round(1).to_f ]
     end
 
-    simple_chart = {
-      labels: daily_production.map(&:first),
-      data: daily_production.map(&:last)
+    @chart_data = {
+      labels: daily_data.map(&:first),
+      data: daily_data.map(&:last)
     }
 
-    # Weekly trend chart
-    weekly_trend = prepare_weekly_trend_from_data(production_chart_data)
+    # 1. Enhanced Weekly production trend with predictions
+    @weekly_trend_chart = prepare_weekly_trend_chart
 
-    # Farm comparison chart (current month)
-    farm_comparison = prepare_farm_comparison_from_data(production_chart_data, farms)
+    # 2. Farm production comparison (current month)
+    @farm_comparison_chart = prepare_farm_comparison_chart
 
-    # Production vs Sales chart
-    production_vs_sales = prepare_production_vs_sales_from_data(
-      production_chart_data, 
-      sales_chart_data, 
-      last_7_days
-    )
+    # 3. Production vs Sales comparison (last 7 days)
+    @production_vs_sales_chart = prepare_production_vs_sales_chart
 
-    {
-      simple_chart: simple_chart,
-      weekly_trend: weekly_trend,
-      farm_comparison: farm_comparison,
-      production_vs_sales: production_vs_sales,
-      profit_loss: { labels: [], datasets: [] }, # Simplified for now
-      cost_breakdown: { labels: [], datasets: [] }, # Simplified for now
-      prediction: { labels: [], datasets: [] } # Simplified for now
-    }
-  end
+    # 4. NEW: Monthly profit/loss trend
+    @profit_loss_chart = prepare_profit_loss_chart
 
-  def prepare_weekly_trend_from_data(production_data)
-    # Group by week and calculate totals
-    weekly_data = production_data
-      .group_by { |r| r.production_date.beginning_of_week }
-      .transform_values do |records|
-        total = records.sum { |r| r.total_production.to_f }
-        avg_daily = records.any? ? total / records.map(&:production_date).uniq.count : 0
-        { production: total.round(1), average_daily: avg_daily.round(1) }
-      end
-      .sort_by { |week, _| week }
-      .last(8) # Last 8 weeks
+    # 5. NEW: Cost breakdown chart
+    @cost_breakdown_chart = prepare_cost_breakdown_chart
 
-    {
-      labels: weekly_data.map { |week, _| "Week #{week.strftime('%m/%d')}" },
-      datasets: [
-        {
-          label: "Weekly Production (L)",
-          data: weekly_data.map { |_, data| data[:production] },
-          borderColor: "rgba(75, 192, 192, 1)",
-          backgroundColor: "rgba(75, 192, 192, 0.2)",
-          tension: 0.4,
-          fill: true
-        },
-        {
-          label: "Daily Average",
-          data: weekly_data.map { |_, data| data[:average_daily] },
-          borderColor: "rgba(255, 159, 64, 1)", 
-          backgroundColor: "rgba(255, 159, 64, 0.2)",
-          tension: 0.4,
-          borderDash: [5, 5]
-        }
-      ]
-    }
-  end
-
-  def prepare_farm_comparison_from_data(production_data, farms)
-    current_month_start = Date.current.beginning_of_month
-    
-    farm_totals = farms.map do |farm|
-      total = production_data
-        .select { |r| r.farm_id == farm.id && r.production_date >= current_month_start }
-        .sum { |r| r.total_production.to_f }
-      [farm.name, total.round(1)]
-    end
-
-    {
-      labels: farm_totals.map(&:first),
-      datasets: [{
-        label: "Monthly Production (L)",
-        data: farm_totals.map(&:last),
-        backgroundColor: [
-          "rgba(255, 99, 132, 0.8)",
-          "rgba(54, 162, 235, 0.8)", 
-          "rgba(255, 205, 86, 0.8)",
-          "rgba(75, 192, 192, 0.8)",
-          "rgba(153, 102, 255, 0.8)",
-          "rgba(255, 159, 64, 0.8)"
-        ],
-        borderWidth: 2
-      }]
-    }
-  end
-
-  def prepare_production_vs_sales_from_data(production_data, sales_data, last_7_days)
-    daily_comparison = last_7_days.map do |date|
-      production = production_data
-        .select { |r| r.production_date == date }
-        .sum { |r| r.total_production.to_f }
-      
-      sales = sales_data
-        .select { |r| r.sale_date == date }
-        .sum { |r| r.milk_sold.to_f }
-      
-      {
-        date: date.strftime("%m/%d"),
-        production: production.round(1),
-        sales: sales.round(1)
-      }
-    end
-
-    {
-      labels: daily_comparison.map { |data| data[:date] },
-      datasets: [
-        {
-          label: "Production (L)",
-          data: daily_comparison.map { |data| data[:production] },
-          borderColor: "rgba(75, 192, 192, 1)",
-          backgroundColor: "rgba(75, 192, 192, 0.2)",
-          tension: 0.4
-        },
-        {
-          label: "Sales (L)",
-          data: daily_comparison.map { |data| data[:sales] },
-          borderColor: "rgba(255, 99, 132, 1)",
-          backgroundColor: "rgba(255, 99, 132, 0.2)",
-          tension: 0.4
-        }
-      ]
-    }
+    # 6. NEW: Predictive production chart
+    @prediction_chart = prepare_prediction_chart
   end
 
   private

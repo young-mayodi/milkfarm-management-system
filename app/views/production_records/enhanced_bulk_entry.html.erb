@@ -132,67 +132,60 @@
         </div>
         
         <!-- Enhanced Summary Statistics -->
-        <% if @summary_stats && @summary_stats.is_a?(Hash) %>
-          <div class="smart-summary-stats">
-            <div class="row g-0 text-center">
-              <div class="col-md-2">
-                <div class="stat-item">
-                  <div class="stat-value text-primary" id="completion_percentage">
-                    <%= @summary_stats[:completion_percentage] || 0 %>%
-                  </div>
-                  <div class="stat-label">Completion</div>
-                  <div class="progress mt-2" style="height: 4px;">
-                    <div class="progress-bar bg-primary" id="completion_bar" 
-                         style="width: <%= @summary_stats[:completion_percentage] || 0 %>%"></div>
-                  </div>
+        <div class="smart-summary-stats">
+          <div class="row g-0 text-center">
+            <div class="col-md-2">
+              <div class="stat-item">
+                <div class="stat-value text-primary" id="completion_percentage">
+                  <%= @summary_stats[:completion_percentage] %>%
                 </div>
-              </div>
-              <div class="col-md-2">
-                <div class="stat-item">
-                  <div class="stat-value text-info" id="total_cows"><%= @summary_stats[:total_cows] || 0 %></div>
-                  <div class="stat-label">Total Cows</div>
-                </div>
-              </div>
-              <div class="col-md-2">
-                <div class="stat-item">
-                  <div class="stat-value text-success" id="completed_records">
-                    <%= @summary_stats[:completed_records] || 0 %>
-                  </div>
-                  <div class="stat-label">Completed</div>
-                </div>
-              </div>
-              <div class="col-md-2">
-                <div class="stat-item">
-                  <div class="stat-value text-warning" id="remaining_cows">
-                    <%= @summary_stats[:remaining_cows] || 0 %>
-                  </div>
-                  <div class="stat-label">Remaining</div>
-                </div>
-              </div>
-              <div class="col-md-2">
-                <div class="stat-item">
-                  <div class="stat-value text-primary" id="avg_production">
-                    <%= @summary_stats[:average_production] || 0 %>L
-                  </div>
-                  <div class="stat-label">Avg per Cow</div>
-                </div>
-              </div>
-              <div class="col-md-2">
-                <div class="stat-item">
-                  <div class="stat-value text-success" id="daily_total">
-                    <%= @summary_stats[:total_production] || 0 %>L
-                  </div>
-                  <div class="stat-label">Daily Total</div>
+                <div class="stat-label">Completion</div>
+                <div class="progress mt-2" style="height: 4px;">
+                  <div class="progress-bar bg-primary" id="completion_bar" 
+                       style="width: <%= @summary_stats[:completion_percentage] %>%"></div>
                 </div>
               </div>
             </div>
+            <div class="col-md-2">
+              <div class="stat-item">
+                <div class="stat-value text-info" id="total_cows"><%= @summary_stats[:total_cows] %></div>
+                <div class="stat-label">Total Cows</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="stat-item">
+                <div class="stat-value text-success" id="completed_records">
+                  <%= @summary_stats[:completed_records] %>
+                </div>
+                <div class="stat-label">Completed</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="stat-item">
+                <div class="stat-value text-warning" id="remaining_cows">
+                  <%= @summary_stats[:remaining_cows] %>
+                </div>
+                <div class="stat-label">Remaining</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="stat-item">
+                <div class="stat-value text-primary" id="avg_production">
+                  <%= @summary_stats[:average_production] %>L
+                </div>
+                <div class="stat-label">Avg per Cow</div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="stat-item">
+                <div class="stat-value text-success" id="daily_total">
+                  <%= @summary_stats[:total_production] %>L
+                </div>
+                <div class="stat-label">Daily Total</div>
+              </div>
+            </div>
           </div>
-        <% else %>
-          <div class="alert alert-warning">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            Summary statistics are temporarily unavailable. Please refresh the page.
-          </div>
-        <% end %>
+        </div>
       </div>
     </div>
     
@@ -309,10 +302,6 @@
                     <i class="bi bi-sunset me-1 text-purple"></i>EVENING
                     <div class="session-subtitle">16:00 - 20:00</div>
                   </th>
-                  <th style="width: 140px;" class="text-center session-header night-header">
-                    <i class="bi bi-moon me-1 text-dark"></i>NIGHT
-                    <div class="session-subtitle">21:00 - 05:00</div>
-                  </th>
                   <th style="width: 120px;" class="text-center total-header">
                     <i class="bi bi-calculator me-1 text-success"></i>TOTAL
                     <div class="session-subtitle">Auto-calculated</div>
@@ -406,23 +395,6 @@
                                                    readonly: @readonly_mode,
                                                    data: { 
                                                      session: 'evening',
-                                                     cow_id: record.cow.id,
-                                                     row_index: index
-                                                   } %>
-                      <% end %>
-                    </td>
-
-                    <!-- Night Production -->
-                    <td class="text-center production-cell night-cell">
-                      <%= form.fields_for "records[#{record.cow.id}]", record do |record_form| %>
-                        <%= record_form.number_field :night_production, 
-                                                   value: (@existing_records[record.cow.id]&.night_production || ''),
-                                                   class: "form-control production-input night-input #{'is-valid' if @existing_records[record.cow.id]&.night_production&.positive?}",
-                                                   step: 0.1, min: 0, max: 50,
-                                                   placeholder: "0.0",
-                                                   readonly: @readonly_mode,
-                                                   data: { 
-                                                     session: 'night',
                                                      cow_id: record.cow.id,
                                                      row_index: index
                                                    } %>
@@ -957,15 +929,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const morningInput = document.querySelector(`[data-cow-id="${cowId}"][data-session="morning"]`);
             const noonInput = document.querySelector(`[data-cow-id="${cowId}"][data-session="noon"]`);
             const eveningInput = document.querySelector(`[data-cow-id="${cowId}"][data-session="evening"]`);
-            const nightInput = document.querySelector(`[data-cow-id="${cowId}"][data-session="night"]`);
             const totalDisplay = document.getElementById(`total_${cowId}`);
             
-            if (morningInput && noonInput && eveningInput && nightInput && totalDisplay) {
+            if (morningInput && noonInput && eveningInput && totalDisplay) {
                 const morning = parseFloat(morningInput.value) || 0;
                 const noon = parseFloat(noonInput.value) || 0;
                 const evening = parseFloat(eveningInput.value) || 0;
-                const night = parseFloat(nightInput.value) || 0;
-                const total = (morning + noon + evening + night).toFixed(1);
+                const total = (morning + noon + evening).toFixed(1);
                 
                 totalDisplay.textContent = `${total}L`;
                 
