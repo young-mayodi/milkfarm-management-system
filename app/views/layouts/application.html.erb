@@ -1461,30 +1461,31 @@
           <!-- Quick Stats in Sidebar -->
           <div class="mt-auto pt-4">
             <div class="bg-white bg-opacity-10 rounded p-3">
+              <%
+                # Use cached navigation_stats for all sidebar stats
+                stats = navigation_stats rescue {}
+                today_production_cached = Rails.cache.fetch(['today-production', Date.current], expires_in: 5.minutes) do
+                  ProductionRecord.where(production_date: Date.current).sum(:total_production)
+                end rescue 0
+              %>
               <h6 class="text-white mb-2">
                 <i class="bi bi-calendar3 me-1"></i>
                 Today's Summary
               </h6>
               <div class="d-flex justify-content-between text-light mb-1">
                 <small>Active Cows:</small>
-                <small class="fw-bold"><%= Cow.active.count %></small>
+                <small class="fw-bold"><%= stats[:adult_cows_count] || 0 %></small>
               </div>
               <div class="d-flex justify-content-between text-light mb-2">
                 <small>Today's Production:</small>
-                <small class="fw-bold"><%= number_with_precision(ProductionRecord.where(production_date: Date.current).sum(:total_production), precision: 1) %>L</small>
+                <small class="fw-bold"><%= number_with_precision(today_production_cached, precision: 1) %>L</small>
               </div>
               
               <!-- Health Alerts Summary -->
               <% 
-                health_alerts_count = begin
-                  Cow.active.select { |c| c.requires_health_attention? }.count rescue 0
-                end
-                vaccination_due_count = begin
-                  VaccinationRecord.due_soon.count rescue 0
-                end
-                breeding_due_count = begin
-                  BreedingRecord.due_soon.count rescue 0
-                end
+                health_alerts_count = stats[:health_alerts_count] || 0
+                vaccination_due_count = stats[:vaccination_alerts_count] || 0
+                breeding_due_count = stats[:breeding_alerts_count] || 0
               %>
               
               <div class="border-top border-light border-opacity-25 pt-2 mt-2">
@@ -1618,16 +1619,11 @@
                   <button class="btn btn-outline-primary btn-sm position-relative" type="button" data-bs-toggle="dropdown">
                     <i class="bi bi-bell-fill"></i>
                     <%
-                      # Calculate total notifications
-                      health_alerts_count = begin
-                        Cow.active.select { |c| c.requires_health_attention? }.count rescue 0
-                      end
-                      vaccination_due_count = begin
-                        VaccinationRecord.due_soon.count rescue 0
-                      end
-                      breeding_due_count = begin
-                        BreedingRecord.due_soon.count rescue 0
-                      end
+                      # Use cached navigation_stats instead of expensive queries
+                      stats = navigation_stats rescue {}
+                      health_alerts_count = stats[:health_alerts_count] || 0
+                      vaccination_due_count = stats[:vaccination_alerts_count] || 0
+                      breeding_due_count = stats[:breeding_alerts_count] || 0
                       total_notifications = health_alerts_count + vaccination_due_count + breeding_due_count
                     %>
                     <% if total_notifications > 0 %>
