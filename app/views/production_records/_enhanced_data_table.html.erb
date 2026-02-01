@@ -51,13 +51,14 @@
           <th width="5%">
             <input type="checkbox" class="form-check-input" id="select_all_cows">
           </th>
-          <th width="15%">Cow Details</th>
-          <th width="12%">Health Status</th>
-          <th width="15%">Morning <small>(5-8 AM)</small></th>
-          <th width="15%">Noon <small>(11-2 PM)</small></th>
-          <th width="15%">Evening <small>(5-8 PM)</small></th>
-          <th width="12%">Total</th>
-          <th width="8%">Actions</th>
+          <th width="13%">Cow Details</th>
+          <th width="10%">Health Status</th>
+          <th width="13%">Morning <small>(5-8 AM)</small></th>
+          <th width="13%">Noon <small>(11-2 PM)</small></th>
+          <th width="13%">Evening <small>(5-8 PM)</small></th>
+          <th width="13%">Night <small>(9 PM-4 AM)</small></th>
+          <th width="10%">Total</th>
+          <th width="7%">Actions</th>
           <th width="3%">
             <i class="bi bi-three-dots-vertical"></i>
           </th>
@@ -194,6 +195,29 @@
                       "session": "evening",
                       "previous": record.cow.production_records.where(production_date: @date - 1.day).first&.evening_production || 0,
                       "avg": 11.7
+                    } %>
+                <div class="input-indicators">
+                  <span class="trend-indicator"></span>
+                  <span class="quality-indicator"></span>
+                </div>
+              </div>
+            </td>
+            <td class="production-input-cell">
+              <!-- Night input with same enhancements -->
+              <div class="production-input-wrapper">
+                <%= form.number_field "production_#{record.cow.id}_night",
+                    value: record.night_production > 0 ? record.night_production : nil,
+                    placeholder: "0.0",
+                    step: 0.1,
+                    min: 0,
+                    max: 50,
+                    class: "form-control production-input night-input #{@readonly_mode ? 'readonly-input' : ''}",
+                    readonly: @readonly_mode,
+                    data: {
+                      "cow-id": record.cow.id,
+                      "session": "night",
+                      "previous": record.cow.production_records.where(production_date: @date - 1.day).first&.night_production || 0,
+                      "avg": 7.5
                     } %>
                 <div class="input-indicators">
                   <span class="trend-indicator"></span>

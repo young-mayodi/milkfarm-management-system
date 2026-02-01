@@ -36,53 +36,80 @@ class ApplicationController < ActionController::Base
     redirect_to dashboard_path, alert: "Access denied" unless current_user&.can_view_reports?
   end
 
-  # PERFORMANCE: Cache expensive navigation counts
+  # PERFORMANCE: Lazy-load and cache expensive navigation counts
   def navigation_stats
-    @navigation_stats ||= Rails.cache.fetch(
-      ['navigation-stats', current_user&.id, Date.current],
-      expires_in: 5.minutes
+    return @navigation_stats if defined?(@navigation_stats)
+
+    @navigation_stats = Rails.cache.fetch(
+      ['navigation-stats-v2', current_user&.id, Date.current],
+      expires_in: 15.minutes,
+      race_condition_ttl: 10.seconds
     ) do
       return {} unless current_user
 
+      # Use counter cache or simple counts - avoid joins
+      accessible_farm_ids = current_user.accessible_farms.pluck(:id)
+
       {
-        adult_cows_count: Cow.adult_cows.where(farm: current_user.accessible_farms).count,
-        calves_count: Cow.calves.where(farm: current_user.accessible_farms).count,
-        health_alerts_count: health_alerts_count_optimized,
-        vaccination_alerts_count: VaccinationRecord.overdue.count,
-        breeding_alerts_count: BreedingRecord.overdue.count,
-        system_alerts_count: system_alerts_count_optimized
+        adult_cows_count: Cow.where(farm_id: accessible_farm_ids, cow_type: 'adult').count,
+        calves_count: Cow.where(farm_id: accessible_farm_ids, cow_type: 'calf').count,
+        health_alerts_count: health_alerts_count_optimized(accessible_farm_ids),
+        vaccination_alerts_count: vaccination_alerts_count_optimized,
+        breeding_alerts_count: breeding_alerts_count_optimized,
+        system_alerts_count: system_alerts_count_optimized(accessible_farm_ids)
       }
+    rescue => e
+      Rails.logger.error "Navigation stats error: #{e.message}"
+      {}
     end
   end
   helper_method :navigation_stats
 
   private
 
-  def health_alerts_count_optimized
-    # Use database query instead of loading all cows into memory
-    Cow.active
-       .joins(:health_records)
-       .where(health_records: { 
-         health_status: ['sick', 'injured', 'critical', 'quarantine'],
-         recorded_at: 30.days.ago..Time.current 
-       })
-       .distinct
-       .count
+  def health_alerts_count_optimized(farm_ids = nil)
+    # Simplified query - only count recent sick animals
+    scope = HealthRecord.where(
+      health_status: ['sick', 'injured', 'critical', 'quarantine'],
+      recorded_at: 7.days.ago..Time.current
+    )
+
+    scope = scope.joins(:cow).where(cows: { farm_id: farm_ids, status: 'active' }) if farm_ids.present?
+
+    scope.select(:cow_id).distinct.count
+  rescue => e
+    Rails.logger.error "Health alerts count error: #{e.message}"
+    0
+  end
+
+  def vaccination_alerts_count_optimized
+    VaccinationRecord.where('next_due_date < ?', 7.days.from_now).limit(100).count
   rescue
     0
   end
 
-  def system_alerts_count_optimized
-    critical_count = Cow.joins(:health_records)
-                       .where(health_records: { health_status: 'sick', recorded_at: 7.days.ago..Time.current })
-                       .distinct.count +
-                    HealthRecord.where('temperature > ? AND recorded_at > ?', 39.5, 24.hours.ago).count +
-                    VaccinationRecord.where('next_due_date < ?', Date.current).count
-    
-    warning_count = BreedingRecord.where(expected_due_date: Date.current..7.days.from_now).count
-    
-    critical_count + warning_count
+  def breeding_alerts_count_optimized
+    BreedingRecord.where(expected_due_date: Date.current..14.days.from_now).limit(100).count
   rescue
+    0
+  end
+
+  def system_alerts_count_optimized(farm_ids = nil)
+    # Simple count without multiple joins
+    health_critical = HealthRecord.where(
+      health_status: ['sick', 'critical'],
+      recorded_at: 7.days.ago..Time.current
+    ).limit(100).count
+
+    temp_alerts = HealthRecord.where('temperature > ? AND recorded_at > ?', 39.5, 24.hours.ago)
+                             .limit(100).count
+
+    vaccine_overdue = VaccinationRecord.where('next_due_date < ?', Date.current)
+                                      .limit(100).count
+
+    health_critical + temp_alerts + vaccine_overdue
+  rescue => e
+    Rails.logger.error "System alerts count error: #{e.message}"
     0
   end
 end

@@ -325,6 +325,7 @@
             <th><i class="bi bi-sunrise me-1"></i>Morning</th>
             <th><i class="bi bi-sun me-1"></i>Noon</th>
             <th><i class="bi bi-sunset me-1"></i>Evening</th>
+            <th><i class="bi bi-moon me-1"></i>Night</th>
             <th><i class="bi bi-droplet-fill me-1"></i>Total</th>
             <th><i class="bi bi-gear me-1"></i>Actions</th>
           </tr>
@@ -369,6 +370,11 @@
               <td>
                 <span class="production-value evening">
                   <%= number_with_precision(record.evening_production || 0, precision: 1) %>L
+                </span>
+              </td>
+              <td>
+                <span class="production-value night">
+                  <%= number_with_precision(record.night_production || 0, precision: 1) %>L
                 </span>
               </td>
               <td>
@@ -442,6 +448,10 @@
               <div class="production-item">
                 <i class="bi bi-sunset me-1"></i>
                 <span>Evening: <strong><%= number_with_precision(record.evening_production || 0, precision: 1) %>L</strong></span>
+              </div>
+              <div class="production-item">
+                <i class="bi bi-moon me-1"></i>
+                <span>Night: <strong><%= number_with_precision(record.night_production || 0, precision: 1) %>L</strong></span>
               </div>
             </div>
           </div>
@@ -665,6 +675,10 @@
     color: #9f7aea;
   }
   
+  .production-value.night {
+    color: #4a5568;
+  }
+
   .production-value.total {
     color: #48bb78;
   }

@@ -134,6 +134,9 @@
                   <i class="bi bi-sunset me-1"></i>EVENING
                 </th>
                 <th style="width: 120px;" class="text-center">
+                  <i class="bi bi-moon me-1"></i>NIGHT
+                </th>
+                <th style="width: 120px;" class="text-center">
                   <i class="bi bi-calculator me-1"></i>TOTAL
                 </th>
                 <th style="width: 80px;" class="text-center">STATUS</th>
@@ -194,6 +197,20 @@
                     <% end %>
                   </td>
                   <td>
+                    <%= form.fields_for "records[#{record.cow.id}]", record do |record_fields| %>
+                      <%= record_fields.number_field :night_production,
+                            value: record.night_production > 0 ? number_with_precision(record.night_production, precision: 1) : '',
+                            step: 0.1, min: 0, max: 100,
+                            class: "form-control text-center production-input night-input",
+                            placeholder: "0.0",
+                            data: {
+                              cow_id: record.cow.id,
+                              session: 'night',
+                              auto_save: true
+                            } %>
+                    <% end %>
+                  </td>
+                  <td>
                     <div class="text-center">
                       <span class="badge bg-primary total-display" data-cow-id="<%= record.cow.id %>">
                         <%= number_with_precision(record.total_production, precision: 1) %>L
@@ -221,6 +238,9 @@
                 </th>
                 <th class="text-center">
                   <span id="evening_total" class="badge bg-success">0.0L</span>
+                </th>
+                <th class="text-center">
+                  <span id="night_total" class="badge bg-dark">0.0L</span>
                 </th>
                 <th class="text-center">
                   <span id="grand_total" class="badge bg-primary fs-6">0.0L</span>
@@ -548,20 +568,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let morningTotal = 0;
     let noonTotal = 0;
     let eveningTotal = 0;
+    let nightTotal = 0;
     let recordsCount = 0;
     
     document.querySelectorAll('.production-row').forEach(function(row) {
       const morningInput = row.querySelector('.morning-input');
       const noonInput = row.querySelector('.noon-input');
       const eveningInput = row.querySelector('.evening-input');
+      const nightInput = row.querySelector('.night-input');
       const totalDisplay = row.querySelector('.total-display');
       
-      if (morningInput && noonInput && eveningInput && totalDisplay) {
+      if (morningInput && noonInput && eveningInput && nightInput && totalDisplay) {
         const morning = parseFloat(morningInput.value) || 0;
         const noon = parseFloat(noonInput.value) || 0;
         const evening = parseFloat(eveningInput.value) || 0;
-        const total = morning + noon + evening;
-        
+        const night = parseFloat(nightInput.value) || 0;
+        const total = morning + noon + evening + night;
+
         // Update row total
         totalDisplay.textContent = total.toFixed(1) + 'L';
         
@@ -569,6 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         morningTotal += morning;
         noonTotal += noon;
         eveningTotal += evening;
+        nightTotal += night;
         grandTotal += total;
         
         if (total > 0) {
@@ -581,12 +605,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const morningTotalEl = document.getElementById('morning_total');
     const noonTotalEl = document.getElementById('noon_total');
     const eveningTotalEl = document.getElementById('evening_total');
+    const nightTotalEl = document.getElementById('night_total');
     const grandTotalEl = document.getElementById('grand_total');
     const recordsCountEl = document.getElementById('records_count');
     
     if (morningTotalEl) morningTotalEl.textContent = morningTotal.toFixed(1) + 'L';
     if (noonTotalEl) noonTotalEl.textContent = noonTotal.toFixed(1) + 'L';
     if (eveningTotalEl) eveningTotalEl.textContent = eveningTotal.toFixed(1) + 'L';
+    if (nightTotalEl) nightTotalEl.textContent = nightTotal.toFixed(1) + 'L';
     if (grandTotalEl) grandTotalEl.textContent = grandTotal.toFixed(1) + 'L';
     if (recordsCountEl) recordsCountEl.textContent = recordsCount;
     

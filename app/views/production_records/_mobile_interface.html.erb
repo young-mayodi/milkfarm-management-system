@@ -45,7 +45,7 @@
           <div class="card-body">
             <!-- Mobile Production Inputs -->
             <div class="row g-2 mb-3">
-              <div class="col-4">
+              <div class="col-3">
                 <label class="form-label text-muted small">Morning</label>
                 <div class="input-group">
                   <%= form.number_field "production_#{record.cow.id}_morning",
@@ -59,7 +59,7 @@
                   <span class="input-group-text">L</span>
                 </div>
               </div>
-              <div class="col-4">
+              <div class="col-3">
                 <label class="form-label text-muted small">Noon</label>
                 <div class="input-group">
                   <%= form.number_field "production_#{record.cow.id}_noon",
@@ -73,7 +73,7 @@
                   <span class="input-group-text">L</span>
                 </div>
               </div>
-              <div class="col-4">
+              <div class="col-3">
                 <label class="form-label text-muted small">Evening</label>
                 <div class="input-group">
                   <%= form.number_field "production_#{record.cow.id}_evening",
@@ -84,6 +84,20 @@
                       max: 50,
                       class: "form-control mobile-production-input",
                       data: { "cow-id": record.cow.id, "session": "evening" } %>
+                  <span class="input-group-text">L</span>
+                </div>
+              </div>
+              <div class="col-3">
+                <label class="form-label text-muted small">Night</label>
+                <div class="input-group">
+                  <%= form.number_field "production_#{record.cow.id}_night",
+                      value: record.night_production > 0 ? record.night_production : nil,
+                      placeholder: "0.0",
+                      step: 0.1,
+                      min: 0,
+                      max: 50,
+                      class: "form-control mobile-production-input",
+                      data: { "cow-id": record.cow.id, "session": "night" } %>
                   <span class="input-group-text">L</span>
                 </div>
               </div>

@@ -333,6 +333,127 @@
       </div>
     </div>
 
+    <!-- Daily Breakdown with Individual Cow Data (Collapsible) -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-calendar-day me-2"></i>
+          Daily Production Records - Individual Cow Breakdown
+        </h5>
+        <small>Click on any date to expand and see individual cow production for all 4 milking periods</small>
+      </div>
+      <div class="card-body">
+        <% if @trends_data[:daily_data] %>
+          <div class="accordion" id="dailyDataAccordion">
+            <% @trends_data[:daily_data].each_with_index do |(date, cows_data), date_index| %>
+              <% date_total_info = @trends_data[:date_totals][date] %>
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="heading-<%= date_index %>">
+                  <button class="accordion-button <%= date_index > 0 ? 'collapsed' : '' %>"
+                          type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target="#collapse-<%= date_index %>"
+                          aria-expanded="<%= date_index == 0 %>"
+                          aria-controls="collapse-<%= date_index %>">
+                    <div class="w-100 d-flex justify-content-between align-items-center pe-3">
+                      <div>
+                        <strong><%= date.strftime("%A, %B %d, %Y") %></strong>
+                      </div>
+                      <div class="text-end">
+                        <span class="badge bg-primary me-2"><%= cows_data.size %> cows</span>
+                        <span class="badge bg-success"><%= number_with_precision(date_total_info[:total], precision: 1) %>L total</span>
+                      </div>
+                    </div>
+                  </button>
+                </h2>
+                <div id="collapse-<%= date_index %>"
+                     class="accordion-collapse collapse <%= date_index == 0 ? 'show' : '' %>"
+                     aria-labelledby="heading-<%= date_index %>"
+                     data-bs-parent="#dailyDataAccordion">
+                  <div class="accordion-body p-0">
+                    <div class="table-responsive">
+                      <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light sticky-top">
+                          <tr>
+                            <th>Cow</th>
+                            <th>Tag</th>
+                            <th class="text-end">
+                              <i class="fas fa-sun text-warning me-1"></i>
+                              Morning
+                            </th>
+                            <th class="text-end">
+                              <i class="fas fa-sun text-info me-1"></i>
+                              Noon
+                            </th>
+                            <th class="text-end">
+                              <i class="fas fa-cloud-sun text-primary me-1"></i>
+                              Evening
+                            </th>
+                            <th class="text-end">
+                              <i class="fas fa-moon text-dark me-1"></i>
+                              Night
+                            </th>
+                            <th class="text-end fw-bold">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% cows_data.sort_by { |_, cow_data| -cow_data[:total] }.each do |cow_id, cow_data| %>
+                            <tr>
+                              <td><strong><%= cow_data[:cow_name] %></strong></td>
+                              <td>
+                                <span class="badge bg-secondary"><%= cow_data[:cow_tag] %></span>
+                              </td>
+                              <td class="text-end">
+                                <span class="<%= cow_data[:morning] > 0 ? 'text-warning fw-bold' : 'text-muted' %>">
+                                  <%= number_with_precision(cow_data[:morning], precision: 1) %>L
+                                </span>
+                              </td>
+                              <td class="text-end">
+                                <span class="<%= cow_data[:noon] > 0 ? 'text-info fw-bold' : 'text-muted' %>">
+                                  <%= number_with_precision(cow_data[:noon], precision: 1) %>L
+                                </span>
+                              </td>
+                              <td class="text-end">
+                                <span class="<%= cow_data[:evening] > 0 ? 'text-primary fw-bold' : 'text-muted' %>">
+                                  <%= number_with_precision(cow_data[:evening], precision: 1) %>L
+                                </span>
+                              </td>
+                              <td class="text-end">
+                                <span class="<%= cow_data[:night] > 0 ? 'text-dark fw-bold' : 'text-muted' %>">
+                                  <%= number_with_precision(cow_data[:night], precision: 1) %>L
+                                </span>
+                              </td>
+                              <td class="text-end">
+                                <strong class="text-success"><%= number_with_precision(cow_data[:total], precision: 1) %>L</strong>
+                              </td>
+                            </tr>
+                          <% end %>
+                          <!-- Daily Totals Row -->
+                          <tr class="table-primary fw-bold">
+                            <td colspan="2">Daily Totals</td>
+                            <td class="text-end"><%= number_with_precision(date_total_info[:morning], precision: 1) %>L</td>
+                            <td class="text-end"><%= number_with_precision(date_total_info[:noon], precision: 1) %>L</td>
+                            <td class="text-end"><%= number_with_precision(date_total_info[:evening], precision: 1) %>L</td>
+                            <td class="text-end"><%= number_with_precision(date_total_info[:night], precision: 1) %>L</td>
+                            <td class="text-end"><%= number_with_precision(date_total_info[:total], precision: 1) %>L</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="alert alert-info mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            No daily breakdown data available for the selected period.
+          </div>
+        <% end %>
+      </div>
+    </div>
+
     <!-- Top Producing Cows Overall -->
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-info text-white">

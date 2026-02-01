@@ -366,6 +366,7 @@
                   <th>Morning</th>
                   <th>Noon</th>
                   <th>Evening</th>
+                  <th>Night</th>
                   <th>Total</th>
                 </tr>
               </thead>
@@ -376,6 +377,7 @@
                     <td><%= number_with_precision(record.morning_production, precision: 1) %>L</td>
                     <td><%= number_with_precision(record.noon_production, precision: 1) %>L</td>
                     <td><%= number_with_precision(record.evening_production, precision: 1) %>L</td>
+                    <td><%= number_with_precision(record.night_production || 0, precision: 1) %>L</td>
                     <td>
                       <span class="badge bg-primary">
                         <%= number_with_precision(record.total_production, precision: 1) %>L
