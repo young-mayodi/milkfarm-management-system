@@ -1,4 +1,6 @@
 class CowsController < ApplicationController
+  include PerformanceHelper
+  
   before_action :set_farm, except: [ :index, :show ]
   before_action :set_cow, only: [ :show, :edit, :update, :destroy, :graduate_to_dairy, :mark_as_sold, :mark_as_deceased, :reactivate ]
 
@@ -111,6 +113,14 @@ class CowsController < ApplicationController
 
     @average_production = @cow.average_daily_production(30)
 
+    # Production statistics - calculated once in controller to avoid N+1
+    @records_7_days_count = @cow.production_records.where(production_date: 7.days.ago..Date.current).count
+    @last_7_days_avg = @cow.production_records.where(production_date: 7.days.ago..Date.current).average(:total_production)&.to_f || 0
+    @prev_7_days_avg = @cow.production_records.where(production_date: 14.days.ago..8.days.ago).average(:total_production)&.to_f || 0
+    @production_max = @cow.production_records.maximum(:total_production)&.to_f || 0
+    @production_min = @cow.production_records.minimum(:total_production)&.to_f || 0
+    @production_total = @cow.production_records.sum(:total_production)&.to_f || 0
+
     Rails.logger.info "Recent production count: #{@recent_production.count}"
     Rails.logger.info "Average production: #{@average_production}"
 
@@ -219,8 +229,9 @@ class CowsController < ApplicationController
   end
 
   def destroy
-    @cow.destroy
-    redirect_to farm_cows_url(@farm), notice: "Cow was successfully deleted."
+    # Use soft delete to preserve data
+    @cow.soft_delete!
+    redirect_to farm_cows_url(@farm), notice: "#{@cow.name} has been archived. Data preserved for records."
   end
 
   # Lifecycle management actions
@@ -323,6 +334,9 @@ class CowsController < ApplicationController
       cow = Cow.find(params[:id])
       @farm = cow.farm
     end
+    
+    # SECURITY: Ensure user can only access their own farm's data
+    authorize_farm_access!
   end
 
   def set_cow
@@ -334,8 +348,21 @@ class CowsController < ApplicationController
   end
 
   def cow_params
-    params.require(:cow).permit(:name, :tag_number, :breed, :age, :group_name, :status, :mother_id,
+    params.require(:cow).permit(:name, :tag_number, :breed, :age, :group_name, :status, :mother_id, :sire_id,
                                 :current_weight, :prev_weight, :weight_gain, :avg_daily_gain, :birth_date)
+  end
+  
+  # SECURITY: Authorize farm access - users can only access their own farm's data
+  def authorize_farm_access!
+    return if current_user.nil? # Will be caught by authenticate_user!
+    
+    # Farm owners can access all farms
+    return if current_user.farm_owner? && current_user.farm.nil?
+    
+    # Other users can only access their own farm
+    if @farm && current_user.farm_id != @farm.id
+      redirect_to dashboard_path, alert: "Access denied. You can only access your own farm's data."
+    end
   end
 
   # Calculate summary statistics efficiently with caching

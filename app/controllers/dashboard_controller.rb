@@ -1,4 +1,6 @@
 class DashboardController < ApplicationController
+  include PerformanceHelper
+  
   def index
     load_dashboard_data
     prepare_chart_data
@@ -19,34 +21,47 @@ class DashboardController < ApplicationController
   private
 
   def load_dashboard_data
-    # Simple data loading without complex caching
+    # Use cached data with performance helpers
     @farms = current_user.farm_owner? ? Farm.all : [ current_user.farm ]
+    farm_id = @farms.first&.id
+    
+    # Use counter caches instead of COUNT queries
     @total_farms = @farms.count
-    @total_cows = Cow.count
-    @active_cows = Cow.active.count
+    @total_cows = Rails.cache.fetch("total_cows_count", expires_in: 5.minutes) { Cow.count }
+    @active_cows = Rails.cache.fetch("active_cows_count", expires_in: 5.minutes) { Cow.active.count }
 
-    # Today's production
-    @today_production = ProductionRecord.where(production_date: Date.current).sum(:total_production)
+    # Cache production data
+    @today_production = Rails.cache.fetch("today_production_#{Date.current}", expires_in: 30.minutes) do
+      ProductionRecord.where(production_date: Date.current).sum(:total_production)
+    end
 
-    # Yesterday's production for comparison
-    @yesterday_production = ProductionRecord.where(production_date: Date.yesterday).sum(:total_production)
+    @yesterday_production = Rails.cache.fetch("yesterday_production_#{Date.yesterday}", expires_in: 1.day) do
+      ProductionRecord.where(production_date: Date.yesterday).sum(:total_production)
+    end
 
-    # This month's production
-    @monthly_production = ProductionRecord.for_month(Date.current.month, Date.current.year).sum(:total_production)
+    @monthly_production = Rails.cache.fetch("monthly_production_#{Date.current.month}_#{Date.current.year}", expires_in: 1.hour) do
+      ProductionRecord.for_month(Date.current.month, Date.current.year).sum(:total_production)
+    end
 
-    # Recent production records
-    @recent_records = ProductionRecord.includes(:cow, :farm).recent.limit(10)
+    # Recent production records with eager loading
+    @recent_records = Rails.cache.fetch("recent_records_#{Date.current}", expires_in: 15.minutes) do
+      ProductionRecord.includes(:cow, :farm).recent.limit(10).to_a
+    end
 
-    # Recent active cows with high production
-    @recent_active_cows = Cow.where(status: "active")
-                             .joins(:production_records)
-                             .where(production_records: { production_date: 1.week.ago..Date.current })
-                             .group("cows.id")
-                             .select("cows.*, AVG(production_records.total_production) as avg_production")
-                             .limit(5)
-                             .order("avg_production DESC")
+    # Recent active cows with hi (cached)
+    @farm_production_today = Rails.cache.fetch("farm_production_today_#{Date.current}", expires_in: 30.minutes) do
+      @farms.map do |farm|
+        {
+          farm: farm,
+          production: ProductionRecord.daily_farm_total(farm, Date.current)
+        }
+      end
+    end
 
-    # Farm-wise production today
+    # Monthly sales (cached)
+    @monthly_sales = Rails.cache.fetch("monthly_sales_#{Date.current.month}_#{Date.current.year}", expires_in: 1.hour) do
+      SalesRecord.for_month(Date.current.month, Date.current.year).sum(:total_sales)
+    end
     @farm_production_today = @farms.map do |farm|
       {
         farm: farm,
@@ -64,43 +79,49 @@ class DashboardController < ApplicationController
     load_notifications_data
 
     # Enhanced Analytics Data
-    load_enhanced_analytics
-  end
-
-  def load_enhanced_analytics
-    # Weekly trend analysis
-    @weekly_trends = ProductionRecord.weekly_trend_analysis(weeks_back: 8)
-
-    # Monthly trend analysis
-    @monthly_trends = ProductionRecord.monthly_trend_analysis(months_back: 6)
-
-    # Predictive analytics
-    @production_predictions = ProductionRecord.predictive_analysis
-
-    # Profit/Loss analysis for each farm
-    @farm_profit_analysis = @farms.map do |farm|
+    loCache all expensive analytics
+    cache_key = "enhanced_analytics_#{@farms.first&.id}_#{Date.current}"
+    
+    cached_data = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
       {
-        farm: farm,
-        current_month: SalesRecord.profit_loss_analysis(farm, Date.current.beginning_of_month..Date.current),
-        last_month: SalesRecord.profit_loss_analysis(farm, 1.month.ago.beginning_of_month..1.month.ago.end_of_month)
+        weekly_trends: ProductionRecord.weekly_trend_analysis(weeks_back: 8),
+        monthly_trends: ProductionRecord.monthly_trend_analysis(months_back: 6),
+        production_predictions: ProductionRecord.predictive_analysis,
+        farm_profit_analysis: @farms.map do |farm|
+          {
+            farm: farm,
+            current_month: SalesRecord.profit_loss_analysis(farm, Date.current.beginning_of_month..Date.current),
+            last_month: SalesRecord.profit_loss_analysis(farm, 1.month.ago.beginning_of_month..1.month.ago.end_of_month)
+          }
+        end,
+        profit_trends: @farms.first ? SalesRecord.monthly_profit_trend(@farms.first, months_back: 6) : {},
+        cost_breakdown: @farms.first ? SalesRecord.cost_breakdown_analysis(@farms.first) : {}
       }
     end
-
-    # Overall profit trend
+    
+    # Assign cached values
+    @weekly_trends = cached_data[:weekly_trends]
+    @monthly_trends = cached_data[:monthly_trends]
+    @production_predictions = cached_data[:production_predictions]
+    @farm_profit_analysis = cached_data[:farm_profit_analysis]
+    @profit_trends = cached_data[:profit_trends]
+    @cost_breakdown = cached_data[:cost_breakdown]
     @profit_trends = @farms.first ? SalesRecord.monthly_profit_trend(@farms.first, months_back: 6) : {}
 
     # Cost breakdown
-    @cost_breakdown = @farms.first ? SalesRecord.cost_breakdown_analysis(@farms.first) : {}
-  end
+    @cCache chart data
+    @chart_data = Rails.cache.fetch("dashboard_chart_data_#{Date.current}", expires_in: 30.minutes) do
+      last_7_days = (7.days.ago.to_date..Date.current).to_a
+      daily_data = last_7_days.map do |date|
+        production = ProductionRecord.where(production_date: date).sum(:total_production)
+        [ date.strftime("%m/%d"), production.round(1).to_f ]
+      end
 
-  def prepare_chart_data
-    # Simple chart data for the main chart
-    last_7_days = (7.days.ago.to_date..Date.current).to_a
-    daily_data = last_7_days.map do |date|
-      production = ProductionRecord.where(production_date: date).sum(:total_production)
-      [ date.strftime("%m/%d"), production.round(1).to_f ]
+      {
+        labels: daily_data.map(&:first),
+        data: daily_data.map(&:last)
+      }
     end
-
     @chart_data = {
       labels: daily_data.map(&:first),
       data: daily_data.map(&:last)
@@ -468,16 +489,20 @@ class DashboardController < ApplicationController
       }
     end
 
-    # Upcoming Health Checkups (monthly reminders)
-    animals_due_checkup = Cow.active.includes(:health_records)
-                             .select do |cow|
-                               last_checkup = cow.health_records.order(recorded_at: :desc).first
-                               !last_checkup || last_checkup.recorded_at < 30.days.ago
-                             end
-                             .first(5)
+    # Upcoming Health Checkups (monthly reminders) - OPTIMIZED
+    # Use SQL to find cows that either have no health records or last checkup was > 30 days ago
+    cow_ids_needing_checkup = Cow.active
+                                  .left_joins(:health_records)
+                                  .group('cows.id')
+                                  .having('MAX(health_records.recorded_at) < ? OR MAX(health_records.recorded_at) IS NULL', 30.days.ago)
+                                  .limit(5)
+                                  .pluck(:id)
+    
+    animals_due_checkup = Cow.where(id: cow_ids_needing_checkup)
+                             .includes(:health_records)
 
     animals_due_checkup.each do |cow|
-      last_checkup = cow.health_records.order(recorded_at: :desc).first
+      last_checkup = cow.health_records.max_by(&:recorded_at)
       days_since = last_checkup ? (Date.current - last_checkup.recorded_at.to_date).to_i : 99
 
       alerts << {

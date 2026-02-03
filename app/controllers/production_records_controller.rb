@@ -1,4 +1,6 @@
 class ProductionRecordsController < ApplicationController
+  include PerformanceHelper
+  
   before_action :set_farm_and_cow
   before_action :set_production_record, only: [ :show, :edit, :update, :destroy ]
 
@@ -24,29 +26,24 @@ class ProductionRecordsController < ApplicationController
 
     @production_records = @production_records.recent.page(params[:page]).per(20)
 
-    # Use optimized analytics service with fallback
-    begin
-      analytics_service = ProductionAnalyticsService.new(
-        farm_id: @farm&.id,
-        date_range: 1.week.ago..Date.current
-      )
-
-      @analytics_data = analytics_service.dashboard_data
-      @top_performers = @analytics_data[:top_performers] || []
-      @recent_high_producers = @analytics_data[:recent_high_producers] || []
-      @production_summary = @analytics_data[:production_summary] || {}
-    rescue NameError => e
-      Rails.logger.error "ProductionAnalyticsService not found: #{e.message}"
-      # Fallback to basic queries
-      @top_performers = []
-      @recent_high_producers = []
-      @production_summary = {}
-    rescue StandardError => e
-      Rails.logger.error "Error loading analytics: #{e.message}"
-      @top_performers = []
-      @recent_high_producers = []
-      @production_summary = {}
+    # Cache analytics data
+    cache_key = "production_analytics_#{@farm&.id}_#{@cow&.id}_#{Date.current}"
+    @analytics_data = Rails.cache.fetch(cache_key, expires_in: 15.minutes) do
+      begin
+        analytics_service = ProductionAnalyticsService.new(
+          farm_id: @farm&.id,
+          date_range: 1.week.ago..Date.current
+        )
+        analytics_service.dashboard_data
+      rescue => e
+        Rails.logger.error "Error loading analytics: #{e.message}"
+        { top_performers: [], recent_high_producers: [], production_summary: {} }
+      end
     end
+    
+    @top_performers = @analytics_data[:top_performers] || []
+    @recent_high_producers = @analytics_data[:recent_high_producers] || []
+    @production_summary = @analytics_data[:production_summary] || {}
 
     respond_to do |format|
       format.html
@@ -67,12 +64,19 @@ class ProductionRecordsController < ApplicationController
     @production_record.cow = @cow if @cow
     @production_record.production_date = Date.current
 
-    @cows = @farm ? @farm.cows.active : Cow.active
-    @farms = Farm.all unless @farm
+    # Cache these lists to avoid repeated queries
+    @cows = Rails.cache.fetch("active_cows_#{@farm&.id}", expires_in: 5.minutes) do
+      (@farm ? @farm.cows.active : Cow.active).to_a
+    end
+    @farms = Rails.cache.fetch("farms_list", expires_in: 1.hour) { Farm.all.to_a } unless @farm
   end
 
   def create
     @production_record = ProductionRecord.new(production_record_params)
+    
+    # SECURITY: Set farm_id from context, not from user input
+    @production_record.farm = @farm || current_user.farm
+    @production_record.cow = @cow if @cow
 
     if @production_record.save
       redirect_path = if @farm && @cow
@@ -84,15 +88,21 @@ class ProductionRecordsController < ApplicationController
       end
       redirect_to redirect_path, notice: "Production record was successfully created."
     else
-      @cows = @farm ? @farm.cows.active : Cow.active
-      @farms = Farm.all unless @farm
+      # Cache these lists to avoid repeated queries
+      @cows = Rails.cache.fetch("active_cows_#{@farm&.id}", expires_in: 5.minutes) do
+        (@farm ? @farm.cows.active : Cow.active).to_a
+      end
+      @farms = Rails.cache.fetch("farms_list", expires_in: 1.hour) { Farm.all.to_a } unless @farm
       render :new
     end
   end
 
   def edit
-    @cows = @farm ? @farm.cows.active : Cow.active
-    @farms = Farm.all unless @farm
+    # Cache these lists to avoid repeated queries
+    @cows = Rails.cache.fetch("active_cows_#{@farm&.id}", expires_in: 5.minutes) do
+      (@farm ? @farm.cows.active : Cow.active).to_a
+    end
+    @farms = Rails.cache.fetch("farms_list", expires_in: 1.hour) { Farm.all.to_a } unless @farm
   end
 
   def update
@@ -158,6 +168,7 @@ class ProductionRecordsController < ApplicationController
 
     # PERFORMANCE OPTIMIZATION: Get existing records with single optimized query
     @existing_records = {}
+    @previous_day_records = {}
     if @cows.any?
       cow_ids = @cows.map(&:id)
       existing_records_array = ProductionRecord
@@ -165,6 +176,13 @@ class ProductionRecordsController < ApplicationController
         .includes(:cow)
         .index_by(&:cow_id)
       @existing_records = existing_records_array
+      
+      # Preload previous day's records to avoid N+1 in view
+      previous_day_records_array = ProductionRecord
+        .where(cow_id: cow_ids, production_date: @date - 1.day)
+        .select(:id, :cow_id, :morning_production, :noon_production, :evening_production, :production_date)
+        .index_by(&:cow_id)
+      @previous_day_records = previous_day_records_array
     end
 
     # Create records for all cows (existing or new) - avoid N+1 queries
@@ -433,7 +451,7 @@ class ProductionRecordsController < ApplicationController
     end
 
     # Get farms for dropdown
-    @farms = Farm.includes(:cows).order(:name)
+    @farms = Farm.order(:name)
 
     respond_to do |format|
       format.html
@@ -464,7 +482,7 @@ class ProductionRecordsController < ApplicationController
       end
 
       # Get farms for dropdown
-      @farms = Farm.includes(:cows).order(:name)
+      @farms = Farm.order(:name)
 
       respond_to do |format|
         format.html
@@ -486,15 +504,40 @@ class ProductionRecordsController < ApplicationController
   def set_farm_and_cow
     @farm = Farm.find(params[:farm_id]) if params[:farm_id]
     @cow = @farm ? @farm.cows.find(params[:cow_id]) : Cow.find(params[:cow_id]) if params[:cow_id]
+    
+    # SECURITY: Authorize farm access
+    authorize_farm_access!
   end
 
   def set_production_record
     @production_record = ProductionRecord.find(params[:id])
+    
+    # SECURITY: Ensure record belongs to user's farm
+    if @production_record && current_user.farm_id != @production_record.farm_id
+      unless current_user.farm_owner? && current_user.farm.nil?
+        redirect_to dashboard_path, alert: "Access denied."
+        return
+      end
+    end
   end
 
   def production_record_params
-    params.require(:production_record).permit(:cow_id, :farm_id, :production_date,
+    # SECURITY: farm_id is set from context, not from user input
+    params.require(:production_record).permit(:cow_id, :production_date,
                                               :morning_production, :noon_production, :evening_production, :night_production)
+  end
+  
+  # SECURITY: Authorize farm access - users can only access their own farm's data
+  def authorize_farm_access!
+    return if current_user.nil? # Will be caught by authenticate_user!
+    
+    # Farm owners without a specific farm can access all farms
+    return if current_user.farm_owner? && current_user.farm.nil?
+    
+    # Other users can only access their own farm
+    if @farm && current_user.farm_id != @farm.id
+      redirect_to dashboard_path, alert: "Access denied. You can only access your own farm's data."
+    end
   end
 
   # Broadcast real-time updates to other browser windows
@@ -866,7 +909,7 @@ class ProductionRecordsController < ApplicationController
 
   def calculate_trends_summary(records, date_range)
     total_records = records.count
-    return { message: "No production data found for the selected period" } if total_records.zero?
+    return { message: "No production data found for the selected period", totals: {} } if total_records.zero?
 
     # Aggregate totals with null safety
     morning_total = records.sum(:morning_production).to_f
@@ -891,9 +934,16 @@ class ProductionRecordsController < ApplicationController
       total: records.order(total_production: :desc).first
     }
 
+    # Calculate period days safely
+    period_days = if date_range.is_a?(Range)
+                    (date_range.end.to_date - date_range.begin.to_date).to_i + 1
+                  else
+                    1
+                  end
+
     {
       total_records: total_records,
-      period_days: (date_range.end - date_range.begin).to_i + 1,
+      period_days: period_days,
       totals: {
         morning: morning_total.round(1),
         noon: noon_total.round(1),

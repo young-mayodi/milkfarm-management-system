@@ -1,8 +1,11 @@
 class SalesRecordsController < ApplicationController
+  include PerformanceHelper
+  
   before_action :set_farm
   before_action :set_sales_record, only: [:show, :edit, :update, :destroy]
 
   def index
+    # Use eager loading to prevent N+1 queries
     @sales_records = SalesRecord.includes(:farm)
     @sales_records = @sales_records.where(farm: @farm) if @farm
     
@@ -27,11 +30,14 @@ class SalesRecordsController < ApplicationController
     @sales_record.farm = @farm if @farm
     @sales_record.sale_date = Date.current
     
-    @farms = Farm.all unless @farm
+    # Use caching for farms list
+    @farms = Rails.cache.fetch("farms_list", expires_in: 1.hour) { Farm.all.to_a } unless @farm
   end
 
   def create
     @sales_record = SalesRecord.new(sales_record_params)
+    # SECURITY: Set farm_id from context, not from user input
+    @sales_record.farm = @farm || current_user.farm
     
     if @sales_record.save
       redirect_path = @farm ? farm_sales_records_path(@farm) : sales_records_path
@@ -73,7 +79,8 @@ class SalesRecordsController < ApplicationController
   end
 
   def sales_record_params
-    params.require(:sales_record).permit(:farm_id, :sale_date, :milk_sold, :cash_sales, :mpesa_sales, :buyer)
+    # SECURITY: farm_id is set from context, not from user input
+    params.require(:sales_record).permit(:sale_date, :milk_sold, :cash_sales, :mpesa_sales, :buyer)
   end
 
   def send_csv_data(records, filename)
