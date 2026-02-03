@@ -58,12 +58,9 @@ Rails.application.configure do
       namespace: "milk_production_cache",
       expires_in: 1.hour,
       reconnect_attempts: 3,
-      pool_size: ENV.fetch("RAILS_MAX_THREADS", 5).to_i,
-      pool_timeout: 5,
-      error_handler: -> (method:, returning:, exception:) {
-        Rails.logger.error("Redis cache error: #{exception.message}")
-        Bugsnag.notify(exception) if defined?(Bugsnag)
-      }
+      connect_timeout: 2,
+      read_timeout: 1,
+      write_timeout: 1
     }
   else
     config.cache_store = :memory_store, { size: 128.megabytes }
