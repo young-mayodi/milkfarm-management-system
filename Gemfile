@@ -40,7 +40,7 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 # Redis for caching and background jobs
 gem 'redis', '~> 5.0'
-gem 'sidekiq', '~> 7.0'
+gem 'sidekiq', '~> 8.1'
 
 # Heroku deployment and performance gems
 gem 'rails_12factor', group: :production
