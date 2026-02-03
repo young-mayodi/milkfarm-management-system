@@ -106,10 +106,10 @@ class DashboardController < ApplicationController
     @farm_profit_analysis = cached_data[:farm_profit_analysis]
     @profit_trends = cached_data[:profit_trends]
     @cost_breakdown = cached_data[:cost_breakdown]
-    @profit_trends = @farms.first ? SalesRecord.monthly_profit_trend(@farms.first, months_back: 6) : {}
+  end
 
-    # Cost breakdown
-    @cCache chart data
+  def prepare_chart_data
+    # Cache chart data
     @chart_data = Rails.cache.fetch("dashboard_chart_data_#{Date.current}", expires_in: 30.minutes) do
       last_7_days = (7.days.ago.to_date..Date.current).to_a
       daily_data = last_7_days.map do |date|
@@ -122,10 +122,6 @@ class DashboardController < ApplicationController
         data: daily_data.map(&:last)
       }
     end
-    @chart_data = {
-      labels: daily_data.map(&:first),
-      data: daily_data.map(&:last)
-    }
 
     # 1. Enhanced Weekly production trend with predictions
     @weekly_trend_chart = prepare_weekly_trend_chart
