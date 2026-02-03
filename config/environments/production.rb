@@ -51,17 +51,10 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Redis cache store when available, otherwise memory store
+  # Redis cache store when available, otherwise memory store  
+  # Simplified configuration to avoid connection pool issues
   if ENV["REDIS_URL"].present?
-    config.cache_store = :redis_cache_store, {
-      url: ENV["REDIS_URL"],
-      namespace: "milk_production_cache",
-      expires_in: 1.hour,
-      reconnect_attempts: 3,
-      connect_timeout: 2,
-      read_timeout: 1,
-      write_timeout: 1
-    }
+    config.cache_store = :redis_cache_store, { url: ENV["REDIS_URL"] }
   else
     config.cache_store = :memory_store, { size: 128.megabytes }
   end

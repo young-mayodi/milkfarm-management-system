@@ -1,20 +1,8 @@
 # Performance and Caching Configuration
 Rails.application.configure do
-  # Redis cache store for production, memory store for development
-  if ENV["REDIS_URL"].present?
-    config.cache_store = :redis_cache_store, {
-      url: ENV["REDIS_URL"],
-      namespace: "milk_production_cache",
-      expires_in: 1.hour,
-      reconnect_attempts: 3,
-      connect_timeout: 2,
-      read_timeout: 1,
-      write_timeout: 1
-    }
-  else
-    config.cache_store = :memory_store, { size: 128.megabytes }
-  end
-
+  # Simplified Redis configuration - let Rails handle defaults
+  # The detailed configuration is in config/environments/production.rb
+  
   # Enable fragment caching
   config.action_controller.perform_caching = true
 
