@@ -51,8 +51,23 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Simple cache store for now - Redis has compatibility issues with Rails 8
-  config.cache_store = :memory_store
+  # Redis cache store when available, otherwise memory store
+  if ENV["REDIS_URL"].present?
+    config.cache_store = :redis_cache_store, {
+      url: ENV["REDIS_URL"],
+      namespace: "milk_production_cache",
+      expires_in: 1.hour,
+      reconnect_attempts: 3,
+      pool_size: ENV.fetch("RAILS_MAX_THREADS", 5).to_i,
+      pool_timeout: 5,
+      error_handler: -> (method:, returning:, exception:) {
+        Rails.logger.error("Redis cache error: #{exception.message}")
+        Bugsnag.notify(exception) if defined?(Bugsnag)
+      }
+    }
+  else
+    config.cache_store = :memory_store, { size: 128.megabytes }
+  end
 
   # Use Sidekiq for background jobs when Redis is available
   if ENV["REDIS_URL"].present?

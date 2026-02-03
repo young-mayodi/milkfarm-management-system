@@ -1,7 +1,7 @@
 class ProductionRecord < ApplicationRecord
   # Associations
-  belongs_to :cow
-  belongs_to :farm
+  belongs_to :cow, counter_cache: true
+  belongs_to :farm, counter_cache: true
 
   # Validations
   validates :production_date, presence: true
@@ -9,6 +9,33 @@ class ProductionRecord < ApplicationRecord
   validates :noon_production, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :evening_production, presence: true, numericality: { greater_than_or_equal_to: 0 }
   validates :cow_id, uniqueness: { scope: :production_date, message: "already has a production record for this date" }
+  
+  # SECURITY: Prevent future dates and very old dates
+  validate :production_date_not_in_future
+  validate :production_date_not_too_old
+  validate :farm_matches_cow
+  
+  private
+  
+  def production_date_not_in_future
+    if production_date.present? && production_date > Date.current
+      errors.add(:production_date, "cannot be in the future")
+    end
+  end
+  
+  def production_date_not_too_old
+    if production_date.present? && production_date < 1.year.ago
+      errors.add(:production_date, "cannot be more than 1 year in the past")
+    end
+  end
+  
+  def farm_matches_cow
+    if cow.present? && farm.present? && cow.farm_id != farm_id
+      errors.add(:base, "Farm must match the cow's farm")
+    end
+  end
+  
+  public
 
   # Callbacks
   before_save :calculate_total_production
