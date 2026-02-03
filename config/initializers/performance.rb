@@ -10,7 +10,8 @@ Rails.application.configure do
       error_handler: -> (method:, returning:, exception:) {
         Rails.logger.error("Redis cache error: #{exception.message}")
         # Continue without cache if Redis fails
-      }
+      },
+      driver: :ruby
     }
   else
     config.cache_store = :memory_store, { size: 128.megabytes }
