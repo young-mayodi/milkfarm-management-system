@@ -7,6 +7,6 @@
     "numReplicas": 1,
     "sleepApplication": false,
     "restartPolicyType": "ON_FAILURE",
-    "startCommand": "bundle exec puma -C config/puma.rb"
+    "startCommand": "bundle exec rails db:seed && bundle exec puma -C config/puma.rb"
   }
 }
