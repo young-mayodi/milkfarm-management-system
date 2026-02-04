@@ -11,6 +11,7 @@
     </p>
   </div>
   <div class="col-md-4 text-end">
+    <%= link_to raw('<i class="fas fa-sitemap me-2"></i>Family Tree'), lineage_cow_path(@cow), class: "btn btn-success me-2" %>
     <%= link_to "Edit Cow", edit_farm_cow_path(@cow.farm, @cow), class: "btn btn-primary me-2" %>
     <%= link_to "Back to Farm", @cow.farm, class: "btn btn-outline-secondary" %>
   </div>
@@ -88,7 +89,7 @@
           <div class="col-6">
             <div class="metric-box">
               <div class="fw-bold text-info">
-                <%= @cow.production_records.where(production_date: 7.days.ago..Date.current).count %>
+                <%= @records_7_days_count %>
               </div>
               <small class="text-muted">Records (7 days)</small>
             </div>
@@ -148,11 +149,8 @@
         <small>Performance analysis over time</small>
       </div>
       <div class="card-body">
-        <% last_7_days = @cow.production_records.where(production_date: 7.days.ago..Date.current) %>
-        <% prev_7_days = @cow.production_records.where(production_date: 14.days.ago..8.days.ago) %>
-        
-        <% current_avg = last_7_days.average(:total_production) || 0 %>
-        <% previous_avg = prev_7_days.average(:total_production) || 0 %>
+        <% current_avg = @last_7_days_avg %>
+        <% previous_avg = @prev_7_days_avg %>
         <% change_pct = previous_avg > 0 ? ((current_avg - previous_avg) / previous_avg * 100) : 0 %>
         
         <div class="row text-center">
@@ -179,19 +177,19 @@
         <div class="row small text-center">
           <div class="col-4">
             <div class="text-success">
-              <strong><%= (@cow.production_records.maximum(:total_production) || 0).round(1) %>L</strong><br>
+              <strong><%= @production_max.round(1) %>L</strong><br>
               <span class="text-muted">Best Day</span>
             </div>
           </div>
           <div class="col-4">
             <div class="text-warning">
-              <strong><%= (@cow.production_records.minimum(:total_production) || 0).round(1) %>L</strong><br>
+              <strong><%= @production_min.round(1) %>L</strong><br>
               <span class="text-muted">Lowest Day</span>
             </div>
           </div>
           <div class="col-4">
             <div class="text-info">
-              <strong><%= (@cow.production_records.sum(:total_production) || 0).round(1) %>L</strong><br>
+              <strong><%= @production_total.round(1) %>L</strong><br>
               <span class="text-muted">Total Ever</span>
             </div>
           </div>
@@ -272,7 +270,7 @@
           <% if @cow.calf? && @cow.ready_for_dairy? %>
             <div class="col-md-6 col-lg-3">
               <%= link_to "Graduate to Dairy Cow", 
-                    farm_cow_graduate_to_dairy_path(@cow.farm, @cow), 
+                    graduate_to_dairy_cow_path(@cow), 
                     method: :patch,
                     data: { 
                       confirm: "Graduate #{@cow.name} to dairy cow status? This will change the animal's classification." 
@@ -299,7 +297,7 @@
             
             <div class="col-md-6 col-lg-3">
               <%= link_to "Mark as Deceased", 
-                    mark_as_deceased_farm_cow_path(@cow.farm, @cow), 
+                    mark_as_deceased_cow_path(@cow), 
                     method: :patch,
                     data: { 
                       confirm: "Mark #{@cow.name} as deceased? This action can be reversed if needed." 
@@ -310,7 +308,7 @@
           <% elsif @cow.status.in?(['sold', 'deceased']) %>
             <div class="col-md-6 col-lg-3">
               <%= link_to "Reactivate Animal", 
-                    farm_cow_reactivate_path(@cow.farm, @cow), 
+                    reactivate_cow_path(@cow), 
                     method: :patch,
                     data: { 
                       confirm: "Reactivate #{@cow.name}? This will change status back to active." 

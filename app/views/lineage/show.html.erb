@@ -1,0 +1,293 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-2">
+        <i class="fas fa-sitemap me-2"></i>
+        Lineage Tree: <%= @cow.name %> (#<%= @cow.tag_number %>)
+      </h1>
+      <p class="text-muted mb-0">
+        <%= @cow.breed %> • Born: <%= @cow.birth_date&.strftime("%B %d, %Y") || "Unknown" %>
+      </p>
+    </div>
+    <div>
+      <%= link_to raw('<i class="fas fa-arrow-left me-2"></i>Back to Cow'),
+          cow_path(@cow),
+          class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <!-- Pedigree Card (3 Generations) -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">
+        <i class="fas fa-family me-2"></i>
+        3-Generation Pedigree Chart
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="pedigree-chart">
+        <div class="generation-0">
+          <div class="pedigree-box main-cow">
+            <strong><%= @cow.name %></strong><br>
+            <small>#<%= @cow.tag_number %></small><br>
+            <small class="text-muted"><%= @cow.breed %></small>
+          </div>
+        </div>
+
+        <div class="generation-1">
+          <!-- Mother -->
+          <div class="pedigree-box <%= @pedigree[:mother] ? 'has-data' : 'no-data' %>">
+            <% if @pedigree[:mother] %>
+              <%= link_to lineage_path(@pedigree[:mother][:id]), class: "text-decoration-none" do %>
+                <strong><%= @pedigree[:mother][:name] %></strong><br>
+                <small>#<%= @pedigree[:mother][:tag_number] %></small><br>
+                <small class="text-muted"><%= @pedigree[:mother][:breed] %></small>
+              <% end %>
+            <% else %>
+              <small class="text-muted">Unknown Mother</small>
+            <% end %>
+          </div>
+
+          <!-- Sire -->
+          <div class="pedigree-box <%= @pedigree[:sire] ? 'has-data' : 'no-data' %>">
+            <% if @pedigree[:sire] %>
+              <%= link_to lineage_path(@pedigree[:sire][:id]), class: "text-decoration-none" do %>
+                <strong><%= @pedigree[:sire][:name] %></strong><br>
+                <small>#<%= @pedigree[:sire][:tag_number] %></small><br>
+                <small class="text-muted"><%= @pedigree[:sire][:breed] %></small>
+              <% end %>
+            <% else %>
+              <small class="text-muted">Unknown Sire</small>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="generation-2">
+          <!-- Maternal Grandmother -->
+          <div class="pedigree-box <%= @pedigree[:maternal_grandmother] ? 'has-data' : 'no-data' %>">
+            <% if @pedigree[:maternal_grandmother] %>
+              <%= link_to lineage_path(@pedigree[:maternal_grandmother][:id]), class: "text-decoration-none" do %>
+                <strong><%= @pedigree[:maternal_grandmother][:name] %></strong><br>
+                <small>#<%= @pedigree[:maternal_grandmother][:tag_number] %></small>
+              <% end %>
+            <% else %>
+              <small class="text-muted">Unknown</small>
+            <% end %>
+          </div>
+
+          <!-- Maternal Grandfather -->
+          <div class="pedigree-box <%= @pedigree[:maternal_grandfather] ? 'has-data' : 'no-data' %>">
+            <% if @pedigree[:maternal_grandfather] %>
+              <%= link_to lineage_path(@pedigree[:maternal_grandfather][:id]), class: "text-decoration-none" do %>
+                <strong><%= @pedigree[:maternal_grandfather][:name] %></strong><br>
+                <small>#<%= @pedigree[:maternal_grandfather][:tag_number] %></small>
+              <% end %>
+            <% else %>
+              <small class="text-muted">Unknown</small>
+            <% end %>
+          </div>
+
+          <!-- Paternal Grandmother -->
+          <div class="pedigree-box <%= @pedigree[:paternal_grandmother] ? 'has-data' : 'no-data' %>">
+            <% if @pedigree[:paternal_grandmother] %>
+              <%= link_to lineage_path(@pedigree[:paternal_grandmother][:id]), class: "text-decoration-none" do %>
+                <strong><%= @pedigree[:paternal_grandmother][:name] %></strong><br>
+                <small>#<%= @pedigree[:paternal_grandmother][:tag_number] %></small>
+              <% end %>
+            <% else %>
+              <small class="text-muted">Unknown</small>
+            <% end %>
+          </div>
+
+          <!-- Paternal Grandfather -->
+          <div class="pedigree-box <%= @pedigree[:paternal_grandfather] ? 'has-data' : 'no-data' %>">
+            <% if @pedigree[:paternal_grandfather] %>
+              <%= link_to lineage_path(@pedigree[:paternal_grandfather][:id]), class: "text-decoration-none" do %>
+                <strong><%= @pedigree[:paternal_grandfather][:name] %></strong><br>
+                <small>#<%= @pedigree[:paternal_grandfather][:tag_number] %></small>
+              <% end %>
+            <% else %>
+              <small class="text-muted">Unknown</small>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Ancestors -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-arrow-up me-2"></i>
+            Ancestors (<%= @ancestors.count %>)
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @ancestors.any? %>
+            <div class="list-group">
+              <% @ancestors.each do |ancestor| %>
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <%= link_to lineage_path(ancestor) do %>
+                        <strong><%= ancestor.name %></strong>
+                        <small class="text-muted">(#<%= ancestor.tag_number %>)</small>
+                      <% end %>
+                      <br>
+                      <small class="text-muted"><%= ancestor.breed %></small>
+                    </div>
+                    <span class="badge bg-<%= ancestor.status == 'active' ? 'success' : 'secondary' %>">
+                      <%= ancestor.status %>
+                    </span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="text-muted mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No ancestor information available
+            </p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Descendants/Offspring -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-arrow-down me-2"></i>
+            Descendants (<%= @descendants.count %>)
+          </h5>
+        </div>
+        <div class="card-body">
+          <% if @descendants.any? %>
+            <div class="list-group">
+              <% @descendants.each do |descendant| %>
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <%= link_to lineage_path(descendant) do %>
+                        <strong><%= descendant.name %></strong>
+                        <small class="text-muted">(#<%= descendant.tag_number %>)</small>
+                      <% end %>
+                      <br>
+                      <small class="text-muted"><%= descendant.breed %> • <%= descendant.birth_date&.strftime("%Y") || "Unknown year" %></small>
+                    </div>
+                    <span class="badge bg-<%= descendant.status == 'active' ? 'success' : 'secondary' %>">
+                      <%= descendant.status %>
+                    </span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="text-muted mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              No offspring recorded yet
+            </p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .pedigree-chart {
+    display: grid;
+    grid-template-columns: 1fr 2fr 4fr;
+    gap: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+
+  .generation-0,
+  .generation-1,
+  .generation-2 {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    gap: 15px;
+  }
+
+  .pedigree-box {
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .pedigree-box.main-cow {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 1.1em;
+    border: 3px solid #5568d3;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+
+  .pedigree-box.has-data {
+    background: white;
+    border: 2px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .pedigree-box.has-data:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+
+  .pedigree-box.no-data {
+    background: #e9ecef;
+    border: 2px dashed #ced4da;
+  }
+
+  .pedigree-box a {
+    color: inherit;
+  }
+
+  .pedigree-box a:hover strong {
+    color: #667eea;
+  }
+
+  /* Connecting lines */
+  .generation-1,
+  .generation-2 {
+    position: relative;
+  }
+
+  .generation-1::before,
+  .generation-2::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 25%;
+    bottom: 25%;
+    width: 2px;
+    background: #dee2e6;
+  }
+
+  @media (max-width: 768px) {
+    .pedigree-chart {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    
+    .generation-1::before,
+    .generation-2::before {
+      display: none;
+    }
+  }
+</style>

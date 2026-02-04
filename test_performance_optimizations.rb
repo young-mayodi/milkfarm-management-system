@@ -16,23 +16,23 @@ puts "-" * 80
 
 if Farm.first
   farm = Farm.first
-  
+
   # Test without counter cache (force COUNT query)
   time_without = Benchmark.realtime do
     100.times { farm.production_records.count }
   end
-  
+
   # Test with counter cache
   time_with = Benchmark.realtime do
     100.times { farm.production_records_count }
   end
-  
+
   puts "100 iterations:"
   puts "  Without counter cache: #{(time_without * 1000).round(2)}ms"
   puts "  With counter cache:    #{(time_with * 1000).round(2)}ms"
   puts "  Speed improvement:     #{((time_without - time_with) / time_without * 100).round(1)}% faster"
   puts
-  
+
   if time_with < time_without * 0.1
     puts "✅ PASS: Counter cache is >10x faster"
   else
@@ -54,17 +54,17 @@ if ENV["REDIS_URL"].present?
   write_time = Benchmark.realtime do
     Rails.cache.write('test_key', { data: 'test' * 100 }, expires_in: 5.minutes)
   end
-  
+
   # Test cache read
   read_time = Benchmark.realtime do
     100.times { Rails.cache.read('test_key') }
   end
-  
+
   puts "Cache write: #{(write_time * 1000).round(2)}ms"
   puts "Cache read (100x): #{(read_time * 1000).round(2)}ms"
   puts "Average per read: #{(read_time * 10).round(2)}ms"
   puts
-  
+
   # Test cache connection
   begin
     ping_result = Rails.cache.redis.ping
@@ -91,7 +91,7 @@ puts "-" * 80
 if ENV["REDIS_URL"].present?
   begin
     require 'sidekiq/api'
-    
+
     stats = Sidekiq::Stats.new
     puts "Sidekiq Statistics:"
     puts "  Processed: #{stats.processed}"
@@ -101,7 +101,7 @@ if ENV["REDIS_URL"].present?
     puts "  Enqueued: #{stats.enqueued}"
     puts "  Dead: #{stats.dead_size}"
     puts
-    
+
     # Test job enqueuing
     puts "Testing job enqueuing..."
     test_farm = Farm.first
@@ -111,7 +111,7 @@ if ENV["REDIS_URL"].present?
     else
       puts "⚠️  No farms available for job testing"
     end
-    
+
     puts
     puts "✅ PASS: Sidekiq configured and operational"
     puts "   Visit /sidekiq to view dashboard"
@@ -143,22 +143,22 @@ end
 
 if Farm.first
   farm_id = Farm.first.id
-  
+
   # Test cached animal counts
   puts "Testing cached_animal_counts..."
   time_first_call = Benchmark.realtime do
     controller.send(:cached_animal_counts, farm_id)
   end
-  
+
   time_cached_call = Benchmark.realtime do
     10.times { controller.send(:cached_animal_counts, farm_id) }
   end
-  
+
   puts "  First call (miss): #{(time_first_call * 1000).round(2)}ms"
   puts "  Cached calls (10x): #{(time_cached_call * 1000).round(2)}ms"
   puts "  Average cached: #{(time_cached_call * 100).round(2)}ms"
   puts
-  
+
   if time_cached_call < time_first_call * 0.5
     puts "✅ PASS: Caching provides significant speedup"
   else
@@ -178,11 +178,11 @@ puts "-" * 80
 if Cow.first
   cow = Cow.first
   key = controller.send(:fragment_cache_key, 'cow_stats', cow)
-  
+
   puts "Generated cache key:"
   puts "  #{key}"
   puts
-  
+
   if key.include?(cow.class.name) && key.include?(cow.id.to_s) && key.include?(cow.updated_at.to_i.to_s)
     puts "✅ PASS: Cache key includes class, id, and timestamp"
   else

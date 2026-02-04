@@ -14,12 +14,6 @@ class ReportsController < ApplicationController
         icon: "bi-list-ul"
       },
       {
-        title: "Production Trends",
-        description: "Interactive charts showing production trends over time",
-        path: production_trends_reports_path,
-        icon: "bi-graph-up"
-      },
-      {
         title: "Production Trends Analysis",
         description: "Comprehensive cow-level production analysis by milking periods (Morning, Noon, Evening, Night)",
         path: production_trends_production_records_path,
@@ -36,19 +30,21 @@ class ReportsController < ApplicationController
 
   def farm_summary
     # PERFORMANCE FIX: Use single optimized query instead of N+1
+    date_threshold = 30.days.ago.to_date
+
     @farm_stats = Farm.left_joins(:production_records, :sales_records, :cows)
       .select(
-        'farms.*',
-        'COUNT(DISTINCT cows.id) as total_cows',
-        'COUNT(DISTINCT CASE WHEN cows.status = \'active\' THEN cows.id END) as active_cows',
-        'COALESCE(SUM(CASE WHEN production_records.production_date >= ? THEN production_records.total_production END), 0) as recent_production',
-        'COALESCE(AVG(CASE WHEN production_records.production_date >= ? THEN production_records.total_production END), 0) as avg_daily_production',
-        'COALESCE(SUM(CASE WHEN sales_records.sale_date >= ? THEN sales_records.milk_sold END), 0) as recent_sales_volume',
-        'COALESCE(SUM(CASE WHEN sales_records.sale_date >= ? THEN sales_records.total_sales END), 0) as recent_sales_revenue'
+        "farms.*",
+        "COUNT(DISTINCT cows.id) as total_cows",
+        "COUNT(DISTINCT CASE WHEN cows.status = 'active' THEN cows.id END) as active_cows",
+        Farm.sanitize_sql_array([ "COALESCE(SUM(CASE WHEN production_records.production_date >= ? THEN production_records.total_production END), 0) as recent_production", date_threshold ]),
+        Farm.sanitize_sql_array([ "COALESCE(AVG(CASE WHEN production_records.production_date >= ? THEN production_records.total_production END), 0) as avg_daily_production", date_threshold ]),
+        Farm.sanitize_sql_array([ "COALESCE(SUM(CASE WHEN sales_records.sale_date >= ? THEN sales_records.milk_sold END), 0) as recent_sales_volume", date_threshold ]),
+        Farm.sanitize_sql_array([ "COALESCE(SUM(CASE WHEN sales_records.sale_date >= ? THEN sales_records.total_sales END), 0) as recent_sales_revenue", date_threshold ])
       )
-      .where('production_records.production_date >= ? OR production_records.production_date IS NULL', 30.days.ago.to_date)
-      .where('sales_records.sale_date >= ? OR sales_records.sale_date IS NULL', 30.days.ago.to_date)
-      .group('farms.id')
+      .where("production_records.production_date >= ? OR production_records.production_date IS NULL", date_threshold)
+      .where("sales_records.sale_date >= ? OR sales_records.sale_date IS NULL", date_threshold)
+      .group("farms.id")
       .map do |farm|
         {
           farm: farm,
@@ -62,7 +58,7 @@ class ReportsController < ApplicationController
       end
 
     # PERFORMANCE FIX: Cache chart data generation
-    @farm_chart_data = Rails.cache.fetch(['farm-chart-data', Date.current], expires_in: 1.hour) do
+    @farm_chart_data = Rails.cache.fetch([ "farm-chart-data", Date.current ], expires_in: 1.hour) do
       {
         labels: @farm_stats.map { |stat| stat[:farm].name },
         datasets: [
@@ -92,7 +88,7 @@ class ReportsController < ApplicationController
     end
 
     # PERFORMANCE FIX: Cache daily production trend with optimized query
-    @trend_chart_data = Rails.cache.fetch(['daily-production-trend', Date.current], expires_in: 1.hour) do
+    @trend_chart_data = Rails.cache.fetch([ "daily-production-trend", Date.current ], expires_in: 1.hour) do
       # Use single optimized query with grouping
       daily_production = ProductionRecord
         .where(production_date: 30.days.ago..Date.current)

@@ -1,6 +1,6 @@
 class CowsController < ApplicationController
   include PerformanceHelper
-  
+
   before_action :set_farm, except: [ :index, :show ]
   before_action :set_cow, only: [ :show, :edit, :update, :destroy, :graduate_to_dairy, :mark_as_sold, :mark_as_deceased, :reactivate ]
 
@@ -334,7 +334,7 @@ class CowsController < ApplicationController
       cow = Cow.find(params[:id])
       @farm = cow.farm
     end
-    
+
     # SECURITY: Ensure user can only access their own farm's data
     authorize_farm_access!
   end
@@ -351,14 +351,14 @@ class CowsController < ApplicationController
     params.require(:cow).permit(:name, :tag_number, :breed, :age, :group_name, :status, :mother_id, :sire_id,
                                 :current_weight, :prev_weight, :weight_gain, :avg_daily_gain, :birth_date)
   end
-  
+
   # SECURITY: Authorize farm access - users can only access their own farm's data
   def authorize_farm_access!
     return if current_user.nil? # Will be caught by authenticate_user!
-    
+
     # Farm owners can access all farms
     return if current_user.farm_owner? && current_user.farm.nil?
-    
+
     # Other users can only access their own farm
     if @farm && current_user.farm_id != @farm.id
       redirect_to dashboard_path, alert: "Access denied. You can only access your own farm's data."

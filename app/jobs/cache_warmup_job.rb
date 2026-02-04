@@ -3,7 +3,7 @@ class CacheWarmupJob < ApplicationJob
 
   def perform(farm_id)
     farm = Farm.find(farm_id)
-    
+
     # Warm up critical caches
     Rails.cache.fetch("animal_counts_#{farm.id}_#{Date.current}", expires_in: 5.minutes) do
       {
@@ -12,7 +12,7 @@ class CacheWarmupJob < ApplicationJob
         active_cows: Cow.active.where(farm: farm).count
       }
     end
-    
+
     # Cache latest production records
     Rails.cache.fetch("latest_production_#{farm.id}_#{Date.current}", expires_in: 10.minutes) do
       ProductionRecord.includes(:cow)
@@ -22,7 +22,7 @@ class CacheWarmupJob < ApplicationJob
                       .limit(100)
                       .to_a
     end
-    
+
     Rails.logger.info("Cache warmed up for farm #{farm.id}")
   end
 end

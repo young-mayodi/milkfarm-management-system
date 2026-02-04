@@ -26,9 +26,16 @@ Rails.application.routes.draw do
       post :mark_as_read
     end
   end
-  # Sidekiq web UI for monitoring background jobs
-  require "sidekiq/web"
-  mount Sidekiq::Web => "/sidekiq"
+  
+  # Sidekiq web UI for monitoring background jobs (optional - requires sidekiq gem)
+  if defined?(Sidekiq)
+    begin
+      require "sidekiq/web"
+      mount Sidekiq::Web => "/sidekiq"
+    rescue LoadError
+      # Sidekiq not available
+    end
+  end
 
   # Authentication routes
   get "login", to: "sessions#new"
@@ -73,12 +80,8 @@ Rails.application.routes.draw do
       resources :health_records
       resources :breeding_records
       resources :vaccination_records
-      member do
-        patch :graduate_to_dairy
-        patch :mark_as_sold
-        patch :mark_as_deceased
-        patch :reactivate
-      end
+      # Note: graduate_to_dairy, mark_as_sold, mark_as_deceased, reactivate, lineage
+      # are defined in standalone cows routes below for cleaner URLs
       collection do
         get :chart_data
       end
@@ -88,13 +91,14 @@ Rails.application.routes.draw do
     resources :animal_sales
   end
 
-  # Standalone routes
+  # Standalone routes for cow actions
   resources :cows do
     member do
       patch :graduate_to_dairy
       patch :mark_as_sold
       patch :mark_as_deceased
       patch :reactivate
+      get :lineage, to: "lineage#show"
     end
     collection do
       get :search

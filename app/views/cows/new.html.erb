@@ -195,6 +195,27 @@
                   </div>
                 </div>
 
+                <div class="form-group">
+                  <%= form.label :sire_id, "Sire/Father (for calves)", class: "form-label modern-label" do %>
+                    <i class="bi bi-gender-male me-2"></i>Sire (Father)
+                  <% end %>
+                  <div class="input-container">
+                    <%= form.select :sire_id, 
+                        options_from_collection_for_select(
+                          (@farm ? @farm.cows : Cow.all).order(:name), 
+                          :id, 
+                          ->(c) { "#{c.name} (##{c.tag_number})" },
+                          @cow.sire_id
+                        ),
+                        { prompt: 'Select sire/father (optional)' },
+                        { class: "form-select modern-input" } %>
+                    <div class="form-text">
+                      <i class="bi bi-info-circle me-1"></i>
+                      Select the father/bull for lineage tracking (helps build family tree)
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Weight and Growth Tracking (for Calves) -->
                 <div class="weight-tracking-section" id="weightTrackingSection" style="display: none;">
                   <h6 class="section-title">

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_26_080602) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_03_024202) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -27,6 +27,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_080602) do
     t.string "buyer_contact"
     t.decimal "weight_at_sale"
     t.index ["cow_id"], name: "index_animal_sales_on_cow_id"
+    t.index ["farm_id", "sale_date"], name: "index_animal_sales_on_farm_and_date"
     t.index ["farm_id"], name: "index_animal_sales_on_farm_id"
   end
 
@@ -42,6 +43,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_080602) do
     t.string "veterinarian"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["breeding_status", "expected_due_date"], name: "index_breeding_records_on_status_and_due_date"
+    t.index ["cow_id", "breeding_date"], name: "index_breeding_records_on_cow_and_date"
     t.index ["cow_id"], name: "index_breeding_records_on_cow_id"
   end
 
@@ -61,9 +64,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_080602) do
     t.decimal "weight_gain"
     t.decimal "avg_daily_gain"
     t.date "birth_date"
+    t.integer "health_records_count", default: 0, null: false
+    t.integer "breeding_records_count", default: 0, null: false
+    t.integer "vaccination_records_count", default: 0, null: false
+    t.integer "production_records_count", default: 0, null: false
+    t.bigint "sire_id"
+    t.datetime "deleted_at"
+    t.index ["birth_date"], name: "idx_cow_dob"
+    t.index ["deleted_at"], name: "index_cows_on_deleted_at"
+    t.index ["farm_id", "status"], name: "idx_cow_farm_status"
     t.index ["farm_id", "status"], name: "index_cows_on_farm_id_and_status"
     t.index ["farm_id"], name: "index_cows_on_farm_id"
     t.index ["mother_id"], name: "index_cows_on_mother_id"
+    t.index ["sire_id"], name: "index_cows_on_sire_id"
+    t.index ["status", "breed"], name: "idx_cow_status_breed"
     t.index ["tag_number"], name: "index_cows_on_tag_number", unique: true
   end
 
@@ -76,6 +90,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_080602) do
     t.string "category"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["farm_id", "expense_date"], name: "index_expenses_on_farm_and_date"
     t.index ["farm_id"], name: "index_expenses_on_farm_id"
   end
 
@@ -88,6 +103,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_080602) do
     t.datetime "updated_at", null: false
     t.integer "cows_count"
     t.integer "active_cows_count", default: 0, null: false
+    t.integer "production_records_count", default: 0, null: false
+    t.integer "sales_records_count", default: 0, null: false
   end
 
   create_table "health_records", force: :cascade do |t|
@@ -102,8 +119,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_080602) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["cow_id", "health_status"], name: "index_health_records_on_cow_and_status"
+    t.index ["cow_id", "recorded_at"], name: "idx_health_cow_date"
     t.index ["cow_id", "recorded_at"], name: "index_health_records_on_cow_and_date"
     t.index ["cow_id"], name: "index_health_records_on_cow_id"
+    t.index ["health_status", "recorded_at"], name: "idx_health_status_date"
     t.index ["health_status", "recorded_at"], name: "index_health_records_on_status_and_date"
     t.index ["health_status"], name: "index_health_records_on_status"
     t.index ["recorded_at"], name: "index_health_records_on_recorded_at"
@@ -121,14 +140,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_080602) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "night_production", precision: 8, scale: 2, default: "0.0"
+    t.index ["cow_id", "production_date"], name: "idx_cow_date"
     t.index ["cow_id", "production_date"], name: "index_production_records_on_cow_id_and_production_date"
     t.index ["cow_id"], name: "index_production_records_on_cow_id"
     t.index ["farm_id", "production_date"], name: "index_production_records_on_farm_id_and_production_date"
     t.index ["farm_id"], name: "index_production_records_on_farm_id"
+    t.index ["production_date", "cow_id"], name: "idx_prod_date_cow"
     t.index ["production_date", "cow_id"], name: "index_production_records_on_production_date_and_cow_id"
+    t.index ["production_date", "farm_id"], name: "idx_prod_date_farm"
     t.index ["production_date", "farm_id"], name: "index_production_records_on_production_date_and_farm_id"
     t.index ["production_date", "total_production"], name: "idx_production_records_date_total_desc", order: { total_production: :desc }
     t.index ["production_date"], name: "index_production_records_on_production_date"
+    t.index ["total_production"], name: "idx_total_prod"
     t.index ["total_production"], name: "index_production_records_on_total_production"
   end
 
@@ -175,13 +198,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_26_080602) do
     t.string "veterinarian"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["cow_id", "vaccination_date"], name: "index_vaccination_records_on_cow_and_date"
     t.index ["cow_id"], name: "index_vaccination_records_on_cow_id"
+    t.index ["next_due_date"], name: "index_vaccination_records_on_next_due_date"
   end
 
   add_foreign_key "animal_sales", "cows"
   add_foreign_key "animal_sales", "farms"
   add_foreign_key "breeding_records", "cows"
   add_foreign_key "cows", "cows", column: "mother_id"
+  add_foreign_key "cows", "cows", column: "sire_id"
   add_foreign_key "cows", "farms"
   add_foreign_key "expenses", "farms"
   add_foreign_key "health_records", "cows"

@@ -51,7 +51,23 @@
     </div>
   </div>
 
-  <% if @trends_data && !@trends_data[:error] %>
+  <% if @trends_data.nil? || @trends_data[:error] %>
+    <!-- Error or No Data Message -->
+    <div class="alert alert-warning" role="alert">
+      <h4 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>No Data Available</h4>
+      <p class="mb-0">
+        <%= @trends_data&.dig(:summary, :message) || "Unable to load production trends data. Please try different filters or check back later." %>
+      </p>
+    </div>
+  <% elsif @trends_data.dig(:summary, :totals).nil? || @trends_data.dig(:summary, :averages).nil? %>
+    <!-- No production records found -->
+    <div class="alert alert-info" role="alert">
+      <h4 class="alert-heading"><i class="fas fa-info-circle me-2"></i>No Production Records</h4>
+      <p class="mb-0">
+        <%= @trends_data.dig(:summary, :message) || "No production data found for the selected period." %>
+      </p>
+    </div>
+  <% else %>
     <!-- Summary Statistics -->
     <div class="row g-3 mb-4">
       <div class="col-md-3">
@@ -518,13 +534,6 @@
       </div>
     </div>
 
-  <% else %>
-    <!-- Error or No Data -->
-    <div class="alert alert-warning">
-      <i class="fas fa-exclamation-triangle me-2"></i>
-      <%= @trends_data[:summary][:message] if @trends_data[:summary] %>
-      No production data found for the selected period. Please try a different date range or farm.
-    </div>
   <% end %>
 </div>
 

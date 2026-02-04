@@ -130,7 +130,7 @@
                     data: { 
                       "cow-id": record.cow.id, 
                       "session": "morning",
-                      "previous": record.cow.production_records.where(production_date: @date - 1.day).first&.morning_production || 0,
+                      "previous": @previous_day_records[record.cow.id]&.morning_production || 0,
                       "avg": 12.5,
                       "max-normal": 18.0
                     } %>
@@ -170,7 +170,7 @@
                     data: { 
                       "cow-id": record.cow.id, 
                       "session": "noon",
-                      "previous": record.cow.production_records.where(production_date: @date - 1.day).first&.noon_production || 0,
+                      "previous": @previous_day_records[record.cow.id]&.noon_production || 0,
                       "avg": 8.3
                     } %>
                 <div class="input-indicators">
@@ -193,7 +193,7 @@
                     data: { 
                       "cow-id": record.cow.id, 
                       "session": "evening",
-                      "previous": record.cow.production_records.where(production_date: @date - 1.day).first&.evening_production || 0,
+                      "previous": @previous_day_records[record.cow.id]&.evening_production || 0,
                       "avg": 11.7
                     } %>
                 <div class="input-indicators">

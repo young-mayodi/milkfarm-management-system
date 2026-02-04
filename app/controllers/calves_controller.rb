@@ -57,6 +57,9 @@ class CalvesController < ApplicationController
   def create
     @calf = Cow.new(calf_params)
 
+    # SECURITY: Set farm_id from context, not from user input
+    @calf.farm = current_user.farm unless current_user.farm_owner?
+
     # Set default birth date if not provided
     @calf.birth_date ||= Date.current if @calf.age && @calf.age < 2
 
@@ -117,7 +120,8 @@ class CalvesController < ApplicationController
   end
 
   def calf_params
-    params.require(:cow).permit(:name, :tag_number, :breed, :age, :farm_id, :group_name,
+    # SECURITY: farm_id is set from context, not from user input
+    params.require(:cow).permit(:name, :tag_number, :breed, :age, :group_name,
                                 :status, :mother_id, :birth_date, :current_weight,
                                 :prev_weight, :weight_gain, :avg_daily_gain)
   end

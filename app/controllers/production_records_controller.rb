@@ -1,6 +1,6 @@
 class ProductionRecordsController < ApplicationController
   include PerformanceHelper
-  
+
   before_action :set_farm_and_cow
   before_action :set_production_record, only: [ :show, :edit, :update, :destroy ]
 
@@ -40,7 +40,7 @@ class ProductionRecordsController < ApplicationController
         { top_performers: [], recent_high_producers: [], production_summary: {} }
       end
     end
-    
+
     @top_performers = @analytics_data[:top_performers] || []
     @recent_high_producers = @analytics_data[:recent_high_producers] || []
     @production_summary = @analytics_data[:production_summary] || {}
@@ -73,7 +73,7 @@ class ProductionRecordsController < ApplicationController
 
   def create
     @production_record = ProductionRecord.new(production_record_params)
-    
+
     # SECURITY: Set farm_id from context, not from user input
     @production_record.farm = @farm || current_user.farm
     @production_record.cow = @cow if @cow
@@ -176,7 +176,7 @@ class ProductionRecordsController < ApplicationController
         .includes(:cow)
         .index_by(&:cow_id)
       @existing_records = existing_records_array
-      
+
       # Preload previous day's records to avoid N+1 in view
       previous_day_records_array = ProductionRecord
         .where(cow_id: cow_ids, production_date: @date - 1.day)
@@ -432,7 +432,7 @@ class ProductionRecordsController < ApplicationController
   # Production time reports - Morning, Noon, Evening, Night breakdown
   def production_time_reports
     @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
-    
+
     # Date range parameters
     @start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : 30.days.ago
     @end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.current
@@ -440,7 +440,7 @@ class ProductionRecordsController < ApplicationController
 
     # Cache key for performance
     cache_key = "production_time_reports_#{@farm&.id}_#{@start_date}_#{@end_date}"
-    
+
     @reports_data = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
       {
         time_summary: ProductionRecord.production_time_summary(@farm&.id, date_range),
@@ -466,17 +466,17 @@ class ProductionRecordsController < ApplicationController
       @farm = Farm.find(params[:farm_id]) if params[:farm_id].present?
       @start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : 7.days.ago
       @end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.current
-      
+
       # Ensure valid date range
       if @start_date > @end_date
         @start_date, @end_date = @end_date, @start_date
       end
-      
+
       date_range = @start_date..@end_date
-      
+
       # Cache key for performance
       cache_key = "production_trends_#{@farm&.id}_#{@start_date}_#{@end_date}"
-      
+
       @trends_data = Rails.cache.fetch(cache_key, expires_in: 30.minutes) do
         generate_detailed_trends_data(date_range, @farm)
       end
@@ -489,11 +489,11 @@ class ProductionRecordsController < ApplicationController
         format.json { render json: @trends_data }
         format.csv { send_trends_csv_report }
       end
-      
+
     rescue => e
       Rails.logger.error "Production Trends Error: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
-      
+
       flash[:error] = "An error occurred while generating production trends. Please try again."
       redirect_to production_records_path and return
     end
@@ -504,19 +504,19 @@ class ProductionRecordsController < ApplicationController
   def set_farm_and_cow
     @farm = Farm.find(params[:farm_id]) if params[:farm_id]
     @cow = @farm ? @farm.cows.find(params[:cow_id]) : Cow.find(params[:cow_id]) if params[:cow_id]
-    
+
     # SECURITY: Authorize farm access
     authorize_farm_access!
   end
 
   def set_production_record
     @production_record = ProductionRecord.find(params[:id])
-    
+
     # SECURITY: Ensure record belongs to user's farm
     if @production_record && current_user.farm_id != @production_record.farm_id
       unless current_user.farm_owner? && current_user.farm.nil?
         redirect_to dashboard_path, alert: "Access denied."
-        return
+        nil
       end
     end
   end
@@ -526,14 +526,14 @@ class ProductionRecordsController < ApplicationController
     params.require(:production_record).permit(:cow_id, :production_date,
                                               :morning_production, :noon_production, :evening_production, :night_production)
   end
-  
+
   # SECURITY: Authorize farm access - users can only access their own farm's data
   def authorize_farm_access!
     return if current_user.nil? # Will be caught by authenticate_user!
-    
+
     # Farm owners without a specific farm can access all farms
     return if current_user.farm_owner? && current_user.farm.nil?
-    
+
     # Other users can only access their own farm
     if @farm && current_user.farm_id != @farm.id
       redirect_to dashboard_path, alert: "Access denied. You can only access your own farm's data."
@@ -626,16 +626,16 @@ class ProductionRecordsController < ApplicationController
   end
 
   def send_csv_report
-    require 'csv'
-    
+    require "csv"
+
     csv_data = CSV.generate(headers: true) do |csv|
-      csv << ['Date', 'Morning Total', 'Noon Total', 'Evening Total', 'Night Total', 'Daily Total', 'Peak Time', 'Cow Count']
-      
+      csv << [ "Date", "Morning Total", "Noon Total", "Evening Total", "Night Total", "Daily Total", "Peak Time", "Cow Count" ]
+
       @reports_data[:daily_breakdown].each do |day_data|
         csv << [
           day_data[:date],
           day_data[:morning],
-          day_data[:noon], 
+          day_data[:noon],
           day_data[:evening],
           day_data[:night],
           day_data[:total],
@@ -645,15 +645,15 @@ class ProductionRecordsController < ApplicationController
       end
     end
 
-    send_data csv_data, filename: "production_time_report_#{@start_date}_to_#{@end_date}.csv", type: 'text/csv'
+    send_data csv_data, filename: "production_time_report_#{@start_date}_to_#{@end_date}.csv", type: "text/csv"
   end
 
   def determine_peak_time_for_day(day_data)
     times = {
-      'Morning' => day_data[:morning],
-      'Noon' => day_data[:noon],
-      'Evening' => day_data[:evening],
-      'Night' => day_data[:night]
+      "Morning" => day_data[:morning],
+      "Noon" => day_data[:noon],
+      "Evening" => day_data[:evening],
+      "Night" => day_data[:night]
     }
     times.max_by { |_time, production| production }.first
   end
@@ -767,7 +767,7 @@ class ProductionRecordsController < ApplicationController
   def generate_detailed_trends_data(date_range, farm)
     begin
       # Base query for production records
-      records = ProductionRecord.includes(cow: [:farm])
+      records = ProductionRecord.includes(cow: [ :farm ])
                                .where(production_date: date_range)
       records = records.where(farm: farm) if farm
 
@@ -775,7 +775,7 @@ class ProductionRecordsController < ApplicationController
       daily_cow_data = {}
       cow_totals = Hash.new { |h, k| h[k] = { morning: 0, noon: 0, evening: 0, night: 0, total: 0, days: 0 } }
       date_totals = Hash.new { |h, k| h[k] = { morning: 0, noon: 0, evening: 0, night: 0, total: 0, cow_count: 0 } }
-      
+
       # Enhanced analytics for daily totals and milking time performance
       daily_performers = Hash.new { |h, k| h[k] = { morning: {}, noon: {}, evening: {}, night: {} } }
       milking_time_analytics = {
@@ -788,17 +788,17 @@ class ProductionRecordsController < ApplicationController
     records.each do |record|
       date = record.production_date
       cow = record.cow
-      
+
       # Initialize date hash if needed
       daily_cow_data[date] ||= {}
-      
+
       # Safely handle potentially nil values
       morning_prod = (record.morning_production || 0).to_f
       noon_prod = (record.noon_production || 0).to_f
       evening_prod = (record.evening_production || 0).to_f
       night_prod = (record.night_production || 0).to_f
       total_prod = (record.total_production || 0).to_f
-      
+
       # Store individual cow data for the date
       daily_cow_data[date][cow.id] = {
         cow_name: cow.name,
@@ -810,7 +810,7 @@ class ProductionRecordsController < ApplicationController
         night: night_prod,
         total: total_prod
       }
-      
+
       # Update cow totals
       cow_totals[cow.id][:morning] += morning_prod
       cow_totals[cow.id][:noon] += noon_prod
@@ -821,7 +821,7 @@ class ProductionRecordsController < ApplicationController
       cow_totals[cow.id][:cow_name] = cow.name
       cow_totals[cow.id][:cow_tag] = cow.tag_number
       cow_totals[cow.id][:farm_name] = cow.farm.name
-      
+
       # Update date totals
       date_totals[date][:morning] += morning_prod
       date_totals[date][:noon] += noon_prod
@@ -829,15 +829,15 @@ class ProductionRecordsController < ApplicationController
       date_totals[date][:night] += night_prod
       date_totals[date][:total] += total_prod
       date_totals[date][:cow_count] += 1
-      
+
       # Track daily performers for each milking time
       milking_periods = {
-        'morning' => morning_prod,
-        'noon' => noon_prod, 
-        'evening' => evening_prod,
-        'night' => night_prod
+        "morning" => morning_prod,
+        "noon" => noon_prod,
+        "evening" => evening_prod,
+        "night" => night_prod
       }
-      
+
       milking_periods.each do |period, production_value|
         if production_value > 0
           current_best = daily_performers[date][period.to_sym]
@@ -848,14 +848,14 @@ class ProductionRecordsController < ApplicationController
               value: production_value
             }
           end
-          
+
           # Update milking time analytics
           milking_time_analytics[period.to_sym][:total] += production_value
           milking_time_analytics[period.to_sym][:sessions] << { date: date, value: production_value }
         end
       end
     end
-    
+
     # Calculate milking time performance metrics
     milking_time_performance = calculate_milking_time_performance(milking_time_analytics, date_totals)
 
@@ -889,7 +889,7 @@ class ProductionRecordsController < ApplicationController
   rescue => e
     Rails.logger.error "Generate Trends Data Error: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
-    
+
     # Return minimal safe data structure
     {
       daily_data: {},
@@ -937,9 +937,9 @@ class ProductionRecordsController < ApplicationController
     # Calculate period days safely
     period_days = if date_range.is_a?(Range)
                     (date_range.end.to_date - date_range.begin.to_date).to_i + 1
-                  else
+    else
                     1
-                  end
+    end
 
     {
       total_records: total_records,
@@ -982,45 +982,45 @@ class ProductionRecordsController < ApplicationController
   end
 
   def send_trends_csv_report
-    require 'csv'
-    
+    require "csv"
+
     csv_data = CSV.generate(headers: true) do |csv|
       # Daily Totals Summary Section
-      csv << ['DAILY TOTALS SUMMARY']
-      csv << ['Date', 'Morning Total', 'Noon Total', 'Evening Total', 'Night Total', 'Daily Total', 'Cow Count']
-      
+      csv << [ "DAILY TOTALS SUMMARY" ]
+      csv << [ "Date", "Morning Total", "Noon Total", "Evening Total", "Night Total", "Daily Total", "Cow Count" ]
+
       if @trends_data[:daily_totals_summary]
         @trends_data[:daily_totals_summary][:daily_rows].each do |row|
           csv << [
             row[:date],
             "#{row[:morning_total]}L",
-            "#{row[:noon_total]}L", 
+            "#{row[:noon_total]}L",
             "#{row[:evening_total]}L",
             "#{row[:night_total]}L",
             "#{row[:daily_total]}L",
             row[:cow_count]
           ]
         end
-        
+
         # Period totals
         totals = @trends_data[:daily_totals_summary][:period_totals]
         csv << [
-          'PERIOD TOTALS',
+          "PERIOD TOTALS",
           "#{totals[:morning]}L",
           "#{totals[:noon]}L",
-          "#{totals[:evening]}L", 
+          "#{totals[:evening]}L",
           "#{totals[:night]}L",
           "#{totals[:daily]}L",
-          'ALL PERIODS'
+          "ALL PERIODS"
         ]
       end
-      
+
       csv << [] # Empty row separator
-      
+
       # Milking Time Performance Section
-      csv << ['MILKING TIME PERFORMANCE ANALYSIS']
-      csv << ['Period', 'Total Production', 'Daily Average', 'Best Day Value', 'Worst Day Value', 'Consistency Score', 'Trend']
-      
+      csv << [ "MILKING TIME PERFORMANCE ANALYSIS" ]
+      csv << [ "Period", "Total Production", "Daily Average", "Best Day Value", "Worst Day Value", "Consistency Score", "Trend" ]
+
       if @trends_data[:milking_time_performance]
         %w[morning noon evening night].each do |period|
           performance = @trends_data[:milking_time_performance][period.to_sym]
@@ -1029,24 +1029,24 @@ class ProductionRecordsController < ApplicationController
               period.titleize,
               "#{performance[:total_production]}L",
               "#{performance[:average_per_day]}L",
-              performance[:best_day] ? "#{performance[:best_day][:value]}L" : 'N/A',
-              performance[:worst_day] ? "#{performance[:worst_day][:value]}L" : 'N/A',
+              performance[:best_day] ? "#{performance[:best_day][:value]}L" : "N/A",
+              performance[:worst_day] ? "#{performance[:worst_day][:value]}L" : "N/A",
               "#{performance[:consistency_score]}%",
               performance[:trend].titleize
             ]
           end
         end
       end
-      
+
       csv << [] # Empty row separator
-      
+
       # Individual Cow Data Section
-      csv << ['INDIVIDUAL COW PRODUCTION DATA']
+      csv << [ "INDIVIDUAL COW PRODUCTION DATA" ]
       csv << [
-        'Date', 'Cow Name', 'Tag Number', 'Farm',
-        'Morning (L)', 'Noon (L)', 'Evening (L)', 'Night (L)', 'Total (L)'
+        "Date", "Cow Name", "Tag Number", "Farm",
+        "Morning (L)", "Noon (L)", "Evening (L)", "Night (L)", "Total (L)"
       ]
-      
+
       # Data rows
       @trends_data[:daily_data].each do |date, cows_data|
         cows_data.each do |cow_id, cow_data|
@@ -1069,20 +1069,20 @@ class ProductionRecordsController < ApplicationController
     filename += "_#{@farm.name.parameterize}" if @farm
     filename += ".csv"
 
-    send_data csv_data, filename: filename, type: 'text/csv'
+    send_data csv_data, filename: filename, type: "text/csv"
   end
 
   # Calculate milking time performance metrics
   def calculate_milking_time_performance(milking_time_analytics, date_totals)
     performance = {}
-    
+
     %w[morning noon evening night].each do |period|
       period_sym = period.to_sym
       analytics = milking_time_analytics[period_sym]
-      
+
       # Calculate daily totals for this period across all days
       daily_totals = date_totals.values.map { |day| day[period_sym] }
-      
+
       performance[period_sym] = {
         total_production: analytics[:total].round(1),
         average_per_day: daily_totals.any? ? (analytics[:total] / daily_totals.count).round(1) : 0,
@@ -1092,24 +1092,24 @@ class ProductionRecordsController < ApplicationController
         trend: calculate_trend(daily_totals)
       }
     end
-    
+
     performance
   end
 
   # Generate daily totals summary table data
   def generate_daily_totals_summary(date_totals)
     summary_rows = []
-    
+
     # Period totals across all days
     period_totals = { morning: 0, noon: 0, evening: 0, night: 0, daily: 0 }
-    
+
     date_totals.each do |date, totals|
       period_totals[:morning] += totals[:morning]
-      period_totals[:noon] += totals[:noon] 
+      period_totals[:noon] += totals[:noon]
       period_totals[:evening] += totals[:evening]
       period_totals[:night] += totals[:night]
       period_totals[:daily] += totals[:total]
-      
+
       # Find best performer for each period on this date
       summary_rows << {
         date: date,
@@ -1121,7 +1121,7 @@ class ProductionRecordsController < ApplicationController
         cow_count: totals[:cow_count]
       }
     end
-    
+
     {
       daily_rows: summary_rows.sort_by { |row| row[:date] }.reverse,
       period_totals: period_totals.transform_values { |v| v.round(1) },
@@ -1138,38 +1138,37 @@ class ProductionRecordsController < ApplicationController
   # Calculate consistency score (100% = perfectly consistent)
   def calculate_consistency_score(values)
     return 100.0 if values.empty? || values.count == 1
-    
+
     mean = values.sum.to_f / values.count
     return 100.0 if mean == 0
-    
+
     variance = values.sum { |v| (v - mean) ** 2 } / values.count
     std_deviation = Math.sqrt(variance)
     coefficient_of_variation = std_deviation / mean
-    
+
     # Convert to consistency score (higher is better)
-    consistency = [(1 - coefficient_of_variation) * 100, 0].max
+    consistency = [ (1 - coefficient_of_variation) * 100, 0 ].max
     consistency.round(1)
   end
 
   # Calculate trend direction (positive/negative/stable)
   def calculate_trend(values)
-    return 'stable' if values.count < 2
-    
+    return "stable" if values.count < 2
+
     first_half = values[0...(values.count / 2)]
     second_half = values[(values.count / 2)..-1]
-    
+
     first_avg = first_half.sum.to_f / first_half.count
     second_avg = second_half.sum.to_f / second_half.count
-    
+
     difference_percent = first_avg > 0 ? ((second_avg - first_avg) / first_avg * 100) : 0
-    
+
     if difference_percent > 5
-      'improving'
+      "improving"
     elsif difference_percent < -5
-      'declining'
+      "declining"
     else
-      'stable'
+      "stable"
     end
   end
-
 end

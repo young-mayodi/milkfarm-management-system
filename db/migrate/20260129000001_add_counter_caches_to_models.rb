@@ -11,13 +11,25 @@ class AddCounterCachesToModels < ActiveRecord::Migration[8.0]
     # Backfill existing counts (do this in batches for safety)
     say_with_time "Backfilling farm counter caches..." do
       Farm.find_each do |farm|
-        Farm.reset_counters(farm.id, :production_records, :sales_records)
+        begin
+          Farm.update_counters(farm.id, production_records_count: farm.production_records.count) if defined?(ProductionRecord)
+          Farm.update_counters(farm.id, sales_records_count: farm.sales.count) if defined?(Sale)
+        rescue => e
+          puts "Skipping farm #{farm.id}: #{e.message}"
+        end
       end
     end
     
     say_with_time "Backfilling cow counter caches..." do
       Cow.find_each do |cow|
-        Cow.reset_counters(cow.id, :health_records, :breeding_records, :vaccination_records, :production_records)
+        begin
+          Cow.update_counters(cow.id, health_records_count: cow.health_records.count) if cow.respond_to?(:health_records)
+          Cow.update_counters(cow.id, breeding_records_count: cow.breeding_records.count) if cow.respond_to?(:breeding_records)
+          Cow.update_counters(cow.id, vaccination_records_count: cow.vaccination_records.count) if cow.respond_to?(:vaccination_records)
+          Cow.update_counters(cow.id, production_records_count: cow.production_records.count) if cow.respond_to?(:production_records)
+        rescue => e
+          puts "Skipping cow #{cow.id}: #{e.message}"
+        end
       end
     end
   end

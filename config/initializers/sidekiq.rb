@@ -1,4 +1,11 @@
-require "sidekiq"
+begin
+  require "sidekiq"
+rescue LoadError
+  # Sidekiq not available - skip configuration
+  Rails.application.config.active_job.queue_adapter = :async
+  Rails.logger.warn("Sidekiq gem not available - using async job adapter")
+  return
+end
 
 if ENV["REDIS_URL"].present?
   # Configure Redis connection pool
@@ -14,10 +21,10 @@ if ENV["REDIS_URL"].present?
     config.redis = redis_config.merge(
       size: ENV.fetch("SIDEKIQ_SERVER_POOL_SIZE", 10).to_i
     )
-    
+
     # Enable reliable fetch (requires Sidekiq Pro)
     # config.reliable_fetch!
-    
+
     # Server-side middleware
     config.server_middleware do |chain|
       # Add custom middleware here if needed
@@ -32,11 +39,11 @@ if ENV["REDIS_URL"].present?
 
   # Configure Rails to use Sidekiq for background jobs
   Rails.application.config.active_job.queue_adapter = :sidekiq
-  
+
   # Set default queue
-  Sidekiq.default_job_options = { 
-    'backtrace' => true,
-    'retry' => 3
+  Sidekiq.default_job_options = {
+    "backtrace" => true,
+    "retry" => 3
   }
 else
   # Fallback to async adapter if Redis is not available

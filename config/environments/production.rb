@@ -51,7 +51,7 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Redis cache store when available, otherwise memory store  
+  # Redis cache store when available, otherwise memory store
   # Use memory store as default to avoid connection pool issues
   config.cache_store = :memory_store, { size: 128.megabytes }
 

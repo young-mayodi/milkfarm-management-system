@@ -39,7 +39,7 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 # gem "solid_cable"
 
 # Heroku deployment gems
-gem 'rails_12factor', group: :production
+gem "rails_12factor", group: :production
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false

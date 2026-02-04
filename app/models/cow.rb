@@ -2,14 +2,16 @@ class Cow < ApplicationRecord
   # Associations
   belongs_to :farm, counter_cache: true
   belongs_to :mother, class_name: "Cow", optional: true
+  belongs_to :sire, class_name: "Cow", optional: true
   has_many :calves, class_name: "Cow", foreign_key: "mother_id", dependent: :nullify
-  has_many :production_records, dependent: :destroy
+  has_many :offspring_as_sire, class_name: "Cow", foreign_key: "sire_id", dependent: :nullify
+  has_many :production_records, dependent: :destroy, counter_cache: true
   has_one :animal_sale, dependent: :destroy
 
   # Advanced Animal Management Associations
-  has_many :health_records, dependent: :destroy
-  has_many :breeding_records, dependent: :destroy
-  has_many :vaccination_records, dependent: :destroy
+  has_many :health_records, dependent: :destroy, counter_cache: true
+  has_many :breeding_records, dependent: :destroy, counter_cache: true
+  has_many :vaccination_records, dependent: :destroy, counter_cache: true
 
   # Validations
   validates :name, presence: true
@@ -30,17 +32,22 @@ class Cow < ApplicationRecord
   after_destroy :decrement_active_count_if_needed
 
   # Scopes - optimized for database performance
-  scope :active, -> { where(status: "active") }
+  scope :not_deleted, -> { where(deleted_at: nil) }
+  scope :deleted, -> { where.not(deleted_at: nil) }
+  scope :active, -> { not_deleted.where(status: "active") }
   scope :by_group, ->(group) { where(group_name: group) }
-  scope :adult_cows, -> { where("cows.age >= ? AND cows.mother_id IS NULL", 2) }
-  scope :calves, -> { where("cows.age < ? OR cows.mother_id IS NOT NULL", 2) }
-  scope :with_mother, -> { where.not(mother_id: nil) }
-  scope :sold, -> { where(status: "sold") }
-  scope :deceased, -> { where(status: "deceased") }
-  scope :graduated, -> { where(status: "graduated_to_dairy") }
+  scope :adult_cows, -> { not_deleted.where("cows.age >= ? AND cows.mother_id IS NULL", 2) }
+  scope :calves, -> { not_deleted.where("cows.age < ? OR cows.mother_id IS NOT NULL", 2) }
+  scope :with_mother, -> { not_deleted.where.not(mother_id: nil) }
+  scope :sold, -> { not_deleted.where(status: "sold") }
+  scope :deceased, -> { not_deleted.where(status: "deceased") }
+  scope :graduated, -> { not_deleted.where(status: "graduated_to_dairy") }
   scope :ready_for_dairy, -> { calves.where("age >= 1.5").where("current_weight >= 80") }
-  scope :can_be_milked, -> { where(status: [ "active", "graduated_to_dairy" ]).where("age >= 1.5") }
-  scope :milkable_animals, -> { where(status: [ "active", "graduated_to_dairy" ]).where("age >= 1.5") }
+  scope :can_be_milked, -> { not_deleted.where(status: [ "active", "graduated_to_dairy" ]).where("age >= 1.5") }
+  scope :milkable_animals, -> { not_deleted.where(status: [ "active", "graduated_to_dairy" ]).where("age >= 1.5") }
+
+  # Override default scope to exclude soft-deleted records
+  default_scope -> { where(deleted_at: nil) }
 
   # Performance optimized scopes
   scope :with_farm_and_mother, -> { includes(:farm, :mother) }
@@ -365,6 +372,21 @@ class Cow < ApplicationRecord
     "#{name} (#{tag_number})"
   end
 
+  # Soft delete methods
+  def soft_delete!
+    update_column(:deleted_at, Time.current)
+    decrement_active_count_if_needed if status == "active"
+  end
+
+  def restore!
+    update_column(:deleted_at, nil)
+    increment_active_count_if_needed if status == "active"
+  end
+
+  def deleted?
+    deleted_at.present?
+  end
+
   private
 
   def increment_active_count_if_needed
@@ -392,5 +414,95 @@ class Cow < ApplicationRecord
     if status == "active"
       farm.decrement!(:active_cows_count)
     end
+  end
+
+  public
+
+  # Lineage / Pedigree Methods
+  def all_offspring
+    calves + offspring_as_sire
+  end
+
+  def lineage_tree(depth = 3)
+    build_lineage_tree(self, depth)
+  end
+
+  def ancestors(generations = 3)
+    result = []
+    current_generation = [ self ]
+
+    generations.times do
+      next_generation = []
+      current_generation.each do |cow|
+        next_generation << cow.mother if cow.mother
+        next_generation << cow.sire if cow.sire
+      end
+      result += next_generation
+      break if next_generation.empty?
+      current_generation = next_generation
+    end
+
+    result.compact.uniq
+  end
+
+  def descendants(generations = 3)
+    result = []
+    current_generation = [ self ]
+
+    generations.times do
+      next_generation = []
+      current_generation.each do |cow|
+        offspring = cow.all_offspring
+        next_generation += offspring
+      end
+      result += next_generation
+      break if next_generation.empty?
+      current_generation = next_generation
+    end
+
+    result.compact.uniq
+  end
+
+  def pedigree_summary
+    {
+      cow: { id: id, name: name, tag_number: tag_number, breed: breed, birth_date: birth_date },
+      mother: mother ? { id: mother.id, name: mother.name, tag_number: mother.tag_number, breed: mother.breed } : nil,
+      sire: sire ? { id: sire.id, name: sire.name, tag_number: sire.tag_number, breed: sire.breed } : nil,
+      maternal_grandmother: mother&.mother ? { id: mother.mother.id, name: mother.mother.name, tag_number: mother.mother.tag_number } : nil,
+      maternal_grandfather: mother&.sire ? { id: mother.sire.id, name: mother.sire.name, tag_number: mother.sire.tag_number } : nil,
+      paternal_grandmother: sire&.mother ? { id: sire.mother.id, name: sire.mother.name, tag_number: sire.mother.tag_number } : nil,
+      paternal_grandfather: sire&.sire ? { id: sire.sire.id, name: sire.sire.name, tag_number: sire.sire.tag_number } : nil
+    }
+  end
+
+  private
+
+  def build_lineage_tree(cow, depth, current_depth = 0)
+    return nil if cow.nil? || current_depth >= depth
+
+    {
+      id: cow.id,
+      name: cow.name,
+      tag_number: cow.tag_number,
+      breed: cow.breed,
+      birth_date: cow.birth_date,
+      status: cow.status,
+      children: cow.all_offspring.map { |child| build_lineage_tree(child, depth, current_depth + 1) }.compact,
+      mother: build_parent_info(cow.mother),
+      sire: build_parent_info(cow.sire)
+    }
+  end
+
+  def build_parent_info(parent)
+    return nil unless parent
+
+    {
+      id: parent.id,
+      name: parent.name,
+      tag_number: parent.tag_number,
+      breed: parent.breed,
+      birth_date: parent.birth_date,
+      status: parent.status
+    }
   end
 end

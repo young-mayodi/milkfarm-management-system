@@ -170,9 +170,9 @@
     <div class="row g-4" id="farmsGrid">
       <% @farms.each_with_index do |farm, index| %>
         <div class="col-xl-4 col-lg-6 col-md-6 farm-item" 
-             data-name="<%= farm.name.downcase %>" 
-             data-owner="<%= farm.owner.downcase %>" 
-             data-location="<%= farm.location.downcase %>"
+             data-name="<%= farm.name&.downcase %>" 
+             data-owner="<%= farm.owner&.downcase %>" 
+             data-location="<%= farm.location&.downcase %>"
              data-cows="<%= farm.total_cows %>"
              data-production="<%= farm.today_production %>">
           <div class="farm-card" data-farm-id="<%= farm.id %>">
@@ -301,9 +301,9 @@
       <div class="list-body" id="farmsList">
         <% @farms.each do |farm| %>
           <div class="farm-list-item" 
-               data-name="<%= farm.name.downcase %>" 
-               data-owner="<%= farm.owner.downcase %>" 
-               data-location="<%= farm.location.downcase %>"
+               data-name="<%= farm.name&.downcase %>" 
+               data-owner="<%= farm.owner&.downcase %>" 
+               data-location="<%= farm.location&.downcase %>"
                data-cows="<%= farm.total_cows %>"
                data-production="<%= farm.today_production %>">
             <div class="row align-items-center">
