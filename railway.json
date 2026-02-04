@@ -6,6 +6,7 @@
   "deploy": {
     "numReplicas": 1,
     "sleepApplication": false,
-    "restartPolicyType": "ON_FAILURE"
+    "restartPolicyType": "ON_FAILURE",
+    "startCommand": "bundle exec rails db:migrate && bundle exec puma -C config/puma.rb"
   }
 }
