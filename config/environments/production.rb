@@ -52,15 +52,21 @@ Rails.application.configure do
   config.active_support.report_deprecations = false
 
   # Redis cache store when available, otherwise memory store  
-  # Simplified configuration to avoid connection pool issues
-  if ENV["REDIS_URL"].present?
-    config.cache_store = :redis_cache_store, { url: ENV["REDIS_URL"] }
+  # Railway doesn't provide Redis by default, so use memory store
+  # Use Redis only if explicitly configured
+  if ENV["REDIS_URL"].present? && !ENV["RAILWAY_ENVIRONMENT"]
+    config.cache_store = :redis_cache_store, {
+      url: ENV["REDIS_URL"],
+      pool_size: 5,
+      pool_timeout: 5,
+      reconnect_attempts: 3
+    }
   else
     config.cache_store = :memory_store, { size: 128.megabytes }
   end
 
   # Use Sidekiq for background jobs when Redis is available
-  if ENV["REDIS_URL"].present?
+  if ENV["REDIS_URL"].present? && !ENV["RAILWAY_ENVIRONMENT"]
     config.active_job.queue_adapter = :sidekiq
   else
     config.active_job.queue_adapter = :async
