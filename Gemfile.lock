@@ -87,8 +87,6 @@ GEM
       msgpack (~> 1.2)
     brakeman (7.1.2)
       racc
-    bugsnag (6.29.0)
-      concurrent-ruby (~> 1.0)
     builder (3.3.0)
     bullet (8.1.0)
       activesupport (>= 3.0.0)
@@ -286,10 +284,6 @@ GEM
       erb
       psych (>= 4.0.0)
       tsort
-    redis (5.4.1)
-      redis-client (>= 0.22.0)
-    redis-client (0.26.3)
-      connection_pool
     regexp_parser (2.11.3)
     reline (0.6.3)
       io-console (~> 0.5)
@@ -331,14 +325,6 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
-    sidekiq (7.3.9)
-      base64
-      connection_pool (>= 2.3.0)
-      logger
-      rack (>= 2.2.4)
-      redis-client (>= 0.22.2)
-    skylight (7.0.0)
-      activesupport (>= 7.1.0)
     sshkit (1.25.0)
       base64
       logger
@@ -398,7 +384,6 @@ DEPENDENCIES
   bcrypt (~> 3.1.7)
   bootsnap
   brakeman
-  bugsnag (~> 6.29)
   bullet
   capybara
   csv
@@ -415,11 +400,8 @@ DEPENDENCIES
   rack-mini-profiler
   rails (~> 8.0.2)
   rails_12factor
-  redis (~> 5.0)
   rubocop-rails-omakase
   selenium-webdriver
-  sidekiq (~> 7.0)
-  skylight (~> 7.0)
   stimulus-rails
   thruster
   turbo-rails
