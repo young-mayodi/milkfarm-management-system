@@ -38,7 +38,7 @@ plugin :tmp_restart
 # plugin :solid_queue if ENV["SOLID_QUEUE_IN_PUMA"]
 
 # Heroku recommends these settings for production
-workers ENV.fetch("WEB_CONCURRENCY") { 1 }
+workers ENV.fetch("WEB_CONCURRENCY", 1)
 preload_app!
 
 on_worker_boot do
