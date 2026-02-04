@@ -21,7 +21,7 @@ class AddCounterCachesToModels < ActiveRecord::Migration[8.0]
     end
     
     say_with_time "Backfilling cow counter caches..." do
-      Cow.find_each do |cow|
+      Cow.unscoped.find_each do |cow|
         begin
           Cow.update_counters(cow.id, health_records_count: cow.health_records.count) if cow.respond_to?(:health_records)
           Cow.update_counters(cow.id, breeding_records_count: cow.breeding_records.count) if cow.respond_to?(:breeding_records)
