@@ -14,15 +14,23 @@ class AddCounterCachesToFarmsAndCows < ActiveRecord::Migration[8.0]
     reversible do |dir|
       dir.up do
         Farm.find_each do |farm|
-          Farm.reset_counters(farm.id, :production_records) if Farm.reflect_on_association(:production_records)
-          Farm.reset_counters(farm.id, :cows) if Farm.reflect_on_association(:cows)
+          [:production_records, :cows].each do |assoc|
+            begin
+              Farm.reset_counters(farm.id, assoc) if Farm.reflect_on_association(assoc)
+            rescue => e
+              # Skip if association doesn't exist or counter cache column not found
+            end
+          end
         end
 
         Cow.unscoped.find_each do |cow|
-          Cow.reset_counters(cow.id, :production_records) if Cow.reflect_on_association(:production_records)
-          Cow.reset_counters(cow.id, :health_records) if Cow.reflect_on_association(:health_records)
-          Cow.reset_counters(cow.id, :breeding_records) if Cow.reflect_on_association(:breeding_records)
-          Cow.reset_counters(cow.id, :vaccination_records) if Cow.reflect_on_association(:vaccination_records)
+          [:production_records, :health_records, :breeding_records, :vaccination_records].each do |assoc|
+            begin
+              Cow.reset_counters(cow.id, assoc) if Cow.reflect_on_association(assoc)
+            rescue => e
+              # Skip if association doesn't exist or counter cache column not found
+            end
+          end
         end
       end
     end
