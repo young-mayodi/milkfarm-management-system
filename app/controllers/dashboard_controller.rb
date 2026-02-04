@@ -1,6 +1,6 @@
 class DashboardController < ApplicationController
   include PerformanceHelper
-  
+
   def index
     load_dashboard_data
     prepare_chart_data
@@ -24,7 +24,7 @@ class DashboardController < ApplicationController
     # Use cached data with performance helpers
     @farms = current_user.farm_owner? ? Farm.all : [ current_user.farm ]
     farm_id = @farms.first&.id
-    
+
     # Use counter caches instead of COUNT queries
     @total_farms = @farms.count
     @total_cows = Rails.cache.fetch("total_cows_count", expires_in: 5.minutes) { Cow.count }
@@ -79,9 +79,9 @@ class DashboardController < ApplicationController
     load_notifications_data
 
     # Enhanced Analytics Data
-    loCache all expensive analytics
+    # Cache all expensive analytics
     cache_key = "enhanced_analytics_#{@farms.first&.id}_#{Date.current}"
-    
+
     cached_data = Rails.cache.fetch(cache_key, expires_in: 1.hour) do
       {
         weekly_trends: ProductionRecord.weekly_trend_analysis(weeks_back: 8),
@@ -98,7 +98,7 @@ class DashboardController < ApplicationController
         cost_breakdown: @farms.first ? SalesRecord.cost_breakdown_analysis(@farms.first) : {}
       }
     end
-    
+
     # Assign cached values
     @weekly_trends = cached_data[:weekly_trends]
     @monthly_trends = cached_data[:monthly_trends]
@@ -489,11 +489,11 @@ class DashboardController < ApplicationController
     # Use SQL to find cows that either have no health records or last checkup was > 30 days ago
     cow_ids_needing_checkup = Cow.active
                                   .left_joins(:health_records)
-                                  .group('cows.id')
-                                  .having('MAX(health_records.recorded_at) < ? OR MAX(health_records.recorded_at) IS NULL', 30.days.ago)
+                                  .group("cows.id")
+                                  .having("MAX(health_records.recorded_at) < ? OR MAX(health_records.recorded_at) IS NULL", 30.days.ago)
                                   .limit(5)
                                   .pluck(:id)
-    
+
     animals_due_checkup = Cow.where(id: cow_ids_needing_checkup)
                              .includes(:health_records)
 
