@@ -2,7 +2,6 @@ class AddCounterCachesToFarmsAndCows < ActiveRecord::Migration[8.0]
   def change
     # Add counter caches to farms table
     add_column :farms, :production_records_count, :integer, default: 0, null: false unless column_exists?(:farms, :production_records_count)
-    add_column :farms, :health_records_count, :integer, default: 0, null: false unless column_exists?(:farms, :health_records_count)
     add_column :farms, :cows_count, :integer, default: 0, null: false unless column_exists?(:farms, :cows_count)
 
     # Add counter caches to cows table
@@ -15,14 +14,13 @@ class AddCounterCachesToFarmsAndCows < ActiveRecord::Migration[8.0]
     reversible do |dir|
       dir.up do
         Farm.find_each do |farm|
-          Farm.reset_counters(farm.id, :production_records)
-          Farm.reset_counters(farm.id, :health_records)
-          Farm.reset_counters(farm.id, :cows)
+          Farm.reset_counters(farm.id, :production_records) if Farm.reflect_on_association(:production_records)
+          Farm.reset_counters(farm.id, :cows) if Farm.reflect_on_association(:cows)
         end
 
-        Cow.find_each do |cow|
-          Cow.reset_counters(cow.id, :production_records)
-          Cow.reset_counters(cow.id, :health_records)
+        Cow.unscoped.find_each do |cow|
+          Cow.reset_counters(cow.id, :production_records) if Cow.reflect_on_association(:production_records)
+          Cow.reset_counters(cow.id, :health_records) if Cow.reflect_on_association(:health_records)
           Cow.reset_counters(cow.id, :breeding_records) if Cow.reflect_on_association(:breeding_records)
           Cow.reset_counters(cow.id, :vaccination_records) if Cow.reflect_on_association(:vaccination_records)
         end
