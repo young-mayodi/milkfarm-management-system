@@ -335,9 +335,9 @@ class CowsController < ApplicationController
       @farm = cow.farm
     end
 
-    # For standalone new/create routes without farm_id, default to first farm if available
+    # For standalone new/create routes without farm_id, default to current user's farm
     if @farm.nil? && action_name.in?(%w[new create])
-      @farm = current_user.farms.first if current_user
+      @farm = current_user.farm if current_user
       
       if @farm.nil?
         redirect_to farms_path, alert: "Please select a farm first to add a cow." and return
