@@ -5,11 +5,12 @@ class SalesRecord < ApplicationRecord
   # Validations
   validates :sale_date, presence: true
   validates :milk_sold, presence: true, numericality: { greater_than: 0 }
-  validates :cash_sales, presence: true, numericality: { greater_than_or_equal_to: 0 }
-  validates :mpesa_sales, presence: true, numericality: { greater_than_or_equal_to: 0 }
+  validates :cash_sales, numericality: { greater_than_or_equal_to: 0 }, allow_blank: true
+  validates :mpesa_sales, numericality: { greater_than_or_equal_to: 0 }, allow_blank: true
   validates :buyer, presence: true
 
   # Callbacks
+  before_validation :normalize_blank_values
   before_save :calculate_total_sales
 
   # Scopes
@@ -168,6 +169,11 @@ class SalesRecord < ApplicationRecord
   end
 
   private
+
+  def normalize_blank_values
+    self.cash_sales = nil if cash_sales.blank?
+    self.mpesa_sales = nil if mpesa_sales.blank?
+  end
 
   def calculate_total_sales
     self.total_sales = (cash_sales || 0) + (mpesa_sales || 0)
