@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_03_024202) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_16_125459) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -182,6 +182,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_03_024202) do
     t.string "phone"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "auth_token"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["farm_id", "role"], name: "index_users_on_farm_id_and_role"
     t.index ["farm_id"], name: "index_users_on_farm_id"

@@ -248,7 +248,7 @@ class ProductionRecord < ApplicationRecord
   def self.calculate_prediction_confidence(data, slope)
     # Simple confidence calculation based on data variance
     return 50 if data.empty? || data.sum.zero?
-    
+
     mean = data.sum.to_f / data.length.to_f
     variance = data.map { |x| (x.to_f - mean) ** 2 }.sum / data.length.to_f
     coefficient_of_variation = Math.sqrt(variance) / mean

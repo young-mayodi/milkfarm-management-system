@@ -1,4 +1,19 @@
 Rails.application.routes.draw do
+  # API routes for mobile app
+  namespace :api do
+    post "login", to: "auth#login"
+    post "logout", to: "auth#logout"
+    get "user", to: "auth#user"
+    
+    resources :farms, only: [ :index, :show ]
+    resources :cows, only: [ :index, :show, :create, :update ]
+    resources :production_records, only: [ :index, :show, :create, :update ]
+    resources :reports, only: [ :index, :show ]
+    
+    # Dashboard endpoint
+    get "dashboard", to: "dashboard#index"
+  end
+
   # Health check and monitoring routes
   get "health", to: "health#index"
   get "health/bugsnag_test", to: "health#bugsnag_test"
