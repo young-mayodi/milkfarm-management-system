@@ -1,5 +1,5 @@
 module Api
-  class ProductionRecordsController < ApplicationController
+  class ProductionRecordsController < Api::ApplicationController
     def index
       records = ProductionRecord.all
       records = records.where(farm_id: params[:farm_id]) if params[:farm_id]

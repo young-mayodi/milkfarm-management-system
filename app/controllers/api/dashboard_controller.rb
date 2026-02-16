@@ -1,5 +1,5 @@
 module Api
-  class DashboardController < ApplicationController
+  class DashboardController < Api::ApplicationController
     def index
       render json: {
         overview_stats: {

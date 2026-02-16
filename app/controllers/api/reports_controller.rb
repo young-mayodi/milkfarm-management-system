@@ -1,5 +1,5 @@
 module Api
-  class ReportsController < ApplicationController
+  class ReportsController < Api::ApplicationController
     def index
       reports = [
         {

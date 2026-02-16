@@ -1,5 +1,5 @@
 module Api
-  class FarmsController < ApplicationController
+  class FarmsController < Api::ApplicationController
     def index
       farms = Farm.all
       render json: farms.map { |farm| farm_json(farm) }

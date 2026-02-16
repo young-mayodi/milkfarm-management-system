@@ -1,5 +1,5 @@
 module Api
-  class AuthController < ApplicationController
+  class AuthController < Api::ApplicationController
     skip_before_action :authenticate_request!, only: [:login]
     
     def login

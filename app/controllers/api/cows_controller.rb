@@ -1,5 +1,5 @@
 module Api
-  class CowsController < ApplicationController
+  class CowsController < Api::ApplicationController
     def index
       cows = Cow.active
       cows = cows.where(farm_id: params[:farm_id]) if params[:farm_id]
