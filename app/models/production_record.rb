@@ -106,15 +106,19 @@ class ProductionRecord < ApplicationRecord
     end_date = Date.current
     start_date = weeks_back.weeks.ago.beginning_of_week
 
-    records = where(production_date: start_date..end_date)
+    # OPTIMIZED: Use single query with GROUP BY instead of multiple queries
+    weekly_totals = where(production_date: start_date..end_date)
+      .group("DATE_TRUNC('week', production_date)")
+      .sum(:total_production)
+
     weekly_data = {}
     weekly_productions = []
 
     (0..weeks_back-1).each do |week_offset|
       week_start = end_date.beginning_of_week - week_offset.weeks
-      week_end = week_start.end_of_week
 
-      week_production = records.where(production_date: week_start..week_end).sum(:total_production)
+      # Use the pre-calculated totals
+      week_production = weekly_totals[week_start] || 0
       weekly_productions << week_production
 
       weekly_data[week_start] = {
@@ -172,14 +176,23 @@ class ProductionRecord < ApplicationRecord
   end
 
   def self.monthly_trend_analysis(months_back: 6)
+    # OPTIMIZED: Use single query with GROUP BY instead of looping
+    start_date = (months_back - 1).months.ago.beginning_of_month
+    end_date = Date.current.end_of_month
+
+    monthly_totals = where(production_date: start_date..end_date)
+      .group("DATE_TRUNC('month', production_date)")
+      .sum(:total_production)
+
     monthly_data = {}
 
     (0..months_back-1).each do |month_offset|
       date = month_offset.months.ago
-      month_production = for_month(date.month, date.year).sum(:total_production)
+      month_start = date.beginning_of_month
+      month_production = monthly_totals[month_start] || 0
       days_in_month = Date.new(date.year, date.month, -1).day
 
-      monthly_data[date.beginning_of_month] = {
+      monthly_data[month_start] = {
         production: month_production,
         average_daily: month_production / days_in_month,
         month_name: date.strftime("%B %Y")
@@ -245,7 +258,10 @@ class ProductionRecord < ApplicationRecord
   private
 
   def calculate_total_production
-    self.total_production = (morning_production || 0) + (noon_production || 0) + (evening_production || 0)
+    self.total_production = (morning_production || 0) +
+      (noon_production || 0) +
+      (evening_production || 0) +
+      (night_production || 0)
   end
 
   # Immediate cache invalidation for critical operations

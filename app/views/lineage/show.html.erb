@@ -17,6 +17,8 @@
     </div>
   </div>
 
+  <% pedigree = @pedigree || {} %>
+
   <!-- Pedigree Card (3 Generations) -->
   <div class="card shadow-sm mb-4">
     <div class="card-header bg-primary text-white">
@@ -37,12 +39,12 @@
 
         <div class="generation-1">
           <!-- Mother -->
-          <div class="pedigree-box <%= @pedigree[:mother] ? 'has-data' : 'no-data' %>">
-            <% if @pedigree[:mother] %>
-              <%= link_to lineage_path(@pedigree[:mother][:id]), class: "text-decoration-none" do %>
-                <strong><%= @pedigree[:mother][:name] %></strong><br>
-                <small>#<%= @pedigree[:mother][:tag_number] %></small><br>
-                <small class="text-muted"><%= @pedigree[:mother][:breed] %></small>
+          <div class="pedigree-box <%= pedigree[:mother] ? 'has-data' : 'no-data' %>">
+            <% if pedigree[:mother] %>
+              <%= link_to lineage_cow_path(pedigree[:mother][:id]), class: "text-decoration-none" do %>
+                <strong><%= pedigree[:mother][:name] %></strong><br>
+                <small>#<%= pedigree[:mother][:tag_number] %></small><br>
+                <small class="text-muted"><%= pedigree[:mother][:breed] %></small>
               <% end %>
             <% else %>
               <small class="text-muted">Unknown Mother</small>
@@ -50,12 +52,12 @@
           </div>
 
           <!-- Sire -->
-          <div class="pedigree-box <%= @pedigree[:sire] ? 'has-data' : 'no-data' %>">
-            <% if @pedigree[:sire] %>
-              <%= link_to lineage_path(@pedigree[:sire][:id]), class: "text-decoration-none" do %>
-                <strong><%= @pedigree[:sire][:name] %></strong><br>
-                <small>#<%= @pedigree[:sire][:tag_number] %></small><br>
-                <small class="text-muted"><%= @pedigree[:sire][:breed] %></small>
+          <div class="pedigree-box <%= pedigree[:sire] ? 'has-data' : 'no-data' %>">
+            <% if pedigree[:sire] %>
+              <%= link_to lineage_cow_path(pedigree[:sire][:id]), class: "text-decoration-none" do %>
+                <strong><%= pedigree[:sire][:name] %></strong><br>
+                <small>#<%= pedigree[:sire][:tag_number] %></small><br>
+                <small class="text-muted"><%= pedigree[:sire][:breed] %></small>
               <% end %>
             <% else %>
               <small class="text-muted">Unknown Sire</small>
@@ -65,11 +67,11 @@
 
         <div class="generation-2">
           <!-- Maternal Grandmother -->
-          <div class="pedigree-box <%= @pedigree[:maternal_grandmother] ? 'has-data' : 'no-data' %>">
-            <% if @pedigree[:maternal_grandmother] %>
-              <%= link_to lineage_path(@pedigree[:maternal_grandmother][:id]), class: "text-decoration-none" do %>
-                <strong><%= @pedigree[:maternal_grandmother][:name] %></strong><br>
-                <small>#<%= @pedigree[:maternal_grandmother][:tag_number] %></small>
+          <div class="pedigree-box <%= pedigree[:maternal_grandmother] ? 'has-data' : 'no-data' %>">
+            <% if pedigree[:maternal_grandmother] %>
+              <%= link_to lineage_cow_path(pedigree[:maternal_grandmother][:id]), class: "text-decoration-none" do %>
+                <strong><%= pedigree[:maternal_grandmother][:name] %></strong><br>
+                <small>#<%= pedigree[:maternal_grandmother][:tag_number] %></small>
               <% end %>
             <% else %>
               <small class="text-muted">Unknown</small>
@@ -77,11 +79,11 @@
           </div>
 
           <!-- Maternal Grandfather -->
-          <div class="pedigree-box <%= @pedigree[:maternal_grandfather] ? 'has-data' : 'no-data' %>">
-            <% if @pedigree[:maternal_grandfather] %>
-              <%= link_to lineage_path(@pedigree[:maternal_grandfather][:id]), class: "text-decoration-none" do %>
-                <strong><%= @pedigree[:maternal_grandfather][:name] %></strong><br>
-                <small>#<%= @pedigree[:maternal_grandfather][:tag_number] %></small>
+          <div class="pedigree-box <%= pedigree[:maternal_grandfather] ? 'has-data' : 'no-data' %>">
+            <% if pedigree[:maternal_grandfather] %>
+              <%= link_to lineage_cow_path(pedigree[:maternal_grandfather][:id]), class: "text-decoration-none" do %>
+                <strong><%= pedigree[:maternal_grandfather][:name] %></strong><br>
+                <small>#<%= pedigree[:maternal_grandfather][:tag_number] %></small>
               <% end %>
             <% else %>
               <small class="text-muted">Unknown</small>
@@ -89,11 +91,11 @@
           </div>
 
           <!-- Paternal Grandmother -->
-          <div class="pedigree-box <%= @pedigree[:paternal_grandmother] ? 'has-data' : 'no-data' %>">
-            <% if @pedigree[:paternal_grandmother] %>
-              <%= link_to lineage_path(@pedigree[:paternal_grandmother][:id]), class: "text-decoration-none" do %>
-                <strong><%= @pedigree[:paternal_grandmother][:name] %></strong><br>
-                <small>#<%= @pedigree[:paternal_grandmother][:tag_number] %></small>
+          <div class="pedigree-box <%= pedigree[:paternal_grandmother] ? 'has-data' : 'no-data' %>">
+            <% if pedigree[:paternal_grandmother] %>
+              <%= link_to lineage_cow_path(pedigree[:paternal_grandmother][:id]), class: "text-decoration-none" do %>
+                <strong><%= pedigree[:paternal_grandmother][:name] %></strong><br>
+                <small>#<%= pedigree[:paternal_grandmother][:tag_number] %></small>
               <% end %>
             <% else %>
               <small class="text-muted">Unknown</small>
@@ -101,11 +103,11 @@
           </div>
 
           <!-- Paternal Grandfather -->
-          <div class="pedigree-box <%= @pedigree[:paternal_grandfather] ? 'has-data' : 'no-data' %>">
-            <% if @pedigree[:paternal_grandfather] %>
-              <%= link_to lineage_path(@pedigree[:paternal_grandfather][:id]), class: "text-decoration-none" do %>
-                <strong><%= @pedigree[:paternal_grandfather][:name] %></strong><br>
-                <small>#<%= @pedigree[:paternal_grandfather][:tag_number] %></small>
+          <div class="pedigree-box <%= pedigree[:paternal_grandfather] ? 'has-data' : 'no-data' %>">
+            <% if pedigree[:paternal_grandfather] %>
+              <%= link_to lineage_cow_path(pedigree[:paternal_grandfather][:id]), class: "text-decoration-none" do %>
+                <strong><%= pedigree[:paternal_grandfather][:name] %></strong><br>
+                <small>#<%= pedigree[:paternal_grandfather][:tag_number] %></small>
               <% end %>
             <% else %>
               <small class="text-muted">Unknown</small>
@@ -133,7 +135,7 @@
                 <div class="list-group-item">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <%= link_to lineage_path(ancestor) do %>
+                      <%= link_to lineage_cow_path(ancestor) do %>
                         <strong><%= ancestor.name %></strong>
                         <small class="text-muted">(#<%= ancestor.tag_number %>)</small>
                       <% end %>
@@ -173,7 +175,7 @@
                 <div class="list-group-item">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <%= link_to lineage_path(descendant) do %>
+                      <%= link_to lineage_cow_path(descendant) do %>
                         <strong><%= descendant.name %></strong>
                         <small class="text-muted">(#<%= descendant.tag_number %>)</small>
                       <% end %>

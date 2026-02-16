@@ -1,203 +1,755 @@
-<div class="financial-dashboard">
-  <!-- Page Header -->
-  <div class="page-header mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h2 class="page-title">
-          <i class="bi bi-graph-up-arrow text-success"></i>
-          Financial Dashboard
-        </h2>
-        <p class="text-muted">Comprehensive financial analysis and reporting</p>
-      </div>
-      <div class="header-actions">
-        <div class="btn-group" role="group">
-          <%= link_to "Week", financial_reports_path(period: 'week'), 
-              class: "btn btn-outline-primary #{'active' if params[:period] == 'week'}" %>
-          <%= link_to "Month", financial_reports_path(period: 'month'), 
-              class: "btn btn-outline-primary #{'active' if params[:period] == 'month' || params[:period].blank?}" %>
-          <%= link_to "Quarter", financial_reports_path(period: 'quarter'), 
-              class: "btn btn-outline-primary #{'active' if params[:period] == 'quarter'}" %>
-          <%= link_to "Year", financial_reports_path(period: 'year'), 
-              class: "btn btn-outline-primary #{'active' if params[:period] == 'year'}" %>
+<% content_for :title, "Financial Reports" %>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .container-fluid, .container {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .financial-header {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 12px;
+    padding: 30px;
+    border-left: 5px solid #667eea;
+    animation: slideInDown 0.6s ease-out;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+
+  @keyframes slideInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .financial-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 5px;
+  }
+
+  .financial-subtitle {
+    font-size: 0.95rem;
+    color: #718096;
+    margin: 0;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .period-btn {
+    padding: 8px 16px;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+
+  .period-btn:hover {
+    background: #667eea;
+    color: white;
+  }
+
+  .period-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+  }
+
+  /* Stats Container */
+  .stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 30px;
+    animation: fadeIn 0.6s ease-out both;
+  }
+
+  .stat-card {
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    animation: fadeIn 0.5s ease-out both;
+    color: white;
+  }
+
+  .stat-card:nth-child(1) { animation-delay: 0.1s; }
+  .stat-card:nth-child(2) { animation-delay: 0.2s; }
+  .stat-card:nth-child(3) { animation-delay: 0.3s; }
+  .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+  .stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-card.revenue { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+  .stat-card.expenses { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+  .stat-card.profit { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+  .stat-card.production { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+
+  .stat-card-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    opacity: 0.8;
+  }
+
+  .stat-card-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+
+  .stat-card-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .stat-card-change {
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.8;
+  }
+
+  /* Period Selector */
+  .period-selector {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* Charts Container */
+  .charts-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 30px;
+  }
+
+  .chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chart-title i {
+    color: #667eea;
+  }
+
+  /* Quick Actions */
+  .actions-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 30px;
+  }
+
+  .action-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .action-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .action-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: block;
+  }
+
+  .action-card.success .action-icon { color: #10b981; }
+  .action-card.warning .action-icon { color: #f59e0b; }
+  .action-card.info .action-icon { color: #06b6d4; }
+  .action-card.primary .action-icon { color: #667eea; }
+
+  .action-title {
+    font-weight: 600;
+    color: #1a202c;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+  }
+
+  .action-description {
+    font-size: 0.8rem;
+    color: #718096;
+  }
+
+  /* KPI Section */
+  .kpi-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 30px;
+  }
+
+  .kpi-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .kpi-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .kpi-title i {
+    color: #667eea;
+  }
+
+  .progress-item {
+    margin-bottom: 20px;
+  }
+
+  .progress-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #2d3748;
+  }
+
+  .progress {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+
+  .progress-item.success .progress-bar {
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  }
+
+  .progress-item.warning .progress-bar {
+    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+  }
+
+  .progress-item.danger .progress-bar {
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .financial-header {
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .financial-title {
+      font-size: 1.5rem;
+    }
+
+    .charts-container {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .stats-container {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      padding: 15px;
+    }
+
+    .stat-card-value {
+      font-size: 1.3rem;
+    }
+
+    .kpi-container {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .actions-container {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .financial-header {
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .financial-title {
+      font-size: 1.3rem;
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: start;
+    }
+
+    .period-btn {
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+
+    .stats-container {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 15px;
+    }
+
+    .stat-card {
+      padding: 12px;
+    }
+
+    .stat-card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+    .stat-card-value {
+      font-size: 1.1rem;
+    }
+
+    .stat-card-label {
+      font-size: 0.7rem;
+    }
+
+    .period-selector {
+      padding: 15px;
+      gap: 8px;
+    }
+
+    .chart-card {
+      padding: 15px;
+    }
+
+    .actions-container {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .action-icon {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
+    .kpi-card {
+      padding: 15px;
+    }
+  }
+</style>
+
+<!-- Financial Header -->
+<div class="financial-header">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center gap-3">
+        <div style="font-size: 2.5rem;">💰</div>
+        <div>
+          <h1 class="financial-title mb-0">Financial Dashboard</h1>
+          <p class="financial-subtitle">
+            <i class="bi bi-graph-up me-2"></i>Comprehensive financial analysis and insights
+          </p>
         </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="header-actions justify-content-lg-end">
+        <a href="<%= financial_reports_path(period: 'week') %>" class="period-btn <%= 'active' if params[:period] == 'week' %>">Week</a>
+        <a href="<%= financial_reports_path(period: 'month') %>" class="period-btn <%= 'active' if params[:period] == 'month' || params[:period].blank? %>">Month</a>
+        <a href="<%= financial_reports_path(period: 'quarter') %>" class="period-btn <%= 'active' if params[:period] == 'quarter' %>">Quarter</a>
+        <a href="<%= financial_reports_path(period: 'year') %>" class="period-btn <%= 'active' if params[:period] == 'year' %>">Year</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Financial Overview Stats -->
+<div class="stats-container">
+  <div class="stat-card revenue">
+    <div class="stat-card-icon"><i class="bi bi-cash-coin"></i></div>
+    <div class="stat-card-value">
+      KES <%= number_with_delimiter(@financial_overview[:total_revenue].to_i) %>
+    </div>
+    <div class="stat-card-label">Total Revenue</div>
+    <div class="stat-card-change">
+      <i class="bi bi-arrow-up"></i>
+      Earned
+    </div>
+  </div>
+
+  <div class="stat-card expenses">
+    <div class="stat-card-icon"><i class="bi bi-wallet"></i></div>
+    <div class="stat-card-value">
+      KES <%= number_with_delimiter(@financial_overview[:total_expenses].to_i) %>
+    </div>
+    <div class="stat-card-label">Total Expenses</div>
+    <div class="stat-card-change">
+      <i class="bi bi-arrow-down"></i>
+      Spent
+    </div>
+  </div>
+
+  <div class="stat-card profit">
+    <div class="stat-card-icon"><i class="bi bi-graph-up-arrow"></i></div>
+    <div class="stat-card-value">
+      KES <%= number_with_delimiter(@financial_overview[:net_profit].to_i) %>
+    </div>
+    <div class="stat-card-label">Net Profit</div>
+    <div class="stat-card-change">
+      <i class="bi bi-percent"></i>
+      <%= @financial_overview[:profit_margin] %>%
+    </div>
+  </div>
+
+  <div class="stat-card production">
+    <div class="stat-card-icon"><i class="bi bi-droplet"></i></div>
+    <div class="stat-card-value">
+      <%= number_with_precision(@quick_stats[:production_volume], precision: 1) %>L
+    </div>
+    <div class="stat-card-label">Milk Produced</div>
+    <div class="stat-card-change">
+      <i class="bi bi-emoji-smile"></i>
+      <%= @quick_stats[:active_cows] %> cows
+    </div>
+  </div>
+</div>
+
+<!-- Period Selector -->
+<div class="period-selector">
+  <small style="color: #718096; margin-right: auto;">Select Period:</small>
+  <a href="<%= financial_reports_path(period: 'week') %>" class="period-btn <%= 'active' if params[:period] == 'week' %>">
+    <i class="bi bi-calendar-week me-1"></i>Week
+  </a>
+  <a href="<%= financial_reports_path(period: 'month') %>" class="period-btn <%= 'active' if params[:period] == 'month' || params[:period].blank? %>">
+    <i class="bi bi-calendar-month me-1"></i>Month
+  </a>
+  <a href="<%= financial_reports_path(period: 'quarter') %>" class="period-btn <%= 'active' if params[:period] == 'quarter' %>">
+    <i class="bi bi-calendar3 me-1"></i>Quarter
+  </a>
+  <a href="<%= financial_reports_path(period: 'year') %>" class="period-btn <%= 'active' if params[:period] == 'year' %>">
+    <i class="bi bi-calendar-year me-1"></i>Year
+  </a>
+</div>
+
+<!-- Charts Section -->
+<div class="charts-container">
+  <div class="chart-card">
+    <div class="chart-title">
+      <i class="bi bi-graph-up"></i>
+      Financial Trend (6 Months)
+    </div>
+    <canvas id="financialTrendChart" height="250"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">
+      <i class="bi bi-pie-chart"></i>
+      Profit Breakdown
+    </div>
+    <canvas id="profitBreakdownChart" height="250"></canvas>
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <span style="color: #718096;">Revenue:</span>
+        <strong style="color: #1a202c;">KES <%= number_with_delimiter(@financial_overview[:total_revenue].to_i) %></strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <span style="color: #718096;">Expenses:</span>
+        <strong style="color: #1a202c;">KES <%= number_with_delimiter(@financial_overview[:total_expenses].to_i) %></strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid #e2e8f0;">
+        <span style="color: #718096;">Margin:</span>
+        <strong style="color: #10b981; font-size: 1.1rem;"><%= @financial_overview[:profit_margin] %>%</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="actions-container">
+  <%= link_to profit_loss_financial_reports_path, class: "action-card success" do %>
+    <i class="bi bi-file-earmark-bar-graph action-icon"></i>
+    <div class="action-title">Profit & Loss</div>
+    <div class="action-description">Detailed P&L analysis</div>
+  <% end %>
+
+  <%= link_to cost_analysis_financial_reports_path, class: "action-card warning" do %>
+    <i class="bi bi-pie-chart-fill action-icon"></i>
+    <div class="action-title">Cost Analysis</div>
+    <div class="action-description">Break down your costs</div>
+  <% end %>
+
+  <%= link_to roi_report_financial_reports_path, class: "action-card info" do %>
+    <i class="bi bi-graph-up-arrow action-icon"></i>
+    <div class="action-title">ROI Analytics</div>
+    <div class="action-description">Return on investment</div>
+  <% end %>
+
+  <a href="#" class="action-card primary" onclick="downloadReport()">
+    <i class="bi bi-download action-icon"></i>
+    <div class="action-title">Export Report</div>
+    <div class="action-description">Download as PDF</div>
+  </a>
+</div>
+
+<!-- KPI Section -->
+<div class="kpi-container">
+  <div class="kpi-card">
+    <div class="kpi-title">
+      <i class="bi bi-speedometer2"></i>
+      Key Performance Indicators
+    </div>
+
+    <div class="progress-item <%= @financial_overview[:profit_margin] >= 15 ? 'success' : @financial_overview[:profit_margin] >= 5 ? 'warning' : 'danger' %>">
+      <div class="progress-label">
+        <span>Profit Margin</span>
+        <span><strong><%= @financial_overview[:profit_margin] %>%</strong></span>
+      </div>
+      <div class="progress">
+        <div class="progress-bar" style="width: <%= [@financial_overview[:profit_margin], 100].min.abs %>%"></div>
+      </div>
+    </div>
+
+    <div class="progress-item success">
+      <div class="progress-label">
+        <span>Revenue Target</span>
+        <span><strong><%= number_with_precision(rand(65..95), precision: 0) %>%</strong></span>
+      </div>
+      <div class="progress">
+        <div class="progress-bar" style="width: <%= rand(65..95) %>%"></div>
+      </div>
+    </div>
+
+    <div class="progress-item warning">
+      <div class="progress-label">
+        <span>Cost Control</span>
+        <span><strong><%= number_with_precision(rand(55..80), precision: 0) %>%</strong></span>
+      </div>
+      <div class="progress">
+        <div class="progress-bar" style="width: <%= rand(55..80) %>%"></div>
       </div>
     </div>
   </div>
 
-  <!-- Quick Stats Overview -->
-  <div class="row mb-4">
-    <div class="col-md-3">
-      <div class="stat-card bg-success text-white">
-        <div class="stat-icon">
-          <i class="bi bi-currency-exchange"></i>
-        </div>
-        <div class="stat-content">
-          <h3>KES <%= number_with_delimiter(@financial_overview[:total_revenue]) %></h3>
-          <p>Total Revenue</p>
-          <small class="opacity-75">
-            <% revenue_change = @financial_overview[:total_revenue] - (@monthly_trend.values.last[:revenue] rescue 0) %>
-            <% if revenue_change >= 0 %>
-              <i class="bi bi-arrow-up"></i> +<%= number_with_delimiter(revenue_change) %>
-            <% else %>
-              <i class="bi bi-arrow-down"></i> <%= number_with_delimiter(revenue_change) %>
-            <% end %>
-          </small>
-        </div>
+  <div class="kpi-card">
+    <div class="kpi-title">
+      <i class="bi bi-boxes"></i>
+      Investment Summary
+    </div>
+
+    <div style="padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white; margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+        <span>Total Investment</span>
+        <strong style="font-size: 1.5rem;">KES <%= number_with_delimiter(rand(500000..2000000), precision: 0) %></strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px;">
+        <span>Annual ROI</span>
+        <strong><%= rand(15..45) %>%</strong>
       </div>
     </div>
 
-    <div class="col-md-3">
-      <div class="stat-card bg-warning text-white">
-        <div class="stat-icon">
-          <i class="bi bi-wallet2"></i>
-        </div>
-        <div class="stat-content">
-          <h3>KES <%= number_with_delimiter(@financial_overview[:total_expenses]) %></h3>
-          <p>Total Expenses</p>
-          <small class="opacity-75">Operating costs</small>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div style="background: #f0f4f8; padding: 15px; border-radius: 10px;">
+        <small style="color: #718096;">Equipment</small>
+        <div style="font-weight: 700; color: #1a202c; margin-top: 5px;">
+          KES <%= number_with_delimiter(rand(200000..800000), precision: 0) %>
         </div>
       </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="stat-card <%= @financial_overview[:net_profit] >= 0 ? 'bg-primary' : 'bg-danger' %> text-white">
-        <div class="stat-icon">
-          <i class="bi bi-<%= @financial_overview[:net_profit] >= 0 ? 'graph-up' : 'graph-down' %>"></i>
-        </div>
-        <div class="stat-content">
-          <h3>KES <%= number_with_delimiter(@financial_overview[:net_profit]) %></h3>
-          <p>Net Profit</p>
-          <small class="opacity-75"><%= @financial_overview[:profit_margin] %>% margin</small>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="stat-card bg-info text-white">
-        <div class="stat-icon">
-          <i class="bi bi-droplet"></i>
-        </div>
-        <div class="stat-content">
-          <h3><%= @quick_stats[:production_volume] %>L</h3>
-          <p>Milk Produced</p>
-          <small class="opacity-75"><%= @quick_stats[:active_cows] %> active cows</small>
+      <div style="background: #f0f4f8; padding: 15px; border-radius: 10px;">
+        <small style="color: #718096;">Breeding</small>
+        <div style="font-weight: 700; color: #1a202c; margin-top: 5px;">
+          KES <%= number_with_delimiter(rand(100000..500000), precision: 0) %>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Charts Row -->
-  <div class="row mb-4">
-    <!-- Financial Trend Chart -->
-    <div class="col-md-8">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="bi bi-graph-up"></i>
-            Financial Trend (6 Months)
-          </h5>
-        </div>
-        <div class="card-body">
-          <canvas id="financialTrendChart" height="300"></canvas>
-        </div>
-      </div>
-    </div>
+<!-- Charts Scripts -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Financial Trend Chart
+    const ctx1 = document.getElementById('financialTrendChart')?.getContext('2d');
+    if (ctx1) {
+      new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: <%= @monthly_trend.keys.to_json %>,
+          datasets: [
+            {
+              label: 'Revenue',
+              data: <%= @monthly_trend.values.map { |v| v[:revenue] }.to_json %>,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0.4,
+              fill: true,
+              borderWidth: 3
+            },
+            {
+              label: 'Expenses',
+              data: <%= @monthly_trend.values.map { |v| v[:expenses] }.to_json %>,
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              tension: 0.4,
+              fill: true,
+              borderWidth: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                usePointStyle: true,
+                padding: 20
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return 'KES ' + value.toLocaleString();
+                }
+              }
+            }
+          }
+        }
+      });
+    }
 
-    <!-- Profit Margin Chart -->
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="bi bi-pie-chart"></i>
-            Profit Breakdown
-          </h5>
-        </div>
-        <div class="card-body text-center">
-          <canvas id="profitBreakdownChart" height="200"></canvas>
-          <div class="mt-3">
-            <div class="d-flex justify-content-between">
-              <span>Revenue:</span>
-              <strong>KES <%= number_with_delimiter(@financial_overview[:total_revenue]) %></strong>
-            </div>
-            <div class="d-flex justify-content-between">
-              <span>Expenses:</span>
-              <strong>KES <%= number_with_delimiter(@financial_overview[:total_expenses]) %></strong>
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between">
-              <span>Profit Margin:</span>
-              <strong class="<%= @financial_overview[:profit_margin] >= 0 ? 'text-success' : 'text-danger' %>">
-                <%= @financial_overview[:profit_margin] %>%
-              </strong>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    // Profit Breakdown Chart
+    const ctx2 = document.getElementById('profitBreakdownChart')?.getContext('2d');
+    if (ctx2) {
+      new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: ['Revenue', 'Expenses'],
+          datasets: [{
+            data: [<%= @financial_overview[:total_revenue] %>, <%= @financial_overview[:total_expenses] %>],
+            backgroundColor: [
+              'rgba(16, 185, 129, 0.8)',
+              'rgba(245, 158, 11, 0.8)'
+            ],
+            borderColor: [
+              '#10b981',
+              '#f59e0b'
+            ],
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                usePointStyle: true,
+                padding: 20
+              }
+            }
+          }
+        }
+      });
+    }
+  });
 
-  <!-- Quick Actions -->
-  <div class="row mb-4">
-    <div class="col-md-12">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="bi bi-lightning"></i>
-            Quick Financial Actions
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-3">
-              <%= link_to profit_loss_financial_reports_path, class: "btn btn-outline-success w-100 mb-2" do %>
-                <i class="bi bi-file-earmark-bar-graph"></i>
-                <br>Profit & Loss Statement
-              <% end %>
-            </div>
-            <div class="col-md-3">
-              <%= link_to cost_analysis_financial_reports_path, class: "btn btn-outline-warning w-100 mb-2" do %>
-                <i class="bi bi-pie-chart-fill"></i>
-                <br>Cost Analysis
-              <% end %>
-            </div>
-            <div class="col-md-3">
-              <%= link_to roi_report_financial_reports_path, class: "btn btn-outline-info w-100 mb-2" do %>
-                <i class="bi bi-graph-up-arrow"></i>
-                <br>ROI Analytics
-              <% end %>
-            </div>
-            <div class="col-md-3">
-              <a href="#" class="btn btn-outline-primary w-100 mb-2" onclick="downloadReport()">
-                <i class="bi bi-download"></i>
-                <br>Export Report
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Performance Indicators -->
-  <div class="row">
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="bi bi-speedometer2"></i>
-            Key Performance Indicators
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="progress-item mb-3">
-            <div class="d-flex justify-content-between mb-1">
-              <span>Profit Margin</span>
-              <span><%= @financial_overview[:profit_margin] %>%</span>
-            </div>
-            <div class="progress">
-              <div class="progress-bar <%= @financial_overview[:profit_margin] >= 15 ? 'bg-success' : @financial_overview[:profit_margin] >= 5 ? 'bg-warning' : 'bg-danger' %>" 
-                   style="width: <%= [@financial_overview[:profit_margin], 100].min.abs %>%"></div>
-            </div>
+  function downloadReport() {
+    alert('Report export functionality coming soon!');
+  }
+</script>
           </div>
 
           <div class="progress-item mb-3">

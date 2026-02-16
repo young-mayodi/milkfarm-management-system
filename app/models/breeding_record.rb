@@ -39,11 +39,18 @@ class BreedingRecord < ApplicationRecord
   scope :overdue, -> { where("expected_due_date < ? AND breeding_status = ?", Date.current, "confirmed") }
 
   # Callbacks
-  before_save :calculate_expected_due_date, if: :breeding_date_changed?
+  before_save :calculate_expected_due_date, if: :should_calculate_expected_due_date?
 
   # Instance methods
   def gestation_period_days
     283 # Average gestation period for cattle
+  end
+
+  def should_calculate_expected_due_date?
+    # Only auto-calculate if:
+    # 1. Breeding date changed AND
+    # 2. User hasn't manually set expected_due_date (it's blank or unchanged)
+    breeding_date_changed? && !expected_due_date_changed?
   end
 
   def calculate_expected_due_date

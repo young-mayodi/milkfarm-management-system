@@ -5,7 +5,7 @@
         <h4 class="mb-0">Record Milk Production</h4>
       </div>
       <div class="card-body">
-        <%= form_with model: @production_record, local: true, class: "needs-validation", novalidate: true do |form| %>
+        <%= form_with model: @production_record, local: true, class: "needs-validation", novalidate: true, data: { controller: "form-validation" } do |form| %>
           <% if @production_record.errors.any? %>
             <div class="alert alert-danger">
               <h6>Please fix the following errors:</h6>
@@ -21,7 +21,7 @@
             <div class="col-md-6">
               <div class="mb-3">
                 <%= form.label :production_date, "Production Date", class: "form-label" %>
-                <%= form.date_field :production_date, class: "form-control #{'is-invalid' if @production_record.errors[:production_date].any?}", required: true %>
+                <%= form.date_field :production_date, class: "form-control #{'is-invalid' if @production_record.errors[:production_date].any?}", required: true, autofocus: true %>
                 <% if @production_record.errors[:production_date].any? %>
                   <div class="invalid-feedback">
                     <%= @production_record.errors[:production_date].first %>
@@ -130,7 +130,7 @@
 
           <div class="d-grid gap-2 d-md-flex justify-content-md-end">
             <%= link_to "Cancel", production_records_path, class: "btn btn-secondary" %>
-            <%= form.submit "Record Production", class: "btn btn-success" %>
+            <%= form.submit "Record Production", class: "btn btn-success", data: { form_validation_target: "submit" } %>
           </div>
         <% end %>
       </div>

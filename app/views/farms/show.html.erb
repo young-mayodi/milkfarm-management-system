@@ -1,122 +1,155 @@
-<div class="row">
-  <div class="col-md-8">
-    <h1><%= @farm.name %></h1>
-    <p class="lead text-muted"><%= @farm.location %></p>
-  </div>
-  <div class="col-md-4 text-end">
-    <%= link_to "Edit Farm", edit_farm_path(@farm), class: "btn btn-primary me-2" %>
-    <%= link_to "All Farms", farms_path, class: "btn btn-outline-secondary" %>
-  </div>
-</div>
+<% content_for :title, @farm.name %>
 
-<!-- Farm Info -->
-<div class="row mb-4">
-  <div class="col-md-8">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Farm Information</h5>
-        <dl class="row">
-          <dt class="col-sm-3">Owner:</dt>
-          <dd class="col-sm-9"><%= @farm.owner %></dd>
-          
-          <dt class="col-sm-3">Contact:</dt>
-          <dd class="col-sm-9"><%= @farm.contact_phone %></dd>
-          
-          <dt class="col-sm-3">Location:</dt>
-          <dd class="col-sm-9"><%= @farm.location %></dd>
-        </dl>
+<div class="farm-profile">
+  <section class="farm-hero">
+    <div class="hero-left">
+      <div class="hero-kicker">Farm profile</div>
+      <h1 class="hero-title"><%= @farm.name %></h1>
+      <div class="hero-meta">
+        <span class="meta-pill"><i class="bi bi-geo-alt"></i><%= @farm.location %></span>
+        <span class="meta-pill"><i class="bi bi-person"></i><%= @farm.owner %></span>
+        <span class="meta-pill"><i class="bi bi-telephone"></i><%= @farm.contact_phone %></span>
       </div>
     </div>
-  </div>
-  
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Monthly Summary</h5>
-        <div class="row">
-          <div class="col-6">
-            <div class="text-center">
-              <h4 class="text-primary"><%= number_with_precision(@monthly_production, precision: 1) %>L</h4>
-              <small class="text-muted">Production</small>
-            </div>
+    <div class="hero-actions">
+      <%= link_to edit_farm_path(@farm), class: "btn btn-cta" do %>
+        <i class="bi bi-pencil"></i>Edit Farm
+      <% end %>
+      <%= link_to farms_path, class: "btn btn-ghost" do %>
+        <i class="bi bi-grid"></i>All Farms
+      <% end %>
+    </div>
+  </section>
+
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon"><i class="bi bi-emoji-smile"></i></div>
+      <div>
+        <div class="kpi-value"><%= @farm.total_cows %></div>
+        <div class="kpi-label">Total cows</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon"><i class="bi bi-heart-fill"></i></div>
+      <div>
+        <div class="kpi-value"><%= @farm.active_cows %></div>
+        <div class="kpi-label">Active herd</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon"><i class="bi bi-droplet"></i></div>
+      <div>
+        <div class="kpi-value"><%= number_with_precision(@farm.today_production, precision: 1) %>L</div>
+        <div class="kpi-label">Today output</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon"><i class="bi bi-graph-up"></i></div>
+      <div>
+        <div class="kpi-value"><%= number_with_precision(@monthly_production, precision: 1) %>L</div>
+        <div class="kpi-label">Monthly total</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon"><i class="bi bi-cash-coin"></i></div>
+      <div>
+        <div class="kpi-value">$<%= number_with_precision(@monthly_sales, precision: 0) %></div>
+        <div class="kpi-label">Monthly sales</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="split-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Farm Information</h3>
+      </div>
+      <div class="panel-body">
+        <div class="info-grid">
+          <div>
+            <div class="info-label">Owner</div>
+            <div class="info-value"><%= @farm.owner %></div>
           </div>
-          <div class="col-6">
-            <div class="text-center">
-              <h4 class="text-success">$<%= number_with_precision(@monthly_sales, precision: 0) %></h4>
-              <small class="text-muted">Sales</small>
-            </div>
+          <div>
+            <div class="info-label">Contact</div>
+            <div class="info-value"><%= @farm.contact_phone %></div>
+          </div>
+          <div>
+            <div class="info-label">Location</div>
+            <div class="info-value"><%= @farm.location %></div>
+          </div>
+        </div>
+        <div class="action-row">
+          <%= link_to farm_cows_path(@farm), class: "btn btn-outline-primary" do %>
+            <i class="bi bi-list-ul"></i>View Cows (<%= @farm.total_cows %>)
+          <% end %>
+          <%= link_to new_farm_cow_path(@farm), class: "btn btn-outline-success" do %>
+            <i class="bi bi-plus"></i>Add Cow
+          <% end %>
+          <%= link_to farm_production_records_path(@farm), class: "btn btn-outline-info" do %>
+            <i class="bi bi-clipboard-data"></i>Production Records
+          <% end %>
+          <%= link_to new_farm_production_record_path(@farm), class: "btn btn-outline-warning" do %>
+            <i class="bi bi-plus"></i>Record Production
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Monthly Summary</h3>
+      </div>
+      <div class="panel-body">
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="summary-label">Production</div>
+            <div class="summary-value"><%= number_with_precision(@monthly_production, precision: 1) %>L</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">Sales</div>
+            <div class="summary-value">$<%= number_with_precision(@monthly_sales, precision: 0) %></div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
+  </section>
 
-<!-- Actions Row -->
-<div class="row mb-4">
-  <div class="col-12">
-    <div class="btn-group" role="group">
-      <%= link_to farm_cows_path(@farm), class: "btn btn-outline-primary" do %>
-        <i class="bi bi-list-ul me-1"></i>View Cows (<%= @farm.total_cows %>)
-      <% end %>
-      <%= link_to new_farm_cow_path(@farm), class: "btn btn-outline-success" do %>
-        <i class="bi bi-plus me-1"></i>Add Cow
-      <% end %>
-      <%= link_to farm_production_records_path(@farm), class: "btn btn-outline-info" do %>
-        <i class="bi bi-clipboard-data me-1"></i>Production Records
-      <% end %>
-      <%= link_to new_farm_production_record_path(@farm), class: "btn btn-outline-warning" do %>
-        <i class="bi bi-plus me-1"></i>Record Production
-      <% end %>
-    </div>
-  </div>
-</div>
-
-<div class="row">
-  <!-- Cows List -->
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between">
-        <h5 class="mb-0">Cows</h5>
+  <section class="split-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Cows</h3>
         <%= link_to "View All", farm_cows_path(@farm), class: "btn btn-sm btn-primary" %>
       </div>
-      <div class="card-body">
+      <div class="panel-body">
         <% if @cows.any? %>
           <% @cows.limit(10).each do |cow| %>
-            <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="cow-row">
               <div>
-                <strong><%= cow.name %></strong>
-                <small class="text-muted">(<%= cow.tag_number %>)</small>
-                <div class="small">
-                  <%= cow.breed %> • <%= cow.age %> years
-                  <span class="badge bg-<%= cow.status == 'active' ? 'success' : 'secondary' %> ms-1">
-                    <%= cow.status.humanize %>
-                  </span>
-                </div>
+                <div class="cow-name"><%= cow.name %> <span class="cow-tag">#<%= cow.tag_number %></span></div>
+                <div class="cow-sub"><%= cow.breed %> | <%= cow.age %> years</div>
               </div>
+              <span class="badge bg-<%= cow.status == 'active' ? 'success' : 'secondary' %>"><%= cow.status.humanize %></span>
             </div>
           <% end %>
           <% if @cows.count > 10 %>
-            <div class="text-center mt-3">
+            <div class="panel-footer">
               <%= link_to "View all #{@cows.count} cows", farm_cows_path(@farm), class: "btn btn-sm btn-outline-primary" %>
             </div>
           <% end %>
         <% else %>
-          <p class="text-muted">No cows registered yet.</p>
+          <p class="muted">No cows registered yet.</p>
           <%= link_to "Add first cow", new_farm_cow_path(@farm), class: "btn btn-sm btn-primary" %>
         <% end %>
       </div>
     </div>
-  </div>
-  
-  <!-- Recent Production -->
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between">
-        <h5 class="mb-0">Recent Production</h5>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Recent Production</h3>
         <%= link_to "View All", farm_production_records_path(@farm), class: "btn btn-sm btn-primary" %>
       </div>
-      <div class="card-body">
+      <div class="panel-body">
         <% if @recent_production.any? %>
           <div class="table-responsive">
             <table class="table table-sm">
@@ -143,68 +176,307 @@
             </table>
           </div>
         <% else %>
-          <p class="text-muted">No production records yet.</p>
+          <p class="muted">No production records yet.</p>
           <%= link_to "Add first record", new_farm_production_record_path(@farm), class: "btn btn-sm btn-primary" %>
         <% end %>
       </div>
     </div>
-  </div>
-</div>
+  </section>
 
-<!-- Production Charts Section -->
-<div class="row mb-4">
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Daily Production Trend (30 days)</h5>
+  <section class="split-grid">
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Daily Production Trend (30 days)</h3>
       </div>
-      <div class="card-body" style="height: 300px;">
-        <canvas data-controller="chart" 
+      <div class="panel-body chart-panel">
+        <canvas data-controller="chart"
                 data-chart-type-value="line"
                 data-chart-data-value="<%= chart_data_json(@production_chart_data) %>"
                 data-chart-options-value="<%= chart_options_json({plugins: {legend: {display: false}}}) %>">
         </canvas>
       </div>
     </div>
-  </div>
-  
-  <div class="col-lg-6">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Top Producing Cows (30 days)</h5>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h3>Top Producing Cows (30 days)</h3>
       </div>
-      <div class="card-body" style="height: 300px;">
-        <canvas data-controller="chart" 
+      <div class="panel-body chart-panel">
+        <canvas data-controller="chart"
                 data-chart-type-value="bar"
                 data-chart-data-value="<%= chart_data_json(@cow_chart_data) %>"
                 data-chart-options-value="<%= chart_options_json({plugins: {legend: {display: false}}}) %>">
         </canvas>
       </div>
     </div>
-  </div>
+  </section>
+
+  <section class="panel quick-actions">
+    <div class="panel-header">
+      <h3>Quick Actions</h3>
+    </div>
+    <div class="panel-body action-grid">
+      <%= link_to "Add Cow", new_farm_cow_path(@farm), class: "btn btn-success" %>
+      <%= link_to "Production Records", farm_production_records_path(@farm), class: "btn btn-info" %>
+      <%= link_to "Sales Records", farm_sales_records_path(@farm), class: "btn btn-warning" %>
+      <%= link_to "Production Trends", production_trends_reports_path(farm_id: @farm.id), class: "btn btn-primary" %>
+    </div>
+  </section>
 </div>
 
-<!-- Quick Actions -->
-<div class="row mb-4">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Quick Actions</h5>
-        <div class="row">
-          <div class="col-md-3">
-            <%= link_to "Add Cow", new_farm_cow_path(@farm), class: "btn btn-success w-100" %>
-          </div>
-          <div class="col-md-3">
-            <%= link_to "Production Records", farm_production_records_path(@farm), class: "btn btn-info w-100" %>
-          </div>
-          <div class="col-md-3">
-            <%= link_to "Sales Records", farm_sales_records_path(@farm), class: "btn btn-warning w-100" %>
-          </div>
-          <div class="col-md-3">
-            <%= link_to "Production Trends", production_trends_reports_path(farm_id: @farm.id), class: "btn btn-primary w-100" %>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+.farm-profile {
+  --ink: #0f172a;
+  --muted: #64748b;
+  --edge: #e2e8f0;
+  --panel: #ffffff;
+  --panel-2: #f8fafc;
+  --accent: #0ea5a4;
+  --accent-dark: #0f766e;
+  --shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  color: var(--ink);
+  padding: 2.5rem 0 3rem;
+  background: radial-gradient(circle at top right, rgba(14, 165, 164, 0.08), transparent 55%),
+    linear-gradient(120deg, #f8fafc 0%, #f1f5f9 50%, #ffffff 100%);
+}
+
+.farm-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  padding: 2.5rem 2.75rem;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #0f172a 0%, #0f766e 100%);
+  color: #f8fafc;
+  box-shadow: var(--shadow);
+}
+
+.hero-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  color: rgba(248, 250, 252, 0.7);
+  margin-bottom: 0.75rem;
+}
+
+.hero-title {
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(248, 250, 252, 0.2);
+  font-size: 0.85rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.farm-profile .btn-cta {
+  background: #f8fafc;
+  color: #0f172a;
+  border: none;
+  padding: 0.7rem 1.3rem;
+  border-radius: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 12px 30px rgba(15, 118, 110, 0.35);
+}
+
+.farm-profile .btn-ghost {
+  border: 1px solid rgba(248, 250, 252, 0.4);
+  color: #f8fafc;
+  background: transparent;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin: 2.5rem 0 2rem;
+}
+
+.kpi-card {
+  background: var(--panel);
+  border-radius: 18px;
+  border: 1px solid var(--edge);
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.kpi-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(14, 165, 164, 0.15);
+  color: var(--accent-dark);
+  font-size: 1.2rem;
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.kpi-label,
+.farm-profile .muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.split-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: 20px;
+  border: 1px solid var(--edge);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.panel-header {
+  padding: 1.2rem 1.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.panel-body {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.info-value {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.summary-card {
+  padding: 1rem;
+  border-radius: 14px;
+  background: var(--panel-2);
+  border: 1px solid var(--edge);
+}
+
+.summary-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.cow-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--edge);
+}
+
+.cow-row:last-child {
+  border-bottom: none;
+}
+
+.cow-name {
+  font-weight: 600;
+}
+
+.cow-tag {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.cow-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.panel-footer {
+  padding-top: 0.75rem;
+}
+
+.chart-panel {
+  height: 320px;
+}
+
+.quick-actions {
+  margin-bottom: 2rem;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+@media (max-width: 992px) {
+  .farm-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .action-row {
+    flex-direction: column;
+  }
+}
+</style>

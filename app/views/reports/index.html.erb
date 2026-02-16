@@ -1,219 +1,523 @@
-<% content_for :title, "Reports & Analytics" %>
+<% content_for :title do %>
+  Reports & Analytics
+<% end %>
 
-<!-- Modern Header -->
-<div class="reports-header mb-5">
-  <div class="row align-items-center">
-    <div class="col-lg-8">
-      <div class="d-flex align-items-center">
-        <div class="header-icon me-3">
-          <i class="bi bi-graph-up"></i>
-        </div>
-        <div>
-          <h1 class="header-title mb-0">📊 Reports & Analytics</h1>
-          <p class="header-subtitle mb-0">
-            Transform your milk production data into actionable insights
-          </p>
-        </div>
-      </div>
-    </div>
-    <div class="col-lg-4 text-end">
-      <div class="header-actions">
-        <div class="btn-group me-2">
-          <button class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
-            <i class="bi bi-download me-2"></i>Export Data
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-              <a class="dropdown-item" href="#" data-export="csv">
-                <i class="bi bi-filetype-csv me-2"></i>Export as CSV
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="#" data-export="pdf">
-                <i class="bi bi-filetype-pdf me-2"></i>Export as PDF
-              </a>
-            </li>
-            <li><hr class="dropdown-divider"></li>
-            <li>
-              <a class="dropdown-item" href="#" data-export="custom">
-                <i class="bi bi-gear me-2"></i>Custom Export
-              </a>
-            </li>
-          </ul>
-        </div>
-        <%= link_to root_path, class: "btn btn-outline-secondary" do %>
-          <i class="bi bi-house me-2"></i>Dashboard
-        <% end %>
-      </div>
-    </div>
-  </div>
-</div>
+<style>
+  :root {
+    --card-bg: #ffffff;
+    --muted-bg: #f7f8fb;
+    --hover-bg: #f1f5f9;
+    --border-color: #e5e7eb;
+    --text-primary: #1a202c;
+    --text-muted: #6b7280;
+    --primary-rgb: 102, 126, 234;
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --gradient-info: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --gradient-warning: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --gradient-secondary: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  }
 
-<!-- Quick Overview Stats -->
-<div class="overview-stats-container mb-5">
-  <div class="row g-4">
-    <div class="col-md-3 col-sm-6">
-      <div class="stat-card primary-stat">
-        <div class="stat-content">
-          <div class="stat-icon">
-            <i class="bi bi-house-door"></i>
-          </div>
-          <div class="stat-info">
-            <h3 class="stat-value"><%= Farm.count %></h3>
-            <p class="stat-label">Total Farms</p>
-            <small class="stat-trend positive">
-              <i class="bi bi-arrow-up"></i>
-              Active operations
-            </small>
-          </div>
-        </div>
-        <div class="stat-gradient primary-gradient"></div>
-      </div>
-    </div>
-    
-    <div class="col-md-3 col-sm-6">
-      <div class="stat-card success-stat">
-        <div class="stat-content">
-          <div class="stat-icon">
-            <i class="bi bi-emoji-smile"></i>
-          </div>
-          <div class="stat-info">
-            <h3 class="stat-value"><%= Cow.count %></h3>
-            <p class="stat-label">Total Cows</p>
-            <small class="stat-trend positive">
-              <i class="bi bi-heart-fill"></i>
-              Healthy herd
-            </small>
-          </div>
-        </div>
-        <div class="stat-gradient success-gradient"></div>
-      </div>
-    </div>
-    
-    <div class="col-md-3 col-sm-6">
-      <div class="stat-card info-stat">
-        <div class="stat-content">
-          <div class="stat-icon">
-            <i class="bi bi-clipboard-data"></i>
-          </div>
-          <div class="stat-info">
-            <h3 class="stat-value"><%= ProductionRecord.count %></h3>
-            <p class="stat-label">Production Records</p>
-            <small class="stat-trend positive">
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .reports-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 24px 0 48px;
+  }
+
+  .reports-container {
+    width: 100%;
+  }
+
+  .reports-header {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+    border-radius: 14px;
+    padding: 28px;
+    border-left: 6px solid #667eea;
+    animation: slideInDown 0.6s ease-out;
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  @keyframes slideInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .overview-stats-container {
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    border-radius: 12px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    animation: fadeIn 0.5s ease-out both;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.12);
+  }
+
+  .stat-content {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(102, 126, 234, 0.12);
+    color: #667eea;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 6px 0;
+    background: linear-gradient(135deg, var(--stat-color-start), var(--stat-color-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-label {
+    margin: 0;
+    color: #6b7280;
+  }
+
+  .stat-trend {
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #4b5563;
+  }
+
+  .report-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .report-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .report-card.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .report-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 18px;
+    background: var(--muted-bg);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .report-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #ffffff;
+  }
+
+  .report-icon.primary { background: var(--gradient-primary); }
+  .report-icon.success { background: var(--gradient-success); }
+  .report-icon.info { background: var(--gradient-info); }
+  .report-icon.warning { background: var(--gradient-warning); }
+  .report-icon.secondary { background: var(--gradient-secondary); }
+
+  .priority-badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .priority-badge.primary { background: rgba(102, 126, 234, 0.12); color: #667eea; }
+  .priority-badge.success { background: rgba(240, 147, 251, 0.12); color: #f093fb; }
+  .priority-badge.info { background: rgba(79, 172, 254, 0.12); color: #4facfe; }
+  .priority-badge.warning { background: rgba(250, 112, 154, 0.12); color: #fa709a; }
+  .priority-badge.secondary { background: rgba(168, 237, 234, 0.12); color: #7aa7a8; }
+
+  .report-card-body {
+    padding: 18px;
+  }
+
+  .report-title {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 1.05rem;
+  }
+
+  .report-description {
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: #4b5563;
+  }
+
+  .report-card-footer {
+    padding: 16px 18px;
+    background: var(--muted-bg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .report-stats {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  .report-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .report-btn {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    font-weight: 600;
+  }
+
+  .report-sidebar {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .sidebar-section {
+    padding: 18px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .sidebar-section:last-child {
+    border-bottom: none;
+  }
+
+  .sidebar-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+  }
+
+  .insight-card {
+    background: var(--muted-bg);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+  }
+
+  .insight-card + .insight-card {
+    margin-top: 12px;
+  }
+
+  .insight-card:hover {
+    background: var(--hover-bg);
+    transform: translateX(4px);
+  }
+
+  .insight-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: white;
+  }
+
+  .insight-card.positive .insight-icon { background: var(--gradient-success); }
+  .insight-card.neutral .insight-icon { background: var(--gradient-info); }
+  .insight-card.warning .insight-icon { background: var(--gradient-warning); }
+
+  .insight-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .insight-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .insight-trend {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  .activity-item {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .activity-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .template-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .template-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  @media (max-width: 992px) {
+    .report-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .reports-header {
+      padding: 20px;
+    }
+
+    .stat-content {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+
+<div class="reports-page">
+  <div class="container-fluid reports-container">
+    <div class="reports-header">
+      <div class="row align-items-center">
+        <div class="col-lg-8">
+          <div class="d-flex align-items-center">
+            <div class="me-3" style="font-size: 2.2rem;">
               <i class="bi bi-graph-up"></i>
-              Data tracking
-            </small>
+            </div>
+            <div>
+              <h1 class="header-title mb-0">Reports & Analytics Dashboard</h1>
+              <p class="header-subtitle mb-0">Real-time insights for your dairy operations</p>
+            </div>
           </div>
         </div>
-        <div class="stat-gradient info-gradient"></div>
-      </div>
-    </div>
-    
-    <div class="col-md-3 col-sm-6">
-      <div class="stat-card warning-stat">
-        <div class="stat-content">
-          <div class="stat-icon">
-            <i class="bi bi-cash-stack"></i>
-          </div>
-          <div class="stat-info">
-            <h3 class="stat-value"><%= SalesRecord.count %></h3>
-            <p class="stat-label">Sales Records</p>
-            <small class="stat-trend positive">
-              <i class="bi bi-currency-dollar"></i>
-              Revenue tracking
-            </small>
+        <div class="col-lg-4 text-end">
+          <div class="header-actions">
+            <div class="btn-group me-2">
+              <button class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-download me-2"></i>Export
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a class="dropdown-item" href="#" data-export="csv">
+                    <i class="bi bi-filetype-csv me-2"></i>Export as CSV
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="#" data-export="json">
+                    <i class="bi bi-filetype-json me-2"></i>Export as JSON
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <a class="dropdown-item" href="#" data-export="custom">
+                    <i class="bi bi-gear me-2"></i>Custom Export
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <%= link_to root_path, class: "btn btn-outline-secondary" do %>
+              <i class="bi bi-house me-2"></i>Dashboard
+            <% end %>
           </div>
         </div>
-        <div class="stat-gradient warning-gradient"></div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- Report Categories -->
-<div class="report-categories mb-5">
-  <div class="row g-4">
-    <div class="col-lg-8">
-      <div class="reports-grid">
-        <% @report_options.each_with_index do |option, index| %>
-          <div class="report-card" data-report="<%= option[:title].downcase.gsub(' ', '-') %>">
-            <div class="report-card-header">
-              <div class="report-icon <%= ['primary', 'success', 'info', 'warning', 'danger', 'secondary'][index % 6] %>">
-                <i class="<%= option[:icon] %>"></i>
-              </div>
-              <div class="report-priority">
-                <% if index < 2 %>
-                  <span class="priority-badge high">High Priority</span>
-                <% elsif index < 4 %>
-                  <span class="priority-badge medium">Medium Priority</span>
-                <% else %>
-                  <span class="priority-badge low">Low Priority</span>
-                <% end %>
+    <div class="overview-stats-container">
+      <div class="row g-4">
+        <div class="col-md-3 col-sm-6">
+          <div class="stat-card" style="--stat-color-start: #667eea; --stat-color-end: #764ba2;">
+            <div class="stat-content">
+              <div class="stat-icon"><i class="bi bi-house-door"></i></div>
+              <div>
+                <h3 class="stat-value"><%= @overview_stats[:total_farms] %></h3>
+                <p class="stat-label">Total Farms</p>
+                <small class="stat-trend"><i class="bi bi-arrow-up"></i>Active operations</small>
               </div>
             </div>
-            
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="stat-card" style="--stat-color-start: #f093fb; --stat-color-end: #f5576c;">
+            <div class="stat-content">
+              <div class="stat-icon"><i class="bi bi-emoji-smile"></i></div>
+              <div>
+                <h3 class="stat-value"><%= @overview_stats[:total_cows] %></h3>
+                <p class="stat-label">Total Cows</p>
+                <small class="stat-trend"><i class="bi bi-heart-fill"></i><%= number_with_precision(@key_metrics[:active_cow_percentage], precision: 1) %>% active</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="stat-card" style="--stat-color-start: #4facfe; --stat-color-end: #00f2fe;">
+            <div class="stat-content">
+              <div class="stat-icon"><i class="bi bi-clipboard-data"></i></div>
+              <div>
+                <h3 class="stat-value"><%= @overview_stats[:total_production_records] %></h3>
+                <p class="stat-label">Production Records</p>
+                <small class="stat-trend"><i class="bi bi-graph-up"></i><%= number_with_precision(@key_metrics[:avg_production_per_farm], precision: 1) %>L/farm</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="stat-card" style="--stat-color-start: #fa709a; --stat-color-end: #fee140;">
+            <div class="stat-content">
+              <div class="stat-icon"><i class="bi bi-cash-stack"></i></div>
+              <div>
+                <h3 class="stat-value"><%= @overview_stats[:total_sales_records] %></h3>
+                <p class="stat-label">Sales Records</p>
+                <small class="stat-trend"><i class="bi bi-currency-dollar"></i><%= number_with_precision(@key_metrics[:recent_sales_volume], precision: 1) %>L 7d</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-layout">
+      <div class="reports-grid">
+        <% @report_options.each do |option| %>
+          <div class="report-card" data-report="<%= option[:title].downcase.gsub(' ', '-') %>">
+            <div class="report-card-header">
+              <div class="report-icon <%= option[:color] %>">
+                <i class="<%= option[:icon] %>"></i>
+              </div>
+              <span class="priority-badge <%= option[:color] %>">
+                <i class="bi bi-tag me-1"></i><%= option[:badge] %>
+              </span>
+            </div>
             <div class="report-card-body">
               <h5 class="report-title"><%= option[:title] %></h5>
               <p class="report-description"><%= option[:description] %></p>
-              
               <div class="report-features">
                 <% case option[:title] %>
-                <% when "Production Trends" %>
-                  <div class="feature-item">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Daily, Weekly, Monthly trends</span>
-                  </div>
-                  <div class="feature-item">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Performance comparisons</span>
-                  </div>
-                  <div class="feature-item">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Seasonal analysis</span>
-                  </div>
+                <% when "Production Trends Analysis" %>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Daily, Weekly, Monthly trends</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>All milking periods (Morning, Noon, Evening, Night)</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Seasonal analysis & comparisons</span></div>
                 <% when "Farm Summary" %>
-                  <div class="feature-item">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Comprehensive farm overview</span>
-                  </div>
-                  <div class="feature-item">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Key performance indicators</span>
-                  </div>
-                <% when "Cow Performance" %>
-                  <div class="feature-item">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Individual cow analytics</span>
-                  </div>
-                  <div class="feature-item">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Health & production correlation</span>
-                  </div>
-                <% else %>
-                  <div class="feature-item">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Detailed insights</span>
-                  </div>
-                  <div class="feature-item">
-                    <i class="bi bi-check-circle text-success"></i>
-                    <span>Actionable recommendations</span>
-                  </div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Comprehensive farm overview</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Production statistics & KPIs</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Financial metrics</span></div>
+                <% when "Cow Summary" %>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Individual cow analytics</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Production rankings & comparisons</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Performance trends</span></div>
+                <% when "Financial Reports" %>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Revenue & profit analysis</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Cost breakdown & margins</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>ROI & financial trends</span></div>
+                <% when "Data Export" %>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Multiple formats (CSV, JSON)</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Custom field selection</span></div>
+                  <div class="feature-item"><i class="bi bi-check-circle text-success"></i><span>Date range filtering</span></div>
                 <% end %>
               </div>
             </div>
-            
             <div class="report-card-footer">
               <div class="report-stats">
-                <div class="stat-item">
-                  <i class="bi bi-clock"></i>
-                  <span>Generated in ~2s</span>
-                </div>
-                <div class="stat-item">
-                  <i class="bi bi-download"></i>
-                  <span>PDF/CSV Export</span>
-                </div>
+                <div class="stat-item"><i class="bi bi-clock"></i><span>Generated in ~2s</span></div>
+                <div class="stat-item"><i class="bi bi-download"></i><span>PDF/CSV Export</span></div>
               </div>
-              
               <div class="report-actions">
                 <%= link_to option[:path], class: "btn btn-primary report-btn" do %>
                   <i class="bi bi-bar-chart me-2"></i>Generate Report
@@ -246,587 +550,126 @@
           </div>
         <% end %>
       </div>
-    </div>
-    
-    <!-- Report Sidebar -->
-    <div class="col-lg-4">
-      <div class="report-sidebar">
-        <!-- Quick Insights -->
+
+      <aside class="report-sidebar">
         <div class="sidebar-section">
-          <h6 class="sidebar-title">
-            <i class="bi bi-lightbulb me-2"></i>
-            Quick Insights
-          </h6>
-          
-          <div class="insight-cards">
-            <div class="insight-card positive">
-              <div class="insight-icon">
-                <i class="bi bi-arrow-up-circle"></i>
-              </div>
-              <div class="insight-content">
-                <div class="insight-value">
-                  <%= number_with_precision(ProductionRecord.where('production_date > ?', 7.days.ago).average(:total_production) || 0, precision: 1) %>L
-                </div>
-                <div class="insight-label">Avg. Daily Production</div>
-                <div class="insight-trend">
-                  <i class="bi bi-arrow-up"></i>
-                  +12% vs last week
-                </div>
-              </div>
+          <h6 class="sidebar-title"><i class="bi bi-lightbulb me-2"></i>Quick Insights</h6>
+          <div class="insight-card positive">
+            <div class="insight-icon"><i class="bi bi-arrow-up-circle"></i></div>
+            <div>
+              <div class="insight-value"><%= number_with_precision(@key_metrics[:avg_daily_production], precision: 1) %>L</div>
+              <div class="insight-label">Avg. 7-Day Production</div>
+              <div class="insight-trend"><i class="bi bi-arrow-up"></i>Recent average</div>
             </div>
-            
-            <div class="insight-card neutral">
-              <div class="insight-icon">
-                <i class="bi bi-graph-up"></i>
-              </div>
-              <div class="insight-content">
-                <div class="insight-value">
-                  <%= number_with_precision(Cow.where(status: 'active').count.to_f / Cow.count * 100, precision: 1) %>%
-                </div>
-                <div class="insight-label">Active Cows</div>
-                <div class="insight-trend">
-                  <i class="bi bi-dash"></i>
-                  Stable performance
-                </div>
-              </div>
+          </div>
+          <div class="insight-card neutral">
+            <div class="insight-icon"><i class="bi bi-graph-up"></i></div>
+            <div>
+              <div class="insight-value"><%= number_with_precision(@key_metrics[:active_cow_percentage], precision: 1) %>%</div>
+              <div class="insight-label">Active Cows</div>
+              <div class="insight-trend"><i class="bi bi-dash"></i>Healthy herd</div>
             </div>
-            
-            <div class="insight-card warning">
-              <div class="insight-icon">
-                <i class="bi bi-exclamation-triangle"></i>
-              </div>
-              <div class="insight-content">
-                <div class="insight-value">
-                  <%= Cow.where(status: 'sick').count %>
-                </div>
-                <div class="insight-label">Cows Need Attention</div>
-                <div class="insight-trend">
-                  <i class="bi bi-arrow-down"></i>
-                  Monitor closely
-                </div>
-              </div>
+          </div>
+          <div class="insight-card warning">
+            <div class="insight-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            <div>
+              <div class="insight-value"><%= @overview_stats[:sick_cows] %></div>
+              <div class="insight-label">Need Attention</div>
+              <div class="insight-trend"><i class="bi bi-arrow-down"></i>Monitor closely</div>
             </div>
           </div>
         </div>
-        
-        <!-- Recent Activity -->
+
         <div class="sidebar-section">
-          <h6 class="sidebar-title">
-            <i class="bi bi-clock me-2"></i>
-            Recent Report Activity
-          </h6>
-          
-          <div class="activity-feed">
-            <div class="activity-item">
-              <div class="activity-time">2 hours ago</div>
-              <div class="activity-content">
-                <strong>Production Trends</strong> report generated
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-time">Yesterday</div>
-              <div class="activity-content">
-                <strong>Farm Summary</strong> exported as PDF
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-time">2 days ago</div>
-              <div class="activity-content">
-                <strong>Cow Performance</strong> report scheduled
-              </div>
-            </div>
+          <h6 class="sidebar-title"><i class="bi bi-clock me-2"></i>Recent Report Activity</h6>
+          <div class="activity-item">
+            <div class="activity-time">2 hours ago</div>
+            <div class="activity-content"><strong>Production Trends</strong> report generated</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-time">Yesterday</div>
+            <div class="activity-content"><strong>Farm Summary</strong> exported as PDF</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-time">2 days ago</div>
+            <div class="activity-content"><strong>Cow Performance</strong> report scheduled</div>
           </div>
         </div>
-        
-        <!-- Report Templates -->
+
         <div class="sidebar-section">
-          <h6 class="sidebar-title">
-            <i class="bi bi-files me-2"></i>
-            Report Templates
-          </h6>
-          
-          <div class="template-list">
-            <div class="template-item">
-              <div class="template-name">Monthly Summary</div>
-              <button class="btn btn-sm btn-outline-primary">Use Template</button>
-            </div>
-            <div class="template-item">
-              <div class="template-name">Quarterly Review</div>
-              <button class="btn btn-sm btn-outline-primary">Use Template</button>
-            </div>
-            <div class="template-item">
-              <div class="template-name">Annual Report</div>
-              <button class="btn btn-sm btn-outline-primary">Use Template</button>
-            </div>
+          <h6 class="sidebar-title"><i class="bi bi-files me-2"></i>Report Templates</h6>
+          <div class="template-item">
+            <div class="template-name">Monthly Summary</div>
+            <button class="btn btn-sm btn-outline-primary">Use Template</button>
+          </div>
+          <div class="template-item">
+            <div class="template-name">Quarterly Review</div>
+            <button class="btn btn-sm btn-outline-primary">Use Template</button>
+          </div>
+          <div class="template-item">
+            <div class="template-name">Annual Report</div>
+            <button class="btn btn-sm btn-outline-primary">Use Template</button>
           </div>
         </div>
-      </div>
+      </aside>
     </div>
   </div>
 </div>
 
-<!-- Enhanced Scripts and Styles -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const reportCards = document.querySelectorAll('.report-card');
-  const exportButtons = document.querySelectorAll('[data-export]');
-  const scheduleButtons = document.querySelectorAll('[data-schedule-report]');
-  const customizeButtons = document.querySelectorAll('[data-customize-report]');
+  const initReportsPage = () => {
+    const root = document.querySelector('.reports-page');
+    if (!root || root.dataset.reportsInit === 'true') return;
+    root.dataset.reportsInit = 'true';
 
-  // Report card hover effects
-  reportCards.forEach(card => {
-    card.addEventListener('mouseenter', function() {
-      this.style.transform = 'translateY(-8px)';
-      this.style.boxShadow = '0 15px 35px rgba(0,0,0,0.15)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-      this.style.transform = 'translateY(0)';
-      this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
-    });
-  });
+    const reportCards = document.querySelectorAll('.report-card');
+    const exportButtons = document.querySelectorAll('[data-export]');
+    const scheduleButtons = document.querySelectorAll('[data-schedule-report]');
+    const customizeButtons = document.querySelectorAll('[data-customize-report]');
 
-  // Export functionality
-  exportButtons.forEach(button => {
-    button.addEventListener('click', function(e) {
-      e.preventDefault();
-      const format = this.dataset.export;
-      
-      // Show loading state
-      const originalText = this.innerHTML;
-      this.innerHTML = `
-        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-        Preparing ${format.toUpperCase()}...
-      `;
-      
-      // Simulate export process
-      setTimeout(() => {
-        this.innerHTML = originalText;
-        // In real implementation, this would trigger the actual export
-        alert(`Export as ${format.toUpperCase()} functionality would be implemented here`);
-      }, 2000);
+    reportCards.forEach((card, index) => {
+      card.style.animationDelay = `${index * 0.1}s`;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-in');
+          }
+        });
+      });
+      observer.observe(card);
     });
-  });
 
-  // Schedule report functionality
-  scheduleButtons.forEach(button => {
-    button.addEventListener('click', function(e) {
-      e.preventDefault();
-      const reportTitle = this.dataset.scheduleReport;
-      alert(`Schedule "${reportTitle}" report functionality would be implemented here`);
-    });
-  });
-
-  // Customize report functionality
-  customizeButtons.forEach(button => {
-    button.addEventListener('click', function(e) {
-      e.preventDefault();
-      const reportTitle = this.dataset.customizeReport;
-      alert(`Customize "${reportTitle}" report functionality would be implemented here`);
-    });
-  });
-
-  // Report card animations
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry, index) => {
-      if (entry.isIntersecting) {
+    exportButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const format = this.dataset.export;
+        const originalText = this.innerHTML;
+        this.innerHTML = `
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+          Preparing ${format.toUpperCase()}...
+        `;
         setTimeout(() => {
-          entry.target.classList.add('animate-in');
-        }, index * 100);
-      }
+          this.innerHTML = originalText;
+          alert(`Export as ${format.toUpperCase()} functionality would be implemented here`);
+        }, 1500);
+      });
     });
-  });
 
-  reportCards.forEach(card => observer.observe(card));
-  
-  // Stat card animations
-  const statCards = document.querySelectorAll('.stat-card');
-  const statObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.animationDelay = `${Array.from(statCards).indexOf(entry.target) * 0.1}s`;
-        entry.target.classList.add('animate-in');
-      }
+    scheduleButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert(`Schedule "${this.dataset.scheduleReport}" report functionality would be implemented here`);
+      });
     });
-  });
-  
-  statCards.forEach(card => statObserver.observe(card));
-});
+
+    customizeButtons.forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert(`Customize "${this.dataset.customizeReport}" report functionality would be implemented here`);
+      });
+    });
+  };
+
+  document.addEventListener('DOMContentLoaded', initReportsPage);
+  document.addEventListener('turbo:load', initReportsPage);
 </script>
-
-<style>
-/* Reports Enhanced Styles */
-.reports-header {
-  margin-bottom: 2rem;
-}
-
-.overview-stats-container {
-  margin-bottom: 2rem;
-}
-
-.reports-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
-}
-
-.report-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-lg);
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.report-card.animate-in {
-  opacity: 1;
-  transform: translateY(0);
-  animation: slideInUp 0.6s ease-out forwards;
-}
-
-.report-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 1.5rem;
-  background: var(--muted-bg);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.report-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--border-radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  color: white;
-}
-
-.report-icon.primary {
-  background: var(--gradient-primary);
-}
-
-.report-icon.success {
-  background: var(--gradient-success);
-}
-
-.report-icon.info {
-  background: var(--gradient-info);
-}
-
-.report-icon.warning {
-  background: var(--gradient-warning);
-}
-
-.report-icon.danger {
-  background: var(--gradient-danger);
-}
-
-.report-icon.secondary {
-  background: var(--gradient-secondary);
-}
-
-.priority-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.priority-badge.high {
-  background: rgba(239, 68, 68, 0.2);
-  color: var(--danger-color);
-}
-
-.priority-badge.medium {
-  background: rgba(245, 158, 11, 0.2);
-  color: var(--warning-color);
-}
-
-.priority-badge.low {
-  background: rgba(34, 197, 94, 0.2);
-  color: var(--success-color);
-}
-
-.report-card-body {
-  padding: 1.5rem;
-}
-
-.report-title {
-  color: var(--text-primary);
-  font-weight: 600;
-  margin-bottom: 1rem;
-  font-size: 1.125rem;
-}
-
-.report-description {
-  color: var(--text-muted);
-  margin-bottom: 1.5rem;
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-.report-features {
-  margin-bottom: 1rem;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.feature-item:last-child {
-  margin-bottom: 0;
-}
-
-.report-card-footer {
-  padding: 1.5rem;
-  background: var(--muted-bg);
-  border-top: 1px solid var(--border-color);
-}
-
-.report-stats {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.report-stats .stat-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.report-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.report-btn {
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.report-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
-}
-
-/* Sidebar Styles */
-.report-sidebar {
-  background: var(--card-bg);
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--border-color);
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.sidebar-section {
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.sidebar-section:last-child {
-  border-bottom: none;
-}
-
-.sidebar-title {
-  color: var(--text-primary);
-  font-weight: 600;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-}
-
-.insight-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.insight-card {
-  background: var(--muted-bg);
-  border-radius: var(--border-radius);
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.2s ease;
-}
-
-.insight-card:hover {
-  background: var(--hover-bg);
-  transform: translateX(5px);
-}
-
-.insight-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.125rem;
-  color: white;
-}
-
-.insight-card.positive .insight-icon {
-  background: var(--gradient-success);
-}
-
-.insight-card.neutral .insight-icon {
-  background: var(--gradient-info);
-}
-
-.insight-card.warning .insight-icon {
-  background: var(--gradient-warning);
-}
-
-.insight-content {
-  flex: 1;
-}
-
-.insight-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.insight-label {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  margin: 0.25rem 0;
-}
-
-.insight-trend {
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.insight-card.positive .insight-trend {
-  color: var(--success-color);
-}
-
-.insight-card.neutral .insight-trend {
-  color: var(--text-muted);
-}
-
-.insight-card.warning .insight-trend {
-  color: var(--warning-color);
-}
-
-.activity-feed {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.activity-item {
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.activity-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.activity-time {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-bottom: 0.25rem;
-}
-
-.activity-content {
-  font-size: 0.875rem;
-  color: var(--text-primary);
-}
-
-.template-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.template-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  background: var(--muted-bg);
-  border-radius: var(--border-radius);
-  transition: all 0.2s ease;
-}
-
-.template-item:hover {
-  background: var(--hover-bg);
-}
-
-.template-name {
-  font-size: 0.875rem;
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .reports-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .report-card-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .report-actions {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .report-btn {
-    width: 100%;
-  }
-  
-  .insight-cards {
-    gap: 0.75rem;
-  }
-  
-  .sidebar-section {
-    padding: 1rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .report-card-body,
-  .report-card-footer {
-    padding: 1rem;
-  }
-  
-  .report-stats {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-}
-</style>

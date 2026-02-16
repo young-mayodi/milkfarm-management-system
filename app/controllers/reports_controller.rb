@@ -1,29 +1,68 @@
 class ReportsController < ApplicationController
   def index
+    # Cache overview statistics for 1 hour to improve performance
+    @overview_stats = Rails.cache.fetch("reports_overview_stats", expires_in: 1.hour) do
+      {
+        total_farms: Farm.count,
+        total_cows: Cow.count,
+        active_cows: Cow.where(status: "active").count,
+        sick_cows: Cow.where(status: "sick").count,
+        total_production_records: ProductionRecord.count,
+        total_sales_records: SalesRecord.count
+      }
+    end
+
+    # Cache key metrics for 1 hour
+    @key_metrics = Rails.cache.fetch("reports_key_metrics", expires_in: 1.hour) do
+      {
+        avg_daily_production: (ProductionRecord.where("production_date > ?", 7.days.ago).average(:total_production) || 0).round(1),
+        active_cow_percentage: (@overview_stats[:active_cows].to_f / [ @overview_stats[:total_cows], 1 ].max * 100).round(1),
+        recent_sales_volume: (SalesRecord.where("sale_date > ?", 7.days.ago).sum(:milk_sold) || 0).round(1),
+        total_revenue: (SalesRecord.where("sale_date > ?", 30.days.ago).sum(:total_sales) || 0).round(2),
+        avg_production_per_farm: @overview_stats[:total_production_records] > 0 ? (ProductionRecord.sum(:total_production).to_f / [ @overview_stats[:total_farms], 1 ].max).round(1) : 0
+      }
+    end
+
     @report_options = [
       {
         title: "Farm Summary",
         description: "Overview of all farms with production statistics and charts",
         path: farm_summary_reports_path,
-        icon: "bi-building"
+        icon: "bi-building",
+        badge: "Essential",
+        color: "primary"
       },
       {
         title: "Cow Summary",
         description: "Detailed cow production analysis with visual comparisons",
         path: cow_summary_reports_path,
-        icon: "bi-list-ul"
+        icon: "bi-list-ul",
+        badge: "Popular",
+        color: "success"
       },
       {
         title: "Production Trends Analysis",
         description: "Comprehensive cow-level production analysis by milking periods (Morning, Noon, Evening, Night)",
         path: production_trends_production_records_path,
-        icon: "bi-graph-up-arrow"
+        icon: "bi-graph-up-arrow",
+        badge: "Advanced",
+        color: "info"
+      },
+      {
+        title: "Financial Reports",
+        description: "Revenue, profit margins, and financial trends analysis",
+        path: profit_loss_financial_reports_path,
+        icon: "bi-cash-flow",
+        badge: "Finance",
+        color: "warning"
       },
       {
         title: "Data Export",
-        description: "Export data to CSV format",
+        description: "Export data to CSV/JSON format with custom filters",
         path: export_reports_path,
-        icon: "bi-download"
+        icon: "bi-download",
+        badge: "Utility",
+        color: "secondary"
       }
     ]
   end

@@ -23,7 +23,6 @@ class DashboardController < ApplicationController
   def load_dashboard_data
     # Use cached data with performance helpers
     @farms = current_user.farm_owner? ? Farm.all : [ current_user.farm ]
-    farm_id = @farms.first&.id
 
     # Use counter caches instead of COUNT queries
     @total_farms = @farms.count
@@ -48,6 +47,11 @@ class DashboardController < ApplicationController
       ProductionRecord.includes(:cow, :farm).recent.limit(10).to_a
     end
 
+    # Recent active cows (cached)
+    @recent_active_cows = Rails.cache.fetch("recent_active_cows_#{Date.current}", expires_in: 15.minutes) do
+      Cow.active.order(created_at: :desc).limit(10).to_a
+    end
+
     # Recent active cows with hi (cached)
     @farm_production_today = Rails.cache.fetch("farm_production_today_#{Date.current}", expires_in: 30.minutes) do
       @farms.map do |farm|
@@ -62,15 +66,6 @@ class DashboardController < ApplicationController
     @monthly_sales = Rails.cache.fetch("monthly_sales_#{Date.current.month}_#{Date.current.year}", expires_in: 1.hour) do
       SalesRecord.for_month(Date.current.month, Date.current.year).sum(:total_sales)
     end
-    @farm_production_today = @farms.map do |farm|
-      {
-        farm: farm,
-        production: ProductionRecord.daily_farm_total(farm, Date.current)
-      }
-    end
-
-    # Monthly sales
-    @monthly_sales = SalesRecord.for_month(Date.current.month, Date.current.year).sum(:total_sales)
 
     # Monthly revenue calculation
     @monthly_revenue = @monthly_sales * 1.0 # Assuming total sales is the revenue
@@ -331,44 +326,53 @@ class DashboardController < ApplicationController
   end
 
   def load_notifications_data
-    # Overdue vaccinations
-    @overdue_vaccinations = VaccinationRecord.joins(:cow)
+    # Cache notifications data for better performance
+    notifications_cache_key = "dashboard_notifications_#{Date.current}_#{current_user.id}"
+
+    cached_notifications = Rails.cache.fetch(notifications_cache_key, expires_in: 10.minutes) do
+      {
+        overdue_vaccinations: VaccinationRecord.joins(:cow)
                                             .where("next_due_date < ?", Date.current)
                                             .where(cows: { status: "active" })
                                             .includes(:cow)
                                             .limit(10)
-
-    # Vaccinations due this week
-    @due_vaccinations = VaccinationRecord.joins(:cow)
+                                            .to_a,
+        due_vaccinations: VaccinationRecord.joins(:cow)
                                         .where(next_due_date: Date.current..7.days.from_now)
                                         .where(cows: { status: "active" })
                                         .includes(:cow)
                                         .limit(10)
-
-    # Overdue breeding cycles (pregnant cows past due date)
-    @overdue_births = BreedingRecord.joins(:cow)
+                                        .to_a,
+        overdue_births: BreedingRecord.joins(:cow)
                                    .where("expected_due_date < ?", Date.current)
                                    .where(breeding_status: "confirmed")
                                    .where(cows: { status: [ "active", "pregnant" ] })
                                    .includes(:cow)
                                    .limit(10)
-
-    # Breeding cycles due this week
-    @due_births = BreedingRecord.joins(:cow)
+                                   .to_a,
+        due_births: BreedingRecord.joins(:cow)
                                .where(expected_due_date: Date.current..7.days.from_now)
                                .where(breeding_status: "confirmed")
                                .where(cows: { status: [ "active", "pregnant" ] })
                                .includes(:cow)
                                .limit(10)
+                               .to_a
+      }
+    end
+
+    @overdue_vaccinations = cached_notifications[:overdue_vaccinations]
+    @due_vaccinations = cached_notifications[:due_vaccinations]
+    @overdue_births = cached_notifications[:overdue_births]
+    @due_births = cached_notifications[:due_births]
 
     # Enhanced alert system - upcoming events
     @system_alerts = generate_comprehensive_alerts
 
-    # Count totals for quick display
-    @overdue_vaccinations_count = @overdue_vaccinations.count
-    @due_vaccinations_count = @due_vaccinations.count
-    @overdue_births_count = @overdue_births.count
-    @due_births_count = @due_births.count
+    # Use .size instead of .count on already-loaded arrays (much faster)
+    @overdue_vaccinations_count = @overdue_vaccinations.size
+    @due_vaccinations_count = @due_vaccinations.size
+    @overdue_births_count = @overdue_births.size
+    @due_births_count = @due_births.size
   end
 
   def generate_comprehensive_alerts

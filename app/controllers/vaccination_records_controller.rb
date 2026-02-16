@@ -12,7 +12,7 @@ class VaccinationRecordsController < ApplicationController
     end
 
     @vaccination_records = base_query
-      .includes(cow: [:farm])
+      .includes(:cow)
       .order(vaccination_date: :desc)
       .page(params[:page])
       .per(20)
@@ -90,7 +90,7 @@ class VaccinationRecordsController < ApplicationController
 
   # Helper methods for optimization
   def cache_key_for_vaccination_stats
-    [@cow&.id, 'vaccination_stats', VaccinationRecord.maximum(:updated_at)&.to_i].compact.join('_')
+    [ @cow&.id, "vaccination_stats", VaccinationRecord.maximum(:updated_at)&.to_i ].compact.join("_")
   end
 
   def calculate_up_to_date_animals

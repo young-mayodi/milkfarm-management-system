@@ -74,6 +74,11 @@ class Cow < ApplicationRecord
     recent_records.average(:total_production) || 0
   end
 
+  # Alias for convenience in views
+  def avg_production
+    average_daily_production(30)
+  end
+
   def status_badge_class
     case status
     when "active" then "success"

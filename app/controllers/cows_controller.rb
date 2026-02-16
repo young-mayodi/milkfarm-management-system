@@ -107,7 +107,7 @@ class CowsController < ApplicationController
 
     # Optimized recent production with limited fields
     @recent_production = @cow.production_records
-      .select(:id, :production_date, :total_production, :morning_production, :noon_production, :evening_production)
+      .select(:id, :production_date, :total_production, :morning_production, :noon_production, :evening_production, :night_production)
       .recent
       .limit(10)
 
@@ -372,12 +372,12 @@ class CowsController < ApplicationController
 
     Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
       # Get cow IDs from the filtered query to avoid GROUP BY issues
-      cow_ids = @base_query.pluck(:id)
+      cow_ids = @base_query.unscope(:order).distinct.pluck(:id)
 
       if cow_ids.any?
         stats = {}
         stats[:total_count] = cow_ids.count
-        stats[:active_count] = @base_query.where(status: "active").count
+        stats[:active_count] = @base_query.where(status: "active").distinct.count(:id)
 
         # Add calves-specific stats when viewing calves
         if params[:animal_type] == "calves"
@@ -514,7 +514,7 @@ class CowsController < ApplicationController
   def load_production_data_for_table
     return if @cows.empty?
 
-    cow_ids = @cows.pluck(:id)
+    cow_ids = @cows.unscope(:order).distinct.pluck(:id)
 
     # Get last production record for each cow - optimized query
     @last_productions = ProductionRecord

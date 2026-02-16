@@ -4,9 +4,20 @@ class FinancialReportsController < ApplicationController
   before_action :set_date_range
 
   def index
-    @financial_overview = generate_financial_overview
-    @quick_stats = generate_quick_stats
-    @monthly_trend = generate_monthly_trend
+    # Cache financial overview for 1 hour
+    @financial_overview = Rails.cache.fetch("financial_overview_#{@farm.id}_#{@date_range.begin}_#{@date_range.end}", expires_in: 1.hour) do
+      generate_financial_overview
+    end
+
+    # Cache quick stats for 1 hour
+    @quick_stats = Rails.cache.fetch("quick_stats_#{@farm.id}_#{@date_range.begin}_#{@date_range.end}", expires_in: 1.hour) do
+      generate_quick_stats
+    end
+
+    # Cache monthly trend for 1 hour
+    @monthly_trend = Rails.cache.fetch("monthly_trend_#{@farm.id}", expires_in: 1.hour) do
+      generate_monthly_trend
+    end
   end
 
   def profit_loss
@@ -186,16 +197,14 @@ class FinancialReportsController < ApplicationController
 
     # Get total production for the farm
     total_farm_production = cow_production.values.sum
-    
-    # Calculate ROI for each cow based on their production share
-    cows = @farm.cows.active.includes(:production_records)
-                .where(production_records: { production_date: 6.months.ago.to_date..Date.current })
-                .group('cows.id')
-                .limit(20)
+
+    # Get active cows with production in the last 6 months (simplified query)
+    cow_ids_with_production = cow_production.keys
+    cows = @farm.cows.active.where(id: cow_ids_with_production).limit(20)
 
     cows.map do |cow|
       cow_total_production = cow_production[cow.id] || 0
-      
+
       # Calculate revenue share based on production
       cow_revenue = if total_farm_production > 0
         (cow_total_production / total_farm_production) * total_farm_revenue

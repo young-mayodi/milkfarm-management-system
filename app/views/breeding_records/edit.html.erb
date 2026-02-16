@@ -73,12 +73,13 @@
                 <%= form.label :breeding_method, "Breeding Method", class: "form-label" %>
                 <%= form.select :breeding_method,
                     options_for_select([
-                      ['Natural Service', 'natural'],
-                      ['Artificial Insemination', 'ai'],
-                      ['Embryo Transfer', 'et']
+                      ['Natural Service', 'natural_service'],
+                      ['Artificial Insemination', 'artificial_insemination'],
+                      ['Embryo Transfer', 'embryo_transfer'],
+                      ['Synchronized Breeding', 'synchronized_breeding']
                     ], @breeding_record.breeding_method),
                     { prompt: "Select method..." },
-                    { class: "form-select" } %>
+                    { class: "form-select", required: true } %>
               </div>
             </div>
 

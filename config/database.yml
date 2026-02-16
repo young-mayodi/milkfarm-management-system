@@ -15,9 +15,19 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  # For details on connection pooling, see Rails configuration guide
-  # https://guides.rubyonrails.org/configuring.html#database-pooling
+  # Connection pooling configuration
+  # Pool size should match number of app threads
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  # Timeout waiting for connection from pool (seconds)
+  checkout_timeout: 5
+  # Enable prepared statements for better performance
+  prepared_statements: true
+  # Retry connection on failure
+  connect_timeout: 2
+  # Connection reaping - close idle connections
+  reaping_frequency: 10
+  # Max connection lifetime (helps with load balancers)
+  # reconnect: true
 
 
 development:
@@ -81,3 +91,8 @@ test:
 production:
   <<: *default
   url: <%= ENV['DATABASE_URL'] %>
+  # Production-specific settings
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 10 } %>
+  # Statement timeout (30 seconds)
+  variables:
+    statement_timeout: 30000

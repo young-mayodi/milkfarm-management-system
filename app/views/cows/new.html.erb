@@ -71,7 +71,7 @@
         
         <div class="form-card-body">
           <%= form_with model: [@farm, @cow], local: true, class: "modern-form", id: "cowForm", 
-                        data: { turbo: false } do |form| %>
+                        data: { controller: "form-validation", turbo: false } do |form| %>
             
             <!-- Error Display -->
             <% if @cow.errors.any? %>

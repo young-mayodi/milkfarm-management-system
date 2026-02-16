@@ -74,6 +74,31 @@ class SalesRecord < ApplicationRecord
   end
 
   def self.monthly_profit_trend(farm, months_back: 6)
+    # OPTIMIZED: Batch queries instead of looping
+    start_date = (months_back - 1).months.ago.beginning_of_month
+    end_date = Date.current.end_of_month
+
+    # Pre-load all sales data at once
+    all_sales = where(farm: farm, sale_date: start_date..end_date)
+      .group("DATE_TRUNC('month', sale_date)")
+      .select(
+        "DATE_TRUNC('month', sale_date) as month",
+        Arel.sql("SUM(total_sales) as revenue"),
+        Arel.sql("SUM(milk_sold) as milk_sold")
+      )
+      .to_a
+      .index_by(&:month)
+
+    # Pre-load all production data at once
+    all_production = ProductionRecord.where(farm: farm, production_date: start_date..end_date)
+      .group("DATE_TRUNC('month', production_date)")
+      .select(
+        "DATE_TRUNC('month', production_date) as month",
+        Arel.sql("SUM(total_production) as total_prod")
+      )
+      .to_a
+      .index_by(&:month)
+
     trend_data = {}
 
     (0..months_back-1).each do |month_offset|
@@ -81,9 +106,43 @@ class SalesRecord < ApplicationRecord
       month_start = date.beginning_of_month
       month_end = date.end_of_month
 
-      analysis = profit_loss_analysis(farm, month_start..month_end)
-      trend_data[month_start] = analysis
-      end
+      # Use pre-loaded data
+      sales_data = all_sales[month_start]
+      prod_data = all_production[month_start]
+
+      total_revenue = sales_data&.revenue&.to_f || 0
+      total_milk_sold = sales_data&.milk_sold&.to_f || 0
+      total_production = prod_data&.total_prod&.to_f || 0
+
+      # Calculate costs
+      estimated_feed_cost_per_liter = 25.0
+      estimated_labor_cost_per_day = 500.0
+      estimated_other_costs_per_liter = 5.0
+      days_in_month = (month_end - month_start).to_i + 1
+
+      total_estimated_costs = (total_production * estimated_feed_cost_per_liter) +
+                             (days_in_month * estimated_labor_cost_per_day) +
+                             (total_production * estimated_other_costs_per_liter)
+
+      gross_profit = total_revenue - total_estimated_costs
+      profit_margin = total_revenue > 0 ? (gross_profit / total_revenue * 100) : 0
+      milk_sold_percentage = total_production > 0 ? (total_milk_sold / total_production * 100) : 0
+      average_price_per_liter = total_milk_sold > 0 ? (total_revenue / total_milk_sold) : 0
+
+      trend_data[month_start] = {
+        period: month_start..month_end,
+        total_revenue: total_revenue.round(2),
+        total_costs: total_estimated_costs.round(2),
+        gross_profit: gross_profit.round(2),
+        profit_margin: profit_margin.round(2),
+        total_production: total_production.round(2),
+        total_milk_sold: total_milk_sold.round(2),
+        milk_sold_percentage: milk_sold_percentage.round(2),
+        average_price_per_liter: average_price_per_liter.round(2),
+        break_even_production: total_estimated_costs / (average_price_per_liter > 0 ? average_price_per_liter : 50),
+        performance_status: gross_profit > 0 ? "profitable" : "loss"
+      }
+    end
 
     trend_data
   end

@@ -8,3 +8,197 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+/* Loading indicators and animations (inlined to avoid extra asset request) */
+.turbo-progress-bar {
+	height: 3px;
+	background: linear-gradient(to right, #0d6efd, #0dcaf0, #198754);
+	background-size: 200% 100%;
+	animation: progressGradient 2s ease infinite;
+}
+
+@keyframes progressGradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+.loading-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(255, 255, 255, 0.8);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 9999;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+	opacity: 1;
+	visibility: visible;
+}
+
+.loading-spinner {
+	text-align: center;
+}
+
+.loading-spinner .spinner-border {
+	width: 3rem;
+	height: 3rem;
+	border-width: 0.3em;
+}
+
+.loading-text {
+	margin-top: 1rem;
+	font-size: 1.1rem;
+	color: #495057;
+	font-weight: 500;
+}
+
+.btn-loading {
+	position: relative;
+	pointer-events: none;
+	opacity: 0.65;
+}
+
+.btn-loading::after {
+	content: "";
+	position: absolute;
+	width: 1rem;
+	height: 1rem;
+	top: 50%;
+	left: 50%;
+	margin-left: -0.5rem;
+	margin-top: -0.5rem;
+	border: 2px solid currentColor;
+	border-right-color: transparent;
+	border-radius: 50%;
+	animation: spinner-border 0.75s linear infinite;
+}
+
+.skeleton {
+	background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+	background-size: 200% 100%;
+	animation: skeleton-loading 1.5s ease-in-out infinite;
+	border-radius: 0.25rem;
+}
+
+@keyframes skeleton-loading {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+.skeleton-text {
+	height: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.skeleton-text:last-child {
+	margin-bottom: 0;
+	width: 60%;
+}
+
+.skeleton-avatar {
+	width: 3rem;
+	height: 3rem;
+	border-radius: 50%;
+}
+
+.skeleton-card {
+	height: 200px;
+}
+
+.is-invalid {
+	border-color: #dc3545 !important;
+	padding-right: calc(1.5em + 0.75rem);
+	background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+	background-repeat: no-repeat;
+	background-position: right calc(0.375em + 0.1875rem) center;
+	background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.is-valid {
+	border-color: #198754 !important;
+	padding-right: calc(1.5em + 0.75rem);
+	background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+	background-repeat: no-repeat;
+	background-position: right calc(0.375em + 0.1875rem) center;
+	background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.invalid-feedback {
+	display: block;
+	margin-top: 0.25rem;
+	font-size: 0.875em;
+	color: #dc3545;
+}
+
+.valid-feedback {
+	display: block;
+	margin-top: 0.25rem;
+	font-size: 0.875em;
+	color: #198754;
+}
+
+.content-loading {
+	transition: opacity 0.2s ease;
+}
+
+.content-loading.loading {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+.dot-pulse {
+	position: relative;
+	left: -9999px;
+	width: 10px;
+	height: 10px;
+	border-radius: 5px;
+	background-color: #0d6efd;
+	color: #0d6efd;
+	box-shadow: 9999px 0 0 -5px;
+	animation: dot-pulse 1.5s infinite linear;
+	animation-delay: 0.25s;
+}
+
+.dot-pulse::before,
+.dot-pulse::after {
+	content: "";
+	display: inline-block;
+	position: absolute;
+	top: 0;
+	width: 10px;
+	height: 10px;
+	border-radius: 5px;
+	background-color: #0d6efd;
+	color: #0d6efd;
+}
+
+.dot-pulse::before {
+	box-shadow: 9984px 0 0 -5px;
+	animation: dot-pulse-before 1.5s infinite linear;
+	animation-delay: 0s;
+}
+
+.dot-pulse::after {
+	box-shadow: 10014px 0 0 -5px;
+	animation: dot-pulse-after 1.5s infinite linear;
+	animation-delay: 0.5s;
+}

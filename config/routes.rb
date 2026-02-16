@@ -26,7 +26,7 @@ Rails.application.routes.draw do
       post :mark_as_read
     end
   end
-  
+
   # Sidekiq web UI for monitoring background jobs (optional - requires sidekiq gem)
   if defined?(Sidekiq)
     begin
@@ -155,6 +155,11 @@ Rails.application.routes.draw do
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+
+  # Error routes for custom error pages
+  match "/404", to: "errors#not_found", via: :all
+  match "/500", to: "errors#internal_server_error", via: :all
+  match "/422", to: "errors#unprocessable_entity", via: :all
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.

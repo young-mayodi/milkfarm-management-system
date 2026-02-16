@@ -1,167 +1,615 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <div>
-    <h1>Sales Records</h1>
-    <% if @farm %>
-      <p class="lead text-muted">Farm: <%= @farm.name %></p>
-    <% end %>
+<% content_for :title, "Sales Records" %>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .container-fluid, .container {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .sales-header {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-radius: 12px;
+    padding: 30px;
+    border-left: 5px solid #667eea;
+    animation: slideInDown 0.6s ease-out;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+
+  @keyframes slideInDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .sales-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 5px;
+  }
+
+  .sales-subtitle {
+    font-size: 0.95rem;
+    color: #718096;
+    margin: 0;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .header-actions .btn {
+    transition: all 0.3s ease;
+  }
+
+  .header-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Summary Stats */
+  .stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 30px;
+    animation: fadeIn 0.6s ease-out both;
+  }
+
+  .stat-card {
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    animation: fadeIn 0.5s ease-out both;
+    color: white;
+  }
+
+  .stat-card:nth-child(1) { animation-delay: 0.1s; }
+  .stat-card:nth-child(2) { animation-delay: 0.2s; }
+  .stat-card:nth-child(3) { animation-delay: 0.3s; }
+  .stat-card:nth-child(4) { animation-delay: 0.4s; }
+  .stat-card:nth-child(5) { animation-delay: 0.5s; }
+  .stat-card:nth-child(6) { animation-delay: 0.6s; }
+  .stat-card:nth-child(7) { animation-delay: 0.7s; }
+
+  .stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-card.records { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+  .stat-card.milk { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+  .stat-card.revenue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+  .stat-card.cash { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+  .stat-card.mpesa { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+  .stat-card.average { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+
+  .stat-card-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    opacity: 0.8;
+  }
+
+  .stat-card-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+
+  .stat-card-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    font-weight: 500;
+  }
+
+  /* Filter Section */
+  .filter-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .filter-section .form-label {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+
+  .filter-section .form-control {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+  }
+
+  .filter-section .form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .filter-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    height: 40px;
+  }
+
+  .filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    color: white;
+  }
+
+  .filter-info {
+    display: inline-block;
+    background: #e0f2fe;
+    border-left: 4px solid #0284c7;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #0c4a6e;
+  }
+
+  /* Table Styles */
+  .table-section {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    margin-bottom: 0;
+  }
+
+  .table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 15px;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+  }
+
+  .table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f4f8;
+  }
+
+  .table tbody tr:hover {
+    background-color: #f8fbff;
+  }
+
+  .table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+    color: #2d3748;
+  }
+
+  .table .badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .table .badge.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  }
+
+  .table .badge.bg-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  }
+
+  .table .badge.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  }
+
+  .btn-group .btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+  }
+
+  .btn-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .empty-state-icon {
+    font-size: 4rem;
+    color: #cbd5e1;
+    margin-bottom: 20px;
+  }
+
+  .empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 10px;
+  }
+
+  .empty-state p {
+    color: #718096;
+    margin-bottom: 30px;
+  }
+
+  /* Pagination */
+  .pagination {
+    margin: 0;
+  }
+
+  .pagination-container {
+    display: flex;
+    justify-content: center;
+    padding: 30px;
+    background: white;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0 0 12px 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sales-header {
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .sales-title {
+      font-size: 1.5rem;
+    }
+
+    .header-actions {
+      gap: 8px;
+    }
+
+    .header-actions .btn {
+      padding: 8px 12px;
+      font-size: 0.85rem;
+    }
+
+    .stats-container {
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      padding: 15px;
+    }
+
+    .stat-card-value {
+      font-size: 1.3rem;
+    }
+
+    .stat-card-label {
+      font-size: 0.75rem;
+    }
+
+    .table-responsive {
+      font-size: 0.9rem;
+    }
+
+    .table thead th {
+      padding: 10px;
+      font-size: 0.7rem;
+    }
+
+    .table tbody td {
+      padding: 10px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .sales-header {
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .sales-title {
+      font-size: 1.3rem;
+    }
+
+    .header-actions {
+      width: 100%;
+    }
+
+    .header-actions .btn {
+      flex: 1;
+      min-width: 100px;
+      font-size: 0.75rem;
+      padding: 6px 8px;
+    }
+
+    .stats-container {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 15px;
+    }
+
+    .stat-card {
+      padding: 12px;
+    }
+
+    .stat-card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+    .stat-card-value {
+      font-size: 1.1rem;
+    }
+
+    .stat-card-label {
+      font-size: 0.7rem;
+    }
+
+    .filter-section {
+      padding: 15px;
+    }
+
+    .table-responsive {
+      font-size: 0.8rem;
+    }
+
+    .table thead th {
+      padding: 8px;
+      font-size: 0.65rem;
+    }
+
+    .table tbody td {
+      padding: 8px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 4px;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+      padding: 4px 6px;
+      font-size: 0.7rem;
+    }
+  }
+</style>
+
+<!-- Sales Header -->
+<div class="sales-header">
+  <div class="row align-items-center">
+    <div class="col-lg-8">
+      <div class="d-flex align-items-center gap-3">
+        <div style="font-size: 2.5rem;">💵</div>
+        <div>
+          <h1 class="sales-title mb-0">Sales Records</h1>
+          <% if @farm %>
+            <p class="sales-subtitle">
+              <i class="bi bi-building me-2"></i><%= @farm.name %>
+            </p>
+          <% else %>
+            <p class="sales-subtitle">
+              <i class="bi bi-graph-up me-2"></i>Track all milk sales and revenue
+            </p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="header-actions justify-content-lg-end">
+        <% if @farm %>
+          <%= link_to new_farm_sales_record_path(@farm), class: "btn btn-success" do %>
+            <i class="bi bi-plus-circle me-2"></i>Add Sale
+          <% end %>
+        <% else %>
+          <%= link_to new_sales_record_path, class: "btn btn-success" do %>
+            <i class="bi bi-plus-circle me-2"></i>Add Sale
+          <% end %>
+        <% end %>
+        <%= link_to (request.url + (request.query_string.present? ? "&format=csv" : "?format=csv")), 
+                    class: "btn btn-outline-secondary" do %>
+          <i class="bi bi-download me-2"></i>Export CSV
+        <% end %>
+      </div>
+    </div>
   </div>
-  <div>
-    <% if @farm %>
-      <%= link_to "Add Sale", new_farm_sales_record_path(@farm), class: "btn btn-success me-2" %>
-    <% else %>
-      <%= link_to "Add Sale", new_sales_record_path, class: "btn btn-success me-2" %>
-    <% end %>
-    <%= link_to "Export CSV", request.url + (request.query_string.present? ? "&format=csv" : "?format=csv"), 
-                class: "btn btn-info me-2" %>
-    <% if @farm %>
-      <%= link_to "Back to Farm", @farm, class: "btn btn-outline-secondary" %>
-    <% else %>
-      <%= link_to "Dashboard", root_path, class: "btn btn-outline-secondary" %>
-    <% end %>
+</div>
+
+<!-- Summary Statistics -->
+<div class="stats-container">
+  <div class="stat-card records">
+    <div class="stat-card-icon"><i class="bi bi-receipt"></i></div>
+    <div class="stat-card-value"><%= @summary_stats[:total_records] %></div>
+    <div class="stat-card-label">Total Records</div>
+  </div>
+
+  <div class="stat-card milk">
+    <div class="stat-card-icon"><i class="bi bi-droplet"></i></div>
+    <div class="stat-card-value"><%= number_with_precision(@summary_stats[:total_milk_sold], precision: 1) %>L</div>
+    <div class="stat-card-label">Milk Sold</div>
+  </div>
+
+  <div class="stat-card revenue">
+    <div class="stat-card-icon"><i class="bi bi-cash-coin"></i></div>
+    <div class="stat-card-value">KES <%= number_with_precision(@summary_stats[:total_revenue], precision: 0) %></div>
+    <div class="stat-card-label">Total Revenue</div>
+  </div>
+
+  <div class="stat-card cash">
+    <div class="stat-card-icon"><i class="bi bi-wallet"></i></div>
+    <div class="stat-card-value">KES <%= number_with_precision(@summary_stats[:total_cash], precision: 0) %></div>
+    <div class="stat-card-label">Cash Sales</div>
+  </div>
+
+  <div class="stat-card mpesa">
+    <div class="stat-card-icon"><i class="bi bi-phone"></i></div>
+    <div class="stat-card-value">KES <%= number_with_precision(@summary_stats[:total_mpesa], precision: 0) %></div>
+    <div class="stat-card-label">M-Pesa Sales</div>
+  </div>
+
+  <div class="stat-card average">
+    <div class="stat-card-icon"><i class="bi bi-percent"></i></div>
+    <div class="stat-card-value">KES <%= number_with_precision(@summary_stats[:avg_price_per_liter], precision: 0) %></div>
+    <div class="stat-card-label">Avg Price/L</div>
   </div>
 </div>
 
 <!-- Date Filter -->
-<div class="card mb-4">
-  <div class="card-body">
-    <%= form_with url: request.path, method: :get, local: true, class: "row g-3" do |form| %>
-      <div class="col-md-3">
-        <%= form.label :start_date, "From Date", class: "form-label" %>
-        <%= form.date_field :start_date, value: params[:start_date], class: "form-control" %>
-      </div>
-      <div class="col-md-3">
-        <%= form.label :end_date, "To Date", class: "form-label" %>
-        <%= form.date_field :end_date, value: params[:end_date], class: "form-control" %>
-      </div>
-      <div class="col-md-3 d-flex align-items-end">
-        <%= form.submit "Filter", class: "btn btn-primary me-2" %>
-        <%= link_to "Clear", request.path, class: "btn btn-outline-secondary" %>
-      </div>
-      <div class="col-md-3">
-        <% if params[:start_date].present? || params[:end_date].present? %>
-          <div class="alert alert-info mb-0 py-2">
-            <small>
-              <i class="bi bi-funnel"></i>
-              Filtered results
-            </small>
-          </div>
-        <% end %>
-      </div>
-    <% end %>
-  </div>
+<div class="filter-section">
+  <%= form_with url: request.path, method: :get, local: true, class: "row g-3" do |form| %>
+    <div class="col-md-3">
+      <%= form.label :start_date, "From Date", class: "form-label" %>
+      <%= form.date_field :start_date, value: params[:start_date], class: "form-control" %>
+    </div>
+    <div class="col-md-3">
+      <%= form.label :end_date, "To Date", class: "form-label" %>
+      <%= form.date_field :end_date, value: params[:end_date], class: "form-control" %>
+    </div>
+    <div class="col-md-3 d-flex align-items-end gap-2">
+      <%= form.submit "Filter", class: "btn filter-btn" %>
+      <%= link_to "Clear", request.path, class: "btn btn-outline-secondary" %>
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+      <% if params[:start_date].present? || params[:end_date].present? %>
+        <div class="filter-info">
+          <i class="bi bi-funnel"></i>
+          Filtered results
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 </div>
 
-<!-- Summary Cards -->
-<div class="row mb-4">
-  <div class="col-md-3">
-    <div class="card bg-light">
-      <div class="card-body text-center">
-        <h5 class="text-primary"><%= @sales_records.count %></h5>
-        <small class="text-muted">Total Records</small>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card bg-light">
-      <div class="card-body text-center">
-        <h5 class="text-success">
-          <%= number_with_precision(@sales_records.sum(:milk_sold), precision: 1) %>L
-        </h5>
-        <small class="text-muted">Total Milk Sold</small>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card bg-light">
-      <div class="card-body text-center">
-        <h5 class="text-info">
-          KES <%= number_with_precision(@sales_records.sum(:total_sales), precision: 0) %>
-        </h5>
-        <small class="text-muted">Total Revenue</small>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="card bg-light">
-      <div class="card-body text-center">
-        <h5 class="text-warning">
-          <%= @sales_records.any? ? number_with_precision(@sales_records.sum(:total_sales) / @sales_records.sum(:milk_sold), precision: 0) : 0 %>
-        </h5>
-        <small class="text-muted">Avg Price/Liter (KES)</small>
-      </div>
-    </div>
-  </div>
-</div>
-
+<!-- Sales Table -->
 <% if @sales_records.any? %>
-  <div class="card">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <% unless @farm %>
-                <th>Farm</th>
-              <% end %>
-              <th>Buyer</th>
-              <th>Milk Sold (L)</th>
-              <th>Cash (KES)</th>
-              <th>M-Pesa (KES)</th>
-              <th>Total (KES)</th>
-              <th>Price/L</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @sales_records.each do |record| %>
-              <tr>
-                <td><%= record.sale_date.strftime("%B %d, %Y") %></td>
-                <% unless @farm %>
-                  <td>
-                    <%= link_to record.farm.name, record.farm, class: "text-decoration-none" %>
-                  </td>
-                <% end %>
-                <td><%= record.buyer %></td>
-                <td><%= number_with_precision(record.milk_sold, precision: 1) %></td>
-                <td><%= number_with_precision(record.cash_sales, precision: 0) %></td>
-                <td><%= number_with_precision(record.mpesa_sales, precision: 0) %></td>
-                <td>
-                  <span class="badge bg-success">
-                    <%= number_with_precision(record.total_sales, precision: 0) %>
-                  </span>
-                </td>
-                <td>
-                  <span class="badge bg-primary">
-                    <%= number_with_precision(record.total_sales / record.milk_sold, precision: 0) %>
-                  </span>
-                </td>
-                <td>
-                  <div class="btn-group" role="group">
-                    <%= link_to "Edit", edit_sales_record_path(record), 
-                                class: "btn btn-sm btn-outline-secondary" %>
-                    <%= link_to "Delete", record, method: :delete, 
-                                confirm: "Are you sure?", 
-                                class: "btn btn-sm btn-outline-danger" %>
-                  </div>
-                </td>
-              </tr>
+  <div class="table-section">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th><i class="bi bi-calendar"></i> Date</th>
+            <% unless @farm %>
+              <th><i class="bi bi-building"></i> Farm</th>
             <% end %>
-          </tbody>
-        </table>
-      </div>
+            <th><i class="bi bi-person"></i> Buyer</th>
+            <th><i class="bi bi-droplet"></i> Milk (L)</th>
+            <th><i class="bi bi-wallet"></i> Cash</th>
+            <th><i class="bi bi-phone"></i> M-Pesa</th>
+            <th><i class="bi bi-cash-coin"></i> Total</th>
+            <th><i class="bi bi-percent"></i> Price/L</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @sales_records.each do |record| %>
+            <tr>
+              <td><strong><%= record.sale_date.strftime("%b %d, %Y") %></strong></td>
+              <% unless @farm %>
+                <td>
+                  <%= link_to record.farm.name, record.farm, class: "text-decoration-none text-primary fw-500" %>
+                </td>
+              <% end %>
+              <td><%= record.buyer %></td>
+              <td><span class="badge bg-info"><%= number_with_precision(record.milk_sold, precision: 1) %></span></td>
+              <td>KES <%= number_with_precision(record.cash_sales, precision: 0) %></td>
+              <td>KES <%= number_with_precision(record.mpesa_sales, precision: 0) %></td>
+              <td>
+                <span class="badge bg-success">
+                  KES <%= number_with_precision(record.total_sales, precision: 0) %>
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-primary">
+                  KES <%= number_with_precision(record.milk_sold > 0 ? record.total_sales / record.milk_sold : 0, precision: 0) %>
+                </span>
+              </td>
+              <td>
+                <div class="btn-group" role="group">
+                  <%= link_to edit_sales_record_path(record), class: "btn btn-sm btn-outline-secondary", title: "Edit" do %>
+                    <i class="bi bi-pencil"></i>
+                  <% end %>
+                  <%= link_to record, method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-sm btn-outline-danger", title: "Delete" do %>
+                    <i class="bi bi-trash"></i>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     </div>
-    
+
     <!-- Pagination -->
-    <div class="d-flex justify-content-center mt-4">
+    <div class="pagination-container">
       <%= paginate @sales_records %>
     </div>
   </div>
 <% else %>
-  <div class="text-center py-5">
-    <i class="bi bi-currency-dollar display-1 text-muted"></i>
-    <h3 class="mt-3">No sales records</h3>
-    <p class="text-muted">Start recording milk sales.</p>
-    <%= link_to "Add First Sale", new_sales_record_path, class: "btn btn-success" %>
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <i class="bi bi-currency-dollar"></i>
+    </div>
+    <h3>No Sales Records</h3>
+    <p>Start tracking milk sales to see records here.</p>
+    <% if @farm %>
+      <%= link_to "Add First Sale", new_farm_sales_record_path(@farm), class: "btn btn-success" %>
+    <% else %>
+      <%= link_to "Add First Sale", new_sales_record_path, class: "btn btn-success" %>
+    <% end %>
   </div>
 <% end %>

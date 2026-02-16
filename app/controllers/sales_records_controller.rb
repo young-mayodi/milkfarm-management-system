@@ -16,6 +16,23 @@ class SalesRecordsController < ApplicationController
 
     @sales_records = @sales_records.recent.page(params[:page]).per(20)
 
+    # Cache summary statistics for 30 minutes
+    @summary_stats = Rails.cache.fetch("sales_records_summary_#{@farm&.id || 'all'}_#{params[:start_date]}_#{params[:end_date]}", expires_in: 30.minutes) do
+      records = SalesRecord.includes(:farm)
+      records = records.where(farm: @farm) if @farm
+      records = records.where(sale_date: params[:start_date]..params[:end_date]) if params[:start_date].present? && params[:end_date].present?
+
+      {
+        total_records: records.count,
+        total_milk_sold: (records.sum(:milk_sold) || 0).round(1),
+        total_revenue: (records.sum(:total_sales) || 0).round(0),
+        total_cash: (records.sum(:cash_sales) || 0).round(0),
+        total_mpesa: (records.sum(:mpesa_sales) || 0).round(0),
+        avg_price_per_liter: records.any? ? (records.sum(:total_sales).to_f / [ records.sum(:milk_sold), 1 ].max).round(0) : 0,
+        avg_milk_per_sale: records.any? ? (records.sum(:milk_sold) / records.count).round(1) : 0
+      }
+    end
+
     respond_to do |format|
       format.html
       format.csv { send_csv_data(@sales_records, "sales_records") }

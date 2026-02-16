@@ -1138,7 +1138,17 @@
     </style>
   </head>
 
-  <body>
+  <body data-controller="loading">
+    <!-- Global Loading Overlay -->
+    <div class="loading-overlay d-none" data-loading-target="spinner">
+      <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="loading-text mt-3">Loading...</div>
+      </div>
+    </div>
+    
     <!-- Mobile Navigation Header -->
     <nav class="mobile-nav d-lg-none">
       <div class="mobile-nav-content">
@@ -1733,7 +1743,7 @@
         </div>
 
         <!-- Enhanced Page Content -->
-        <main class="container-fluid p-4">
+        <main class="container-fluid p-4" data-loading-target="content">
           <%= yield %>
         </main>
         
@@ -1959,15 +1969,21 @@
     
     <!-- Enhanced Sidebar Toggle Script -->
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // Hide loading screen
+      const hideLoadingScreen = () => {
         const loadingScreen = document.getElementById('loading-screen');
+        if (!loadingScreen) return;
+
         setTimeout(() => {
           loadingScreen.style.opacity = '0';
           setTimeout(() => {
             loadingScreen.style.display = 'none';
           }, 500);
         }, 1000);
+      };
+
+      document.addEventListener('DOMContentLoaded', function() {
+        // Hide loading screen on full page load
+        hideLoadingScreen();
         
         // Mobile Navigation
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
@@ -2082,6 +2098,11 @@
             return new bootstrap.Tooltip(tooltipTriggerEl);
           });
         }
+      });
+
+      document.addEventListener('turbo:load', function() {
+        // Hide loading screen on Turbo navigation
+        hideLoadingScreen();
       });
     </script>
     

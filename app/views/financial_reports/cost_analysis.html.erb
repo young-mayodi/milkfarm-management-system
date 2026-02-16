@@ -1,209 +1,536 @@
-<div class="cost-analysis-report">
-  <!-- Page Header -->
-  <div class="page-header mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h2 class="page-title">
-          <i class="bi bi-pie-chart-fill text-warning"></i>
-          Cost Analysis Report
-        </h2>
-        <p class="text-muted">Detailed cost breakdown and per-liter analysis</p>
-      </div>
-      <div class="header-actions">
-        <%= link_to financial_reports_path, class: "btn btn-outline-secondary" do %>
-          <i class="bi bi-arrow-left"></i> Back to Dashboard
-        <% end %>
-      </div>
-    </div>
-  </div>
+<% content_for :title do %>
+  Cost Analysis Report
+<% end %>
 
-  <!-- Cost Summary Cards -->
-  <div class="row mb-4">
-    <div class="col-md-3">
-      <div class="stat-card bg-warning text-white">
-        <div class="stat-icon">
-          <i class="bi bi-currency-exchange"></i>
-        </div>
-        <div class="stat-content">
-          <h3>KES <%= number_with_delimiter(@cost_breakdown[:total_estimated_costs]) %></h3>
-          <p>Total Costs</p>
-          <small class="opacity-75">Estimated operational costs</small>
-        </div>
-      </div>
-    </div>
+<style>
+  * {
+    box-sizing: border-box;
+  }
 
-    <div class="col-md-3">
-      <div class="stat-card bg-info text-white">
-        <div class="stat-icon">
-          <i class="bi bi-droplet"></i>
-        </div>
-        <div class="stat-content">
-          <h3>KES <%= @cost_per_liter %></h3>
-          <p>Cost per Liter</p>
-          <small class="opacity-75">Production cost efficiency</small>
-        </div>
-      </div>
-    </div>
+  body {
+    overflow-x: hidden;
+  }
 
-    <div class="col-md-3">
-      <div class="stat-card bg-success text-white">
-        <div class="stat-icon">
-          <i class="bi bi-graph-down"></i>
-        </div>
-        <div class="stat-content">
-          <h3>KES <%= number_with_delimiter(@expense_breakdown.values.sum) %></h3>
-          <p>Actual Expenses</p>
-          <small class="opacity-75">Recorded expenses</small>
-        </div>
-      </div>
-    </div>
+  .cost-analysis-report {
+    <% content_for :title do %>
+      Cost Analysis Report
+    <% end %>
 
-    <div class="col-md-3">
-      <div class="stat-card bg-primary text-white">
-        <div class="stat-icon">
-          <i class="bi bi-percent"></i>
-        </div>
-        <div class="stat-content">
-          <h3><%= @expense_breakdown.empty? ? 0 : ((@expense_breakdown.values.max / @expense_breakdown.values.sum) * 100).round(1) %>%</h3>
-          <p>Highest Cost Category</p>
-          <small class="opacity-75">
-            <%= @expense_breakdown.empty? ? 'N/A' : @expense_breakdown.max_by { |k, v| v }[0].humanize %>
-          </small>
-        </div>
-      </div>
-    </div>
-  </div>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
 
-  <div class="row">
-    <!-- Cost Breakdown Analysis -->
-    <div class="col-md-8">
-      <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="bi bi-bar-chart"></i>
-            Detailed Cost Breakdown
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="cost-breakdown-table">
-            <div class="table-responsive">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Cost Category</th>
-                    <th>Estimated Cost</th>
-                    <th>Actual Cost</th>
-                    <th>Variance</th>
-                    <th>% of Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <i class="bi bi-grass text-success"></i>
-                      Feed Costs
-                    </td>
-                    <td>KES <%= number_with_delimiter(@cost_breakdown[:feed_costs]) %></td>
-                    <td>KES <%= number_with_delimiter(@expense_breakdown['feed'] || 0) %></td>
-                    <td class="text-<%= (@expense_breakdown['feed'] || 0) <= @cost_breakdown[:feed_costs] ? 'success' : 'danger' %>">
-                      <%= (@expense_breakdown['feed'] || 0) <= @cost_breakdown[:feed_costs] ? '-' : '+' %>KES <%= number_with_delimiter(((@expense_breakdown['feed'] || 0) - @cost_breakdown[:feed_costs]).abs) %>
-                    </td>
-                    <td><%= ((@expense_breakdown['feed'] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <i class="bi bi-people text-primary"></i>
-                      Labor Costs
-                    </td>
-                    <td>KES <%= number_with_delimiter(@cost_breakdown[:labor_costs]) %></td>
-                    <td>KES <%= number_with_delimiter(@expense_breakdown['labor'] || 0) %></td>
-                    <td class="text-<%= (@expense_breakdown['labor'] || 0) <= @cost_breakdown[:labor_costs] ? 'success' : 'danger' %>">
-                      <%= (@expense_breakdown['labor'] || 0) <= @cost_breakdown[:labor_costs] ? '-' : '+' %>KES <%= number_with_delimiter(((@expense_breakdown['labor'] || 0) - @cost_breakdown[:labor_costs]).abs) %>
-                    </td>
-                    <td><%= ((@expense_breakdown['labor'] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <i class="bi bi-hospital text-danger"></i>
-                      Veterinary Costs
-                    </td>
-                    <td>KES <%= number_with_delimiter(@cost_breakdown[:veterinary_costs]) %></td>
-                    <td>KES <%= number_with_delimiter(@expense_breakdown['veterinary'] || 0) %></td>
-                    <td class="text-<%= (@expense_breakdown['veterinary'] || 0) <= @cost_breakdown[:veterinary_costs] ? 'success' : 'danger' %>">
-                      <%= (@expense_breakdown['veterinary'] || 0) <= @cost_breakdown[:veterinary_costs] ? '-' : '+' %>KES <%= number_with_delimiter(((@expense_breakdown['veterinary'] || 0) - @cost_breakdown[:veterinary_costs]).abs) %>
-                    </td>
-                    <td><%= ((@expense_breakdown['veterinary'] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <i class="bi bi-tools text-warning"></i>
-                      Maintenance Costs
-                    </td>
-                    <td>KES <%= number_with_delimiter(@cost_breakdown[:maintenance_costs]) %></td>
-                    <td>KES <%= number_with_delimiter(@expense_breakdown['maintenance'] || 0) %></td>
-                    <td class="text-<%= (@expense_breakdown['maintenance'] || 0) <= @cost_breakdown[:maintenance_costs] ? 'success' : 'danger' %>">
-                      <%= (@expense_breakdown['maintenance'] || 0) <= @cost_breakdown[:maintenance_costs] ? '-' : '+' %>KES <%= number_with_delimiter(((@expense_breakdown['maintenance'] || 0) - @cost_breakdown[:maintenance_costs]).abs) %>
-                    </td>
-                    <td><%= ((@expense_breakdown['maintenance'] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
-                  </tr>
-                  <% %w[utilities transport equipment breeding insurance other].each do |category| %>
-                    <% if (@expense_breakdown[category] || 0) > 0 %>
-                      <tr>
-                        <td>
-                          <i class="bi bi-<%= {'utilities' => 'lightning', 'transport' => 'truck', 'equipment' => 'gear', 'breeding' => 'heart', 'insurance' => 'shield', 'other' => 'question-circle'}[category] %>"></i>
-                          <%= category.humanize %>
-                        </td>
-                        <td>-</td>
-                        <td>KES <%= number_with_delimiter(@expense_breakdown[category]) %></td>
-                        <td class="text-info">Additional</td>
-                        <td><%= ((@expense_breakdown[category] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
-                      </tr>
-                    <% end %>
-                  <% end %>
-                </tbody>
-                <tfoot>
-                  <tr class="table-dark">
-                    <th>Total</th>
-                    <th>KES <%= number_with_delimiter(@cost_breakdown[:total_estimated_costs]) %></th>
-                    <th>KES <%= number_with_delimiter(@expense_breakdown.values.sum) %></th>
-                    <th class="text-<%= @expense_breakdown.values.sum <= @cost_breakdown[:total_estimated_costs] ? 'success' : 'danger' %>">
-                      <%= @expense_breakdown.values.sum <= @cost_breakdown[:total_estimated_costs] ? 'Under Budget' : 'Over Budget' %>
-                    </th>
-                    <th>100%</th>
-                  </tr>
-                </tfoot>
-              </table>
+      body {
+        overflow-x: hidden;
+      }
+
+      .cost-analysis-report {
+        width: 100%;
+        overflow-x: hidden;
+      }
+
+      .report-header {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
+        border-radius: 12px;
+        padding: 30px;
+        border-left: 5px solid #f59e0b;
+        animation: slideInDown 0.6s ease-out;
+        width: 100%;
+        margin-bottom: 30px;
+      }
+
+      @keyframes slideInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .report-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1a202c;
+        margin-bottom: 5px;
+      }
+
+      .report-subtitle {
+        font-size: 0.95rem;
+        color: #718096;
+        margin: 0;
+      }
+
+      .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        animation: fadeIn 0.6s ease-out;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        height: 100%;
+      }
+
+      .stat-card i {
+        font-size: 2.5rem;
+        opacity: 0.8;
+      }
+
+      .stat-card h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .stat-card p {
+        font-size: 0.95rem;
+        margin: 5px 0 0 0;
+      }
+
+      .stat-card small {
+        font-size: 0.8rem;
+        opacity: 0.75;
+      }
+
+      .card-total-costs {
+        border-left: 4px solid #f59e0b;
+        color: #f59e0b;
+      }
+
+      .card-cost-per-liter {
+        border-left: 4px solid #06b6d4;
+        color: #06b6d4;
+      }
+
+      .card-actual-expenses {
+        border-left: 4px solid #10b981;
+        color: #10b981;
+      }
+
+      .card-highest-category {
+        border-left: 4px solid #667eea;
+        color: #667eea;
+      }
+
+      .content-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        animation: fadeIn 0.6s ease-out;
+        margin-bottom: 20px;
+      }
+
+      .content-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #1a202c;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f59e0b;
+      }
+
+      .cost-breakdown-table {
+        overflow-x: auto;
+      }
+
+      .cost-breakdown-table table {
+        width: 100%;
+        font-size: 0.9rem;
+      }
+
+      .cost-breakdown-table thead {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);
+      }
+
+      .cost-breakdown-table thead th {
+        padding: 15px;
+        font-weight: 600;
+        color: #1a202c;
+        border: none;
+      }
+
+      .cost-breakdown-table tbody tr {
+        border-bottom: 1px solid #e5e7eb;
+        transition: background-color 0.2s;
+      }
+
+      .cost-breakdown-table tbody tr:hover {
+        background-color: #f9fafb;
+      }
+
+      .cost-breakdown-table tbody td {
+        padding: 15px;
+      }
+
+      .cost-breakdown-table tfoot tr {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);
+        font-weight: 600;
+      }
+
+      .cost-breakdown-table tfoot th {
+        padding: 15px;
+      }
+
+      .sidebar-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+        animation: fadeIn 0.6s ease-out;
+      }
+
+      .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1a202c;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .sidebar-title i {
+        color: #f59e0b;
+      }
+
+      .cost-item {
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .cost-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .cost-label {
+        font-size: 0.9rem;
+        color: #718096;
+        margin-bottom: 5px;
+      }
+
+      .cost-value {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+      }
+
+      .cost-bar {
+        height: 8px;
+        background-color: #e5e7eb;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .cost-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+        transition: width 0.3s ease;
+      }
+
+      .tip-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        padding: 12px;
+        background: #f9fafb;
+        border-radius: 8px;
+      }
+
+      .tip-item i {
+        margin-right: 12px;
+        margin-top: 2px;
+        flex-shrink: 0;
+      }
+
+      .alert-info-gradient {
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(8, 145, 178, 0.05) 100%);
+        border-left: 4px solid #06b6d4;
+        color: #0891b2;
+      }
+
+      @media (max-width: 768px) {
+        .report-header {
+          padding: 20px;
+        }
+
+        .report-title {
+          font-size: 1.5rem;
+        }
+
+        .stat-card {
+          padding: 15px;
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .stat-card i {
+          font-size: 2rem;
+        }
+
+        .content-card {
+          padding: 20px;
+        }
+
+        .cost-breakdown-table {
+          font-size: 0.8rem;
+        }
+
+        .cost-breakdown-table th,
+        .cost-breakdown-table td {
+          padding: 10px 5px;
+        }
+
+        .sidebar-card {
+          padding: 20px;
+        }
+      }
+
+      @media (max-width: 576px) {
+        .report-header {
+          padding: 15px;
+          margin-bottom: 20px;
+        }
+
+        .report-title {
+          font-size: 1.3rem;
+        }
+
+        .stat-card {
+          padding: 15px;
+        }
+
+        .stat-card h3 {
+          font-size: 1.4rem;
+        }
+
+        .content-card {
+          padding: 15px;
+        }
+
+        .cost-breakdown-table {
+          font-size: 0.75rem;
+        }
+
+        .cost-breakdown-table th,
+        .cost-breakdown-table td {
+          padding: 8px 4px;
+        }
+
+        .sidebar-card {
+          padding: 15px;
+        }
+
+        .tip-item {
+          padding: 10px;
+        }
+
+        .tip-item i {
+          font-size: 1.2rem;
+        }
+      }
+    </style>
+
+    <div class="cost-analysis-report">
+      <!-- Page Header -->
+      <div class="report-header">
+        <div class="row align-items-center">
+          <div class="col-lg-8">
+            <div class="d-flex align-items-center gap-3">
+              <div style="font-size: 2.5rem;">💰</div>
+              <div>
+                <h1 class="report-title mb-0">Cost Analysis Report</h1>
+                <p class="report-subtitle">Detailed cost breakdown and efficiency analysis</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="d-flex justify-content-lg-end gap-2">
+              <%= link_to financial_reports_path, class: "btn btn-outline-secondary" do %>
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+              <% end %>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Cost Trends Chart -->
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="bi bi-graph-up"></i>
-            Cost Trends (6 Months)
-          </h5>
+      <!-- Cost Summary Cards -->
+      <div class="row mb-4 g-3">
+        <div class="col-md-6 col-lg-3">
+          <div class="stat-card card-total-costs">
+            <div>
+              <i class="bi bi-currency-exchange"></i>
+              <h3>KES <%= number_with_delimiter(@cost_breakdown[:total_estimated_costs]) %></h3>
+              <p>Total Costs</p>
+              <small>Estimated operational costs</small>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <canvas id="costTrendsChart" height="300"></canvas>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="stat-card card-cost-per-liter">
+            <div>
+              <i class="bi bi-droplet"></i>
+              <h3>KES <%= @cost_per_liter %></h3>
+              <p>Cost per Liter</p>
+              <small>Production cost efficiency</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="stat-card card-actual-expenses">
+            <div>
+              <i class="bi bi-graph-down"></i>
+              <h3>KES <%= number_with_delimiter(@expense_breakdown.values.sum) %></h3>
+              <p>Actual Expenses</p>
+              <small>Recorded expenses</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="stat-card card-highest-category">
+            <div>
+              <i class="bi bi-percent"></i>
+              <h3><%= @expense_breakdown.empty? ? 0 : ((@expense_breakdown.values.max / @expense_breakdown.values.sum) * 100).round(1) %>%</h3>
+              <p>Highest Category</p>
+              <small><%= @expense_breakdown.empty? ? 'N/A' : @expense_breakdown.max_by { |k, v| v }[0].humanize %></small>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Cost Analysis Insights -->
-    <div class="col-md-4">
-      <!-- Cost per Liter Analysis -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <h6 class="card-title mb-0">
-            <i class="bi bi-droplet-half"></i>
-            Cost per Liter Analysis
-          </h6>
+      <div class="row g-4">
+        <!-- Cost Analysis -->
+        <div class="col-lg-8">
+          <!-- Detailed Cost Breakdown -->
+          <div class="content-card">
+            <div class="content-title">
+              <i class="bi bi-bar-chart me-2"></i>
+              Detailed Cost Breakdown
+            </div>
+            <div class="cost-breakdown-table">
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Cost Category</th>
+                      <th>Estimated Cost</th>
+                      <th>Actual Cost</th>
+                      <th>Variance</th>
+                      <th>% of Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><i class="bi bi-grass text-success"></i> Feed Costs</td>
+                      <td>KES <%= number_with_delimiter(@cost_breakdown[:feed_costs]) %></td>
+                      <td>KES <%= number_with_delimiter(@expense_breakdown['feed'] || 0) %></td>
+                      <td class="text-<%= (@expense_breakdown['feed'] || 0) <= @cost_breakdown[:feed_costs] ? 'success' : 'danger' %>">
+                        <%= (@expense_breakdown['feed'] || 0) <= @cost_breakdown[:feed_costs] ? '-' : '+' %>KES <%= number_with_delimiter(((@expense_breakdown['feed'] || 0) - @cost_breakdown[:feed_costs]).abs) %>
+                      </td>
+                      <td><%= ((@expense_breakdown['feed'] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
+                    </tr>
+                    <tr>
+                      <td><i class="bi bi-people text-primary"></i> Labor Costs</td>
+                      <td>KES <%= number_with_delimiter(@cost_breakdown[:labor_costs]) %></td>
+                      <td>KES <%= number_with_delimiter(@expense_breakdown['labor'] || 0) %></td>
+                      <td class="text-<%= (@expense_breakdown['labor'] || 0) <= @cost_breakdown[:labor_costs] ? 'success' : 'danger' %>">
+                        <%= (@expense_breakdown['labor'] || 0) <= @cost_breakdown[:labor_costs] ? '-' : '+' %>KES <%= number_with_delimiter(((@expense_breakdown['labor'] || 0) - @cost_breakdown[:labor_costs]).abs) %>
+                      </td>
+                      <td><%= ((@expense_breakdown['labor'] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
+                    </tr>
+                    <tr>
+                      <td><i class="bi bi-hospital text-danger"></i> Veterinary Costs</td>
+                      <td>KES <%= number_with_delimiter(@cost_breakdown[:veterinary_costs]) %></td>
+                      <td>KES <%= number_with_delimiter(@expense_breakdown['veterinary'] || 0) %></td>
+                      <td class="text-<%= (@expense_breakdown['veterinary'] || 0) <= @cost_breakdown[:veterinary_costs] ? 'success' : 'danger' %>">
+                        <%= (@expense_breakdown['veterinary'] || 0) <= @cost_breakdown[:veterinary_costs] ? '-' : '+' %>KES <%= number_with_delimiter(((@expense_breakdown['veterinary'] || 0) - @cost_breakdown[:veterinary_costs]).abs) %>
+                      </td>
+                      <td><%= ((@expense_breakdown['veterinary'] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
+                    </tr>
+                    <tr>
+                      <td><i class="bi bi-tools text-warning"></i> Maintenance Costs</td>
+                      <td>KES <%= number_with_delimiter(@cost_breakdown[:maintenance_costs]) %></td>
+                      <td>KES <%= number_with_delimiter(@expense_breakdown['maintenance'] || 0) %></td>
+                      <td class="text-<%= (@expense_breakdown['maintenance'] || 0) <= @cost_breakdown[:maintenance_costs] ? 'success' : 'danger' %>">
+                        <%= (@expense_breakdown['maintenance'] || 0) <= @cost_breakdown[:maintenance_costs] ? '-' : '+' %>KES <%= number_with_delimiter(((@expense_breakdown['maintenance'] || 0) - @cost_breakdown[:maintenance_costs]).abs) %>
+                      </td>
+                      <td><%= ((@expense_breakdown['maintenance'] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
+                    </tr>
+                    <% %w[utilities transport equipment breeding insurance other].each do |category| %>
+                      <% if (@expense_breakdown[category] || 0) > 0 %>
+                        <tr>
+                          <td>
+                            <i class="bi bi-<%= {'utilities' => 'lightning', 'transport' => 'truck', 'equipment' => 'gear', 'breeding' => 'heart', 'insurance' => 'shield', 'other' => 'question-circle'}[category] %>"></i>
+                            <%= category.humanize %>
+                          </td>
+                          <td>-</td>
+                          <td>KES <%= number_with_delimiter(@expense_breakdown[category]) %></td>
+                          <td class="text-info">Additional</td>
+                          <td><%= ((@expense_breakdown[category] || 0) / @expense_breakdown.values.sum * 100).round(1) rescue 0 %>%</td>
+                        </tr>
+                      <% end %>
+                    <% end %>
+                  </tbody>
+                  <tfoot>
+                    <tr class="table-dark">
+                      <th>Total</th>
+                      <th>KES <%= number_with_delimiter(@cost_breakdown[:total_estimated_costs]) %></th>
+                      <th>KES <%= number_with_delimiter(@expense_breakdown.values.sum) %></th>
+                      <th class="text-<%= @expense_breakdown.values.sum <= @cost_breakdown[:total_estimated_costs] ? 'success' : 'danger' %>">
+                        <%= @expense_breakdown.values.sum <= @cost_breakdown[:total_estimated_costs] ? 'Under Budget' : 'Over Budget' %>
+                      </th>
+                      <th>100%</th>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cost Trends Chart -->
+          <div class="content-card">
+            <div class="content-title">
+              <i class="bi bi-graph-up me-2"></i>
+              Cost Trends (6 Months)
+            </div>
+            <canvas id="costTrendsChart" height="300"></canvas>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="cost-per-liter-breakdown">
+
+        <!-- Cost Insights -->
+        <div class="col-lg-4">
+          <!-- Cost per Liter Analysis -->
+          <div class="sidebar-card">
+            <div class="sidebar-title">
+              <i class="bi bi-droplet-half"></i>
+              Cost per Liter Breakdown
+            </div>
             <% total_production = ProductionRecord.where(farm: @farm, production_date: @date_range).sum(:total_production) %>
             <% if total_production > 0 %>
               <% ['feed', 'labor', 'veterinary', 'maintenance'].each do |category| %>
@@ -221,328 +548,116 @@
               <p class="text-muted">No production data available for cost analysis.</p>
             <% end %>
           </div>
-        </div>
-      </div>
 
-      <!-- Cost Optimization Recommendations -->
-      <div class="card mb-4">
-        <div class="card-header">
-          <h6 class="card-title mb-0">
-            <i class="bi bi-lightbulb"></i>
-            Cost Optimization Tips
-          </h6>
-        </div>
-        <div class="card-body">
-          <% highest_cost_category = @expense_breakdown.max_by { |k, v| v } rescue nil %>
-          <% if highest_cost_category %>
-            <div class="alert alert-info">
-              <strong>Focus Area: <%= highest_cost_category[0].humanize %></strong><br>
-              This is your highest cost category at <%= ((highest_cost_category[1] / @expense_breakdown.values.sum) * 100).round(1) %>% of total expenses.
+          <!-- Cost Optimization -->
+          <div class="sidebar-card">
+            <div class="sidebar-title">
+              <i class="bi bi-lightbulb"></i>
+              Cost Optimization Tips
             </div>
-          <% end %>
+            <div class="optimization-tips">
+              <% highest_cost_category = @expense_breakdown.max_by { |k, v| v } rescue nil %>
+              <% if highest_cost_category %>
+                <div class="alert-info-gradient p-3 rounded mb-3">
+                  <strong><i class="bi bi-info-circle me-2"></i>Focus Area: <%= highest_cost_category[0].humanize %></strong><br>
+                  <small>This is your highest cost at <%= ((highest_cost_category[1] / @expense_breakdown.values.sum) * 100).round(1) %>% of total expenses.</small>
+                </div>
+              <% end %>
 
-          <div class="optimization-tips">
-            <% if @cost_per_liter > 30 %>
+              <% if @cost_per_liter > 30 %>
+                <div class="tip-item">
+                  <i class="bi bi-exclamation-triangle text-warning"></i>
+                  <span>High cost per liter. Consider feed efficiency optimization.</span>
+                </div>
+              <% end %>
+
+              <% if (@expense_breakdown['feed'] || 0) > (@expense_breakdown.values.sum * 0.6) %>
+                <div class="tip-item">
+                  <i class="bi bi-info-circle text-info"></i>
+                  <span>Feed costs are high. Explore bulk purchasing or alternative feeds.</span>
+                </div>
+              <% end %>
+
+              <% if (@expense_breakdown['veterinary'] || 0) > (@expense_breakdown.values.sum * 0.15) %>
+                <div class="tip-item">
+                  <i class="bi bi-heart-pulse text-danger"></i>
+                  <span>High veterinary costs. Focus on preventive health measures.</span>
+                </div>
+              <% end %>
+
               <div class="tip-item">
-                <i class="bi bi-exclamation-triangle text-warning"></i>
-                <span>High cost per liter. Consider feed efficiency optimization.</span>
-              </div>
-            <% end %>
-
-            <% if (@expense_breakdown['feed'] || 0) > (@expense_breakdown.values.sum * 0.6) %>
-              <div class="tip-item">
-                <i class="bi bi-info-circle text-info"></i>
-                <span>Feed costs are high. Explore bulk purchasing or alternative feeds.</span>
-              </div>
-            <% end %>
-
-            <% if (@expense_breakdown['veterinary'] || 0) > (@expense_breakdown.values.sum * 0.15) %>
-              <div class="tip-item">
-                <i class="bi bi-heart-pulse text-danger"></i>
-                <span>High veterinary costs. Focus on preventive health measures.</span>
-              </div>
-            <% end %>
-
-            <div class="tip-item">
-              <i class="bi bi-check-circle text-success"></i>
-              <span>Monitor daily costs to maintain efficiency.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Cost Efficiency Meter -->
-      <div class="card">
-        <div class="card-header">
-          <h6 class="card-title mb-0">
-            <i class="bi bi-speedometer2"></i>
-            Cost Efficiency Meter
-          </h6>
-        </div>
-        <div class="card-body text-center">
-          <div class="efficiency-gauge">
-            <% efficiency_score = [@cost_per_liter <= 25 ? 100 : (50 - @cost_per_liter + 25), 0].max %>
-            <div class="gauge-circle">
-              <div class="gauge-fill" style="stroke-dashoffset: <%= 251 - (251 * efficiency_score / 100) %>"></div>
-              <div class="gauge-center">
-                <div class="gauge-score"><%= efficiency_score.round %>%</div>
-                <div class="gauge-label">Efficient</div>
+                <i class="bi bi-check-circle text-success"></i>
+                <span>Monitor daily costs to maintain efficiency.</span>
               </div>
             </div>
-          </div>
-          <div class="efficiency-description mt-3">
-            <% if efficiency_score >= 80 %>
-              <div class="text-success">
-                <i class="bi bi-check-circle"></i>
-                Excellent cost efficiency
-              </div>
-            <% elsif efficiency_score >= 60 %>
-              <div class="text-warning">
-                <i class="bi bi-dash-circle"></i>
-                Good efficiency, room for improvement
-              </div>
-            <% else %>
-              <div class="text-danger">
-                <i class="bi bi-x-circle"></i>
-                Poor efficiency, optimization needed
-              </div>
-            <% end %>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// Cost Trends Chart
-const costTrends = <%= @cost_trends.to_json.html_safe %>;
-const trendLabels = costTrends.map(item => item.month);
-const trendExpenses = costTrends.map(item => item.total_expenses);
-const trendCostPerLiter = costTrends.map(item => item.cost_per_liter);
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      // Cost Trends Chart
+      const costTrends = <%= @cost_trends.to_json.html_safe %>;
+      const trendLabels = costTrends.map(item => item.month);
+      const trendExpenses = costTrends.map(item => item.total_expenses);
+      const trendCostPerLiter = costTrends.map(item => item.cost_per_liter);
 
-const ctx = document.getElementById('costTrendsChart').getContext('2d');
-new Chart(ctx, {
-  type: 'line',
-  data: {
-    labels: trendLabels,
-    datasets: [
-      {
-        label: 'Total Expenses (KES)',
-        data: trendExpenses,
-        borderColor: '#ffc107',
-        backgroundColor: 'rgba(255, 193, 7, 0.1)',
-        tension: 0.4,
-        yAxisID: 'y'
-      },
-      {
-        label: 'Cost per Liter (KES)',
-        data: trendCostPerLiter,
-        borderColor: '#dc3545',
-        backgroundColor: 'rgba(220, 53, 69, 0.1)',
-        tension: 0.4,
-        yAxisID: 'y1'
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top'
-      }
-    },
-    scales: {
-      y: {
-        type: 'linear',
-        display: true,
-        position: 'left',
-        title: {
-          display: true,
-          text: 'Total Expenses (KES)'
-        }
-      },
-      y1: {
-        type: 'linear',
-        display: true,
-        position: 'right',
-        title: {
-          display: true,
-          text: 'Cost per Liter (KES)'
+      const ctx = document.getElementById('costTrendsChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: trendLabels,
+          datasets: [
+            {
+              label: 'Total Expenses (KES)',
+              data: trendExpenses,
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              tension: 0.4,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Cost per Liter (KES)',
+              data: trendCostPerLiter,
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              tension: 0.4,
+              yAxisID: 'y1'
+            }
+          ]
         },
-        grid: {
-          drawOnChartArea: false
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top'
+            }
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              title: {
+                display: true,
+                text: 'Total Expenses (KES)'
+              }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: {
+                display: true,
+                text: 'Cost per Liter (KES)'
+              },
+              grid: {
+                drawOnChartArea: false
+              }
+            }
+          }
         }
-      }
-    }
-  }
-});
-</script>
-
-<style>
-.cost-analysis-report .stat-card {
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  transition: transform 0.2s;
-}
-
-.cost-analysis-report .stat-card:hover {
-  transform: translateY(-2px);
-}
-
-.cost-item {
-  margin-bottom: 15px;
-}
-
-.cost-label {
-  font-size: 0.875rem;
-  color: #6c757d;
-  margin-bottom: 2px;
-}
-
-.cost-value {
-  font-weight: bold;
-  font-size: 1.1rem;
-  margin-bottom: 5px;
-}
-
-.cost-bar {
-  height: 6px;
-  background-color: #e9ecef;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.cost-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
-  transition: width 0.3s ease;
-}
-
-.tip-item {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 10px;
-  font-size: 0.875rem;
-}
-
-.tip-item i {
-  margin-right: 8px;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-
-.efficiency-gauge {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  margin: 0 auto;
-}
-
-.gauge-circle {
-  position: relative;
-  width: 120px;
-  height: 120px;
-}
-
-.gauge-circle svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.gauge-fill {
-  fill: none;
-  stroke: #28a745;
-  stroke-width: 8;
-  stroke-linecap: round;
-  stroke-dasharray: 251;
-  stroke-dashoffset: 251;
-  transition: stroke-dashoffset 1s ease;
-}
-
-.gauge-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.gauge-score {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #495057;
-}
-
-.gauge-label {
-  font-size: 0.75rem;
-  color: #6c757d;
-}
-
-/* Mobile Optimizations */
-@media (max-width: 768px) {
-  .cost-analysis-report .table-responsive {
-    font-size: 0.875rem;
-  }
-  
-  .efficiency-gauge {
-    width: 100px;
-    height: 100px;
-  }
-  
-  .gauge-score {
-    font-size: 1.25rem;
-  }
-  
-  .cost-per-liter-breakdown {
-    font-size: 0.875rem;
-  }
-  
-  .optimization-tips .tip-item {
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .stat-card {
-    padding: 15px;
-  }
-  
-  .stat-content h3 {
-    font-size: 1.25rem;
-  }
-  
-  .cost-breakdown-table th,
-  .cost-breakdown-table td {
-    padding: 8px 4px;
-    font-size: 0.75rem;
-  }
-}
-</style>
-
-<!-- Add SVG for gauge -->
-<svg style="display: none;">
-  <defs>
-    <circle id="gauge-bg" cx="60" cy="60" r="40" fill="none" stroke="#e9ecef" stroke-width="8"></circle>
-  </defs>
-</svg>
-
-<script>
-// Add SVG for efficiency gauge
-document.addEventListener('DOMContentLoaded', function() {
-  const gaugeCircle = document.querySelector('.gauge-circle');
-  if (gaugeCircle) {
-    gaugeCircle.innerHTML = `
-      <svg>
-        <circle cx="60" cy="60" r="40" fill="none" stroke="#e9ecef" stroke-width="8"></circle>
-        <circle cx="60" cy="60" r="40" class="gauge-fill"></circle>
-      </svg>
-    `;
-  }
-});
-</script>
+      });
+    </script>

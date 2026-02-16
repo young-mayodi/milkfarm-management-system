@@ -605,7 +605,7 @@
                 </tr>
               </thead>
               <tbody>
-                <% @recent_records.limit(6).each do |record| %>
+                <% @recent_records.first(6).each do |record| %>
                   <tr>
                     <td>
                       <span class="badge bg-light text-dark">
@@ -1612,7 +1612,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="card-body">
         <div class="activity-feed">
           <% if @recent_records.any? %>
-            <% @recent_records.limit(5).each do |record| %>
+            <% @recent_records.first(5).each do |record| %>
               <div class="activity-item d-flex mb-3">
                 <div class="activity-icon me-3">
                   <i class="bi bi-droplet-fill text-primary"></i>

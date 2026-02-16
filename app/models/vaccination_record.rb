@@ -32,7 +32,7 @@ class VaccinationRecord < ApplicationRecord
   scope :administered_by, ->(person) { where(administered_by: person) }
 
   # Callbacks
-  before_save :calculate_next_due_date, if: :vaccination_date_changed?
+  before_save :calculate_next_due_date, if: :should_calculate_next_due_date?
 
   # Instance methods
   def vaccine_interval_months
@@ -54,6 +54,13 @@ class VaccinationRecord < ApplicationRecord
     else
       12 # Default to annual
     end
+  end
+
+  def should_calculate_next_due_date?
+    # Only auto-calculate if:
+    # 1. Vaccination date changed AND
+    # 2. User hasn't manually set next_due_date (it's blank or unchanged)
+    vaccination_date_changed? && !next_due_date_changed?
   end
 
   def calculate_next_due_date

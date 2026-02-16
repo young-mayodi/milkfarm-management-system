@@ -1,0 +1,19 @@
+# Automated Database Backup Configuration
+# Add to crontab: crontab -e
+
+# Daily backup at 2 AM (production)
+0 2 * * * cd $HOME/farm-bar/milk_production_system && ./backup_database.sh production >> logs/backup.log 2>&1
+
+# Weekly backup at 3 AM on Sunday (development)
+0 3 * * 0 cd $HOME/farm-bar/milk_production_system && ./backup_database.sh development >> logs/backup.log 2>&1
+
+# Hourly backup during business hours (9 AM - 5 PM, production only)
+# 0 9-17 * * * cd $HOME/farm-bar/milk_production_system && ./backup_database.sh production >> logs/backup.log 2>&1
+
+# For Railway/Heroku, use their backup services:
+# Railway: Use pg_dump in a scheduled task
+# Heroku: heroku pg:backups:schedule DATABASE_URL --at '02:00 America/New_York'
+
+# Monitor backup log
+# Watch log: tail -f logs/backup.log
+# Recent backups: ls -lh backups/

@@ -23,9 +23,12 @@ module MilkProductionSystem
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
-    
+
     # Ensure services are autoloaded
     config.autoload_paths += %W[#{config.root}/app/services]
     config.eager_load_paths += %W[#{config.root}/app/services]
+
+    # Use custom error pages
+    config.exceptions_app = routes
   end
 end
