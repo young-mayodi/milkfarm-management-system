@@ -335,8 +335,17 @@ class CowsController < ApplicationController
       @farm = cow.farm
     end
 
+    # For standalone new/create routes without farm_id, default to first farm if available
+    if @farm.nil? && action_name.in?(%w[new create])
+      @farm = current_user.farms.first if current_user
+      
+      if @farm.nil?
+        redirect_to farms_path, alert: "Please select a farm first to add a cow." and return
+      end
+    end
+
     # SECURITY: Ensure user can only access their own farm's data
-    authorize_farm_access!
+    authorize_farm_access! if @farm
   end
 
   def set_cow
