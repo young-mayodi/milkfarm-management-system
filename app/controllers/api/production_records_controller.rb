@@ -3,11 +3,11 @@ module Api
     def index
       records = ProductionRecord.all
       records = records.where(farm_id: params[:farm_id]) if params[:farm_id]
-      
+
       if params[:start_date] && params[:end_date]
         records = records.where(production_date: params[:start_date]..params[:end_date])
       end
-      
+
       render json: records.map { |record| record_json(record) }
     end
 
@@ -38,7 +38,7 @@ module Api
 
     def record_params
       params.require(:production_record).permit(
-        :cow_id, :farm_id, :production_date, 
+        :cow_id, :farm_id, :production_date,
         :morning_production, :noon_production, :evening_production, :night_production
       )
     end

@@ -78,7 +78,7 @@ module Api
           production = cow.production_records.sum(:total_production)
           {
             name: cow.name,
-            average_daily: (production.to_f / [cow.production_records.count, 1].max).round(2),
+            average_daily: (production.to_f / [ cow.production_records.count, 1 ].max).round(2),
             total_production: production
           }
         }.sort_by { |c| -c[:average_daily] }.first(10)
